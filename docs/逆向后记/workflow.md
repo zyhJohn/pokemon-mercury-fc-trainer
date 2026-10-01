@@ -1,5 +1,14 @@
 # 内存地址定位工作流详解
 
+## 0. mGBA Lua 脚本加载（mercury_bridge.lua 等桥接脚本）
+
+- 加载流程：先 Load ROM 进游戏 → Tools → Scripting → File → Load script → 选 .lua。
+- **脚本文件路径必须纯 ASCII**：中文/非 ASCII 路径会导致脚本静默加载失败（脚本列表空、输出区无 log）。
+  ROM 能加载是因为走不同代码路径。解决：把 .lua 复制到纯 ASCII 路径（如 mGBA 根目录）。
+- mGBA **无「自动加载脚本」机制**，每次启动 mGBA 都需手动 Load script 一次（脚本加载后常驻到关 mGBA）。
+- 权威 API 参考：mGBA 自带示例 `scripts/socketserver.lua`（默认 8888 端口）+ 官方文档 `https://mgba.io/docs/dev/scripting.html`。
+- 验证脚本加载：在脚本顶部 `console:log(...)`，加载成功后输出区会显示；再用 lupa 预验证语法。
+
 ## 1. mGBA GDB 桩（RSP 协议）
 
 - 启动：`mGBA.exe -g game.gba`（端口 2345）；`-t 存档.ss1` 直接进游戏内状态。
