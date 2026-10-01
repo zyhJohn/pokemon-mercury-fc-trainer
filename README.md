@@ -1,7 +1,7 @@
 # 宝可梦水银FC 修改器（mGBA 版）
 
 一个面向 **火红(BPRE)改版《宝可梦水银FC~致150年后的你》** 的图形化内存修改器，操作方式对齐 PokemonMemHack。
-通过 **mGBA 的 GDB 调试桩** 读写游戏内存，无需修改 ROM 或存档文件。
+通过 **mGBA 的 Lua 内存桥接脚本**（推荐）或 **GDB 调试桩**（旧方式）读写游戏内存，无需修改 ROM 或存档文件。
 
 > 本文档面向二次开发，包含完整的内存地址表、数据结构和逆向定位工作流。
 
@@ -12,7 +12,7 @@
 - **目标游戏**：`宝可梦水银FC~致150年后的你 Version 1.0.gba`（32MB）
 - **ROM 底包**：Pokémon FireRed (US)，游戏代码 `BPRE`（`POKEMON FIRE`）
 - **改版内容**：以金银(Johto)为主题，加入第四世代及之后的宝可梦/道具/技能，原创剧情
-- **修改器技术栈**：Python 3 + Tkinter（GUI）↔ mGBA GDB 桩（内存读写）
+- **修改器技术栈**：Python 3 + Tkinter（GUI）↔ mGBA 内存桥接（Lua socket 服务 或 GDB 桩）
 
 ### 已实现功能
 
@@ -32,13 +32,24 @@ pokemon-mercury-fc-trainer/
 ├── LICENSE             # MIT 许可证
 ├── .gitignore          # Git 忽略规则（含游戏 ROM/存档）
 ├── trainer_gui.py      # 修改器主程序源码（Tkinter）
+├── mercury_bridge.lua  # mGBA 内存桥接脚本（不用 GDB，推荐方式）
 ├── names.json          # 中文名称表（解析自 PokemonMemHack 数据文件）
-├── 启动修改器.bat       # 一键启动脚本（需放在 mGBA 目录下使用）
+├── 启动修改器.bat       # 双击入口（实际逻辑在 .ps1 里）
+├── 启动修改器.ps1       # 一键启动核心脚本（PowerShell，处理中文/空格路径）
+├── docs/                # 逆向后记：逆向方法论 + 完整工作日志（见 docs/逆向后记/）
+│   └── 逆向后记/
+├── tools/               # 逆向辅助脚本（gdbmem / 地址搜索 / 写入验证 / 桥接测试桩）
 └── dist/
     └── 水银FC修改器.exe  # 打包产物（被 gitignore，发布到 Releases）
 ```
 
-> 说明：`启动修改器.bat` 假定本目录位于 mGBA 安装目录内（与 `mGBA.exe` 同级或子目录）。
+> `docs/逆向后记/` 收录本次逆向开发的完整工作流程、过程记录与可复用方法论（原为 WorkBuddy 的
+> 用户级技能 `gba-memory-hacking`，现随仓库发布），`tools/` 收录实际使用的逆向辅助脚本，
+> 详见 `docs/逆向后记/README.md`。二者面向二次开发与「复现同类 GBA 改版逆向」场景。
+
+> 说明：`启动修改器.bat` 假定本目录位于 mGBA 安装目录内（与 `mGBA.exe` 同级或子目录），
+> 通过 `启动修改器.ps1` 启动 mGBA（正常模式，无需 GDB）与修改器 exe。改用 PowerShell 的原因：
+> `start` 命令对含空格/中文的 ROM 路径解析不可靠（会报「系统找不到文件」）。
 > 游戏 ROM / 存档（`.gba` / `.sav` / `.ss1` / `.ss2`）涉及版权与个人数据，已加入 `.gitignore`，勿上传。
 
 依赖的 PokemonMemHack 数据文件（用于生成 `names.json`）：
@@ -157,27 +168,52 @@ pokemon-mercury-fc-trainer/
 
 ## 五、使用方法
 
-**一键启动（推荐）**：双击 `启动修改器.bat`（自动开 mGBA + 修改器 exe）。
+修改器支持两种连接方式，**自动尝试**（优先 TCP 桥接，失败回退 GDB）。
 
-**或直接双击 `水银FC修改器.exe`**（免 Python，但需先手动用 `-g` 启动 mGBA）。
+### 方式 A：TCP 桥接（推荐，不用 GDB、不用 cmd）
 
-**手动（源码运行）**：
+1. 正常启动 mGBA 并进入游戏（**直接双击 `mGBA.exe` 即可，无需任何参数**）。
+2. 在 mGBA 菜单 `Tools → Scripting → File → Load Script` 加载一次 `mercury_bridge.lua`
+   （脚本加载后常驻，直到关闭 mGBA；在 mGBA 控制台会显示 `listening on port 8888`）。
+3. 双击 `水银FC修改器.exe`，点「连接」。
+
+> 之后每次只需「双击 mGBA → 加载脚本 → 双击修改器 → 连接」，全程无命令行。
+
+### 方式 B：GDB 桩（旧方式，兜底）
+
 ```
-mGBA.exe -g "游戏.gba"
-"C:\...\Python311\python.exe" trainer_gui.py
+mGBA.exe -g "游戏.gba"     # 带 -g 参数启动
+python trainer_gui.py       # 或双击 exe
 ```
+
+### 一键启动
+
+双击 `启动修改器.bat`（内部调用 `启动修改器.ps1`）会自动启动 mGBA + 修改器 exe
+（mGBA 用正常模式，不用 GDB；仍需在 mGBA 里手动加载一次 `mercury_bridge.lua`）。
 
 > 注意：源码运行需带 Tkinter 的 Python（系统 Python 3.11）；某些精简版 Python（如 3.13）无 Tkinter。exe 已内置运行时，无需 Python。
 
-1. 点「连接」→ 状态栏变绿。
+**启动后请先在 mGBA 窗口按按键进入游戏**（mGBA 启动后停在标题画面，需手动按 Start/回车进入），
+进入游戏后 `gSaveBlock1Ptr` 才会被初始化，修改器「连接」后才能读到金钱/队伍等数据。
+
+1. 点「连接」→ 状态栏变绿（显示连接方式：`TCP 桥接` 或 `GDB 桩`）。
 2. 改数值/队伍/背包 → 点「写入全部」或「写入选中」。
 3. 「刷新」重新读取。
+
+### 常见问题
+
+- **「mGBA -g 启动后无反应」**：mGBA 其实是正常启动了（窗口标题 `mGBA - POKEMON FIRE - 0.10.5`），
+  只是停在标题画面等你按键进入游戏，不是卡死。
+- **「一键启动无效」**：旧版 `启动修改器.bat` 用 `start` 命令启动，遇到含空格/中文的 ROM 路径会报
+  「系统找不到文件」。现已改用 PowerShell 脚本，请确认 `启动修改器.bat` 与 `启动修改器.ps1` 都在同一目录。
+- **修改器点「连接」失败**：优先用方式 A（加载 `mercury_bridge.lua`）；若用方式 B，需 `-g` 启动 mGBA。
+  GDB 桩是单连接，一次连接失败需重启 mGBA 再连。
 
 ---
 
 ## 六、依赖与运行环境
 
-- Windows + mGBA 0.10.5+（GDB 桩）
+- Windows + mGBA 0.10.5+（Lua 脚本功能，或 GDB 桩）
 - **exe 版**：无需任何依赖（Python 运行时已内置）
 - **源码版**：Python 3.11（含 Tkinter 8.6），仅标准库
 - 打包：PyInstaller 6.x（`--onefile --windowed --add-data "names.json;."`）
@@ -201,14 +237,36 @@ mGBA.exe -g "游戏.gba"
 
 - **加新字段**：在 `Trainer` 类加 `get_xxx/set_xxx`，在 `App` 类加对应标签页/控件，`_refresh`/`_write_all` 中接上即可。
 - **支持其它改版/游戏**：改 `ADDR` 表 + 用「工作流」重新定位地址即可。
-- **去掉 GDB 依赖**：可改用 mGBA 的 Lua socket（`scripts/socketserver.lua`）做内存后端，或直接 ReadProcessMemory（需定位进程内 WRAM 基址）。
+- **后端扩展**：当前已支持两种内存后端（`MemClient` TCP 桥接 + `GDBClient` GDB 桩）。
+  如需第三种（如 ReadProcessMemory），实现相同的 `r8/r16/r32/w8/w16/w32/read/write` 接口即可无缝接入 `Trainer`。
 - **做成独立 exe**：用 PyInstaller 打包 `trainer_gui.py`。
 
 ### 8.2 关键文件说明
 
-- `trainer_gui.py`：单文件，包含 `GDBClient`（GDB RSP）、`Trainer`（数据访问层）、`App`（GUI）三层，结构清晰可直接读。
+- `trainer_gui.py`：单文件，含 `MemClient`（TCP 桥接）、`GDBClient`（GDB RSP）、`Trainer`（数据访问层）、
+  `App`（GUI）四部分。`Trainer` 只依赖内存客户端的通用接口（`r8/r16/r32/w8/w16/w32/read/write`），
+  两种后端可无缝切换；`App._do_connect()` 优先尝试 `MemClient`，失败回退 `GDBClient`。
+- `mercury_bridge.lua`：mGBA Lua 内存桥接脚本，在 mGBA 内监听 TCP 端口（默认 8888），
+  用 `emu:read8/read16/read32/write8/.../readRange` 提供内存读写服务，替代 GDB 桩（无需 `-g`、无需 cmd）。
 - `names.json`：`{breeds: 物种, items: 道具, skills: 技能, pers: 性格, specs: 特性}`，键为十进制编号字符串。
-- `启动修改器.bat`：用 `for %%f in (*.gba)` 动态找 ROM，避免中文文件名编码问题。
+- `启动修改器.bat`：双击入口，仅一行 `powershell -ExecutionPolicy Bypass -File 启动修改器.ps1`。
+- `启动修改器.ps1`：核心启动逻辑。用 PowerShell `Start-Process` 启动 mGBA 与修改器 exe，
+  规避 bat `start` 命令对含空格/中文路径的解析坑；脚本本身保持纯 ASCII，避免 Windows PowerShell 5.1
+  按 GBK 读取无 BOM UTF-8 文件导致中文乱码。
+
+### 8.3 内存桥接协议（mercury_bridge.lua ↔ MemClient）
+
+纯文本协议，每条命令以换行结尾，响应以换行结尾：
+
+| 命令 | 参数 | 响应 |
+|---|---|---|
+| `PING` | — | `PONG` |
+| `READ <hex addr> <hex len>` | 地址、长度 | 十六进制字节串 |
+| `READ8/16/32 <hex addr>` | 地址 | 十进制值 |
+| `WRITE8/16/32 <hex addr> <dec val>` | 地址、值 | `OK` / `ERR` |
+| `WRITE <hex addr> <hex bytes>` | 地址、字节串 | `OK` / `ERR` |
+
+端口默认 `8888`，被占用时脚本自动 `+1` 递增；`MemClient.connect()` 会从默认端口向上扫描并握手 `PING/PONG`。
 
 ### 8.3 构建（打包 exe）
 

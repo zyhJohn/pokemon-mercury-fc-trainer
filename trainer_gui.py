@@ -2,13 +2,17 @@
 """
 宝可梦水银FC 修改器（mGBA 版，图形界面）
 ======================================
-类似 PokemonMemHack 的图形化修改器，通过 mGBA 的 GDB 调试桩读写游戏内存。
+类似 PokemonMemHack 的图形化修改器，通过内存桥接读写游戏内存。
+
+两种连接方式（自动尝试，优先 TCP 桥接）：
+  1. TCP 桥接（推荐，无需 GDB/无需 cmd）：在 mGBA 里加载 mercury_bridge.lua 脚本
+     （mGBA 菜单 Tools -> Scripting -> File -> Load Script），脚本会在本地监听端口。
+  2. GDB 桩（旧方式）：mGBA.exe -g "游戏.gba"，端口 2345。
 
 用法：
-  1. 先用 GDB 模式启动 mGBA：  mGBA.exe -g "游戏.gba"
-     （或双击「启动修改器.bat」）
-  2. 双击运行本程序（或  python trainer_gui.py）
-  3. 点「连接」，即可读写金钱/队伍
+  1. 正常启动 mGBA 并进入游戏（双击 mGBA.exe 即可，无需任何参数）。
+  2. 在 mGBA 里加载一次 mercury_bridge.lua（Tools -> Scripting）。
+  3. 双击运行本程序（或 python trainer_gui.py），点「连接」。
 
 适配：火红(BPRE)改版《宝可梦水银FC~致150年后的你》
 说明：本改版把存档结构 SaveBlock1 前移了 0x7C，金钱真实地址 0x020257BC。
@@ -31,6 +35,8 @@ def resource_path(rel):
 # ============ 常量 ============
 GDB_HOST = "127.0.0.1"
 GDB_PORT = 2345
+TCP_HOST = "127.0.0.1"
+TCP_PORT = 8888          # mercury_bridge.lua 的默认端口（被占用会 +1）
 
 ADDR = {
     "saveBlock1Ptr": 0x03005008,   # gSaveBlock1Ptr
@@ -121,10 +127,116 @@ class GDBClient:
     def w8(self, a, v): self.write(a, struct.pack("<B", v & 0xFF))
 
 
+# ============ TCP 内存桥接客户端（mercury_bridge.lua） ============
+class MemClient:
+    """连接 mGBA 内 mercury_bridge.lua 提供的 TCP 服务，替代 GDB 桩。
+
+    接口与 GDBClient 保持一致：r8/r16/r32/w8/w16/w32/read/write。
+    """
+
+    def __init__(self, host=TCP_HOST, port=TCP_PORT):
+        self.host = host
+        self.port = port
+        self.s = None
+
+    def connect(self):
+        # 尝试从默认端口开始，向上扫描（脚本被占用时会 +1 递增）
+        last_err = None
+        for port in range(self.port, self.port + 50):
+            try:
+                s = socket.socket()
+                s.settimeout(3)
+                s.connect((self.host, port))
+                # 握手
+                s.sendall(b"PING\n")
+                data = b""
+                while b"\n" not in data:
+                    chunk = s.recv(64)
+                    if not chunk:
+                        break
+                    data += chunk
+                if data.strip() == b"PONG":
+                    self.s = s
+                    self.port = port
+                    return
+                s.close()
+            except Exception as e:
+                last_err = e
+                continue
+        raise IOError(f"未找到 mGBA 内存桥接服务（端口 {self.port}+）。"
+                      f"请确认已在 mGBA 中加载 mercury_bridge.lua。错误: {last_err}")
+
+    def close(self):
+        if self.s:
+            try:
+                self.s.close()
+            except Exception:
+                pass
+            self.s = None
+
+    def _roundtrip(self, cmd):
+        self.s.sendall(cmd.encode("ascii") + b"\n")
+        data = b""
+        while b"\n" not in data:
+            chunk = self.s.recv(4096)
+            if not chunk:
+                raise IOError("连接被 mGBA 关闭")
+            data += chunk
+        return data.strip()
+
+    def read(self, addr, n):
+        resp = self._roundtrip(f"READ {addr:x} {n:x}")
+        if resp.startswith(b"ERR"):
+            raise IOError("读取失败: " + resp.decode(errors="ignore"))
+        return bytes.fromhex(resp.decode())
+
+    def write(self, addr, data):
+        resp = self._roundtrip(f"WRITE {addr:x} {data.hex()}")
+        if resp != b"OK":
+            raise IOError("写入失败: " + resp.decode(errors="ignore"))
+        return True
+
+    def r8(self, a):
+        resp = self._roundtrip(f"READ8 {a:x}")
+        if resp.startswith(b"ERR"):
+            raise IOError("读取失败: " + resp.decode(errors="ignore"))
+        return int(resp) & 0xFF
+
+    def r16(self, a):
+        resp = self._roundtrip(f"READ16 {a:x}")
+        if resp.startswith(b"ERR"):
+            raise IOError("读取失败: " + resp.decode(errors="ignore"))
+        return int(resp) & 0xFFFF
+
+    def r32(self, a):
+        resp = self._roundtrip(f"READ32 {a:x}")
+        if resp.startswith(b"ERR"):
+            raise IOError("读取失败: " + resp.decode(errors="ignore"))
+        return int(resp) & 0xFFFFFFFF
+
+    def w8(self, a, v):
+        resp = self._roundtrip(f"WRITE8 {a:x} {v & 0xFF}")
+        if resp != b"OK":
+            raise IOError("写入失败: " + resp.decode(errors="ignore"))
+        return True
+
+    def w16(self, a, v):
+        resp = self._roundtrip(f"WRITE16 {a:x} {v & 0xFFFF}")
+        if resp != b"OK":
+            raise IOError("写入失败: " + resp.decode(errors="ignore"))
+        return True
+
+    def w32(self, a, v):
+        resp = self._roundtrip(f"WRITE32 {a:x} {v & 0xFFFFFFFF}")
+        if resp != b"OK":
+            raise IOError("写入失败: " + resp.decode(errors="ignore"))
+        return True
+
+
 # ============ 游戏数据访问层 ============
 class Trainer:
-    def __init__(self, gdb):
-        self.g = gdb
+    def __init__(self, mem):
+        self.g = mem
         self.sb1 = None
         self.money_addr = None
 
@@ -224,8 +336,11 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("宝可梦水银FC 修改器 (mGBA)")
-        self.gdb = GDBClient()
-        self.trainer = Trainer(self.gdb)
+        # 内存客户端：优先 TCP 桥接（mercury_bridge.lua），失败回退 GDB
+        self.mem = None
+        self.mem_mode = "TCP 桥接"   # 显示用
+        self.gdb = None              # 兼容旧引用
+        self.trainer = Trainer(self)  # 占位，连接后重建
         self.names = load_names()
         self.breeds = self.names.get("breeds", {})
         self.items = self.names.get("items", {})
@@ -363,7 +478,7 @@ class App:
             self.var_item_qty.set(vals[3])
 
     def _write_bag_selected(self):
-        if self.gdb.s is None:
+        if self.mem is None:
             return
         sel = self.bag_tree.selection()
         if not sel:
@@ -380,7 +495,7 @@ class App:
             messagebox.showerror("写入失败", str(e))
 
     def _clear_bag_selected(self):
-        if self.gdb.s is None:
+        if self.mem is None:
             return
         sel = self.bag_tree.selection()
         if not sel:
@@ -396,19 +511,48 @@ class App:
     # ---- 动作 ----
     def _connect(self):
         try:
-            if self.gdb.s is None:
-                self.gdb.connect()
+            if self.mem is None:
+                self._do_connect()
             self.trainer.locate()
-            self.status.set("已连接 0x%08X" % self.trainer.money_addr)
+            self.status.set(f"已连接 ({self.mem_mode}) 0x{self.trainer.money_addr:08X}")
         except Exception as e:
             self.status.set("连接失败")
-            messagebox.showerror("连接失败", f"无法连接 mGBA 的 GDB 端口 {GDB_PORT}。\n\n"
-                                "请确认 mGBA 是以 -g 参数启动的：\n"
-                                '  mGBA.exe -g "游戏.gba"\n\n'
-                                f"错误: {e}")
+            self.mem = None
+            self.trainer = Trainer(None)
+            messagebox.showerror(
+                "连接失败",
+                "无法连接 mGBA 的内存服务。\n\n"
+                "推荐方式（无需 GDB/无需 cmd）：\n"
+                "  1. 正常双击启动 mGBA 并进入游戏\n"
+                "  2. mGBA 菜单 Tools -> Scripting ->\n"
+                "     File -> Load Script 加载 mercury_bridge.lua\n"
+                "  3. 再点本窗口的「连接」\n\n"
+                "旧方式（GDB 桩）：mGBA.exe -g \"游戏.gba\"\n\n"
+                f"错误: {e}")
+
+    def _do_connect(self):
+        """优先尝试 TCP 桥接，失败则回退 GDB 桩。"""
+        # 1. 尝试 TCP 桥接
+        try:
+            mc = MemClient()
+            mc.connect()
+            self.mem = mc
+            self.mem_mode = "TCP 桥接"
+            self.trainer = Trainer(mc)
+            self.gdb = mc   # 兼容旧代码对 .s 的访问？不，用 mem
+            return
+        except Exception:
+            pass
+        # 2. 回退 GDB
+        g = GDBClient()
+        g.connect()
+        self.mem = g
+        self.mem_mode = "GDB 桩"
+        self.trainer = Trainer(g)
+        self.gdb = g
 
     def _refresh(self):
-        if self.gdb.s is None:
+        if self.mem is None:
             return
         try:
             self.trainer.locate()
@@ -437,7 +581,7 @@ class App:
             messagebox.showerror("读取失败", str(e))
 
     def _write_all(self):
-        if self.gdb.s is None:
+        if self.mem is None:
             return
         try:
             self.trainer.locate()
@@ -478,7 +622,7 @@ class App:
             messagebox.showerror("写入失败", str(e))
 
     def _auto_refresh(self):
-        if self.gdb.s is not None:
+        if self.mem is not None:
             try:
                 self.var_money.set(str(self.trainer.get_money()))
             except Exception:

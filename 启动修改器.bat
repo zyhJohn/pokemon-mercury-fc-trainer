@@ -1,10 +1,4 @@
 @echo off
-cd /d "%~dp0"
-cd ..
-for %%f in (*.gba) do set "ROM=%%f"
-echo Starting mGBA in GDB mode...
-start "" "mGBA.exe" -g "%ROM%"
-echo Waiting for mGBA (3s)...
-timeout /t 3 /nobreak >nul
-echo Starting trainer...
-for %%f in ("%~dp0*.exe") do start "" "%%f"
+rem 宝可梦水银FC 修改器 一键启动
+rem 实际逻辑在 启动修改器.ps1 中，此处仅作为双击入口
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0启动修改器.ps1"
