@@ -23,6 +23,7 @@ import sys
 import json
 import socket
 import struct
+import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -63,6 +64,22 @@ class GDBClient:
         self.s = socket.socket()
         self.s.settimeout(6)
         self.s.connect((GDB_HOST, GDB_PORT))
+        # mGBA 桩在客户端连接时会暂停游戏(mDebuggerEnter)，且被动等待客户端命令。
+        # 这里主动发 '?' 探测是否真正可交互，再发 'c'(continue) 让游戏恢复运行，
+        # 否则游戏会一直停在暂停态，后续读内存返回空/超时导致卡死。
+        try:
+            self._cmd("?")          # 探测 halt reason（可选，确认桩可交互）
+        except Exception:
+            pass
+        try:
+            self._send_only("c")    # 恢复游戏运行（关键）
+        except Exception:
+            pass
+
+    def _send_only(self, payload):
+        """只发送命令、不等待响应（用于 c / s 这类异步命令）。"""
+        ck = sum(payload.encode("latin1")) & 0xFF
+        self.s.sendall(b"$" + payload.encode("latin1") + b"#" + f"{ck:02x}".encode())
 
     def close(self):
         if self.s:
@@ -73,32 +90,51 @@ class GDBClient:
             self.s = None
 
     def _read_packet(self):
+        # 用 select 做带超时的读取，避免半开连接时 recv 无限阻塞导致界面卡死
         d = b""
         while b"$" not in d:
+            if not self._recv_wait():
+                return None
             b = self.s.recv(1)
             if not b:
                 return None
             d += b
         while b"#" not in d:
+            if not self._recv_wait():
+                return None
             b = self.s.recv(1)
             if not b:
                 return None
             d += b
+        if not self._recv_wait():
+            return None
         d += self.s.recv(2)
         return d
+
+    def _recv_wait(self, timeout=6):
+        """select 等待 socket 可读，超时返回 False（不抛异常）。"""
+        import select
+        r, _, _ = select.select([self.s], [], [], timeout)
+        return bool(r)
 
     def _cmd(self, payload):
         ck = sum(payload.encode("latin1")) & 0xFF
         self.s.sendall(b"$" + payload.encode("latin1") + b"#" + f"{ck:02x}".encode())
+        if not self._recv_wait():
+            raise IOError("GDB 无响应（超时）")
         b = self.s.recv(1)
         if b == b"$":
             d = b
             while b"#" not in d:
+                if not self._recv_wait():
+                    raise IOError("GDB 响应中断")
                 d += self.s.recv(1)
+            if not self._recv_wait():
+                raise IOError("GDB 响应中断")
             d += self.s.recv(2)
             return d
         if b != b"+":
-            return None
+            raise IOError(f"GDB 非预期响应: {b!r}")
         return self._read_packet()
 
     def read(self, addr, n):
@@ -140,12 +176,12 @@ class MemClient:
         self.s = None
 
     def connect(self):
-        # 尝试从默认端口开始，向上扫描（脚本被占用时会 +1 递增）
+        # 尝试从默认端口开始，向上扫描少量端口（脚本被占用时会 +1 递增）
         last_err = None
-        for port in range(self.port, self.port + 50):
+        for port in range(self.port, self.port + 8):
             try:
                 s = socket.socket()
-                s.settimeout(3)
+                s.settimeout(2)
                 s.connect((self.host, port))
                 # 握手
                 s.sendall(b"PING\n")
@@ -156,6 +192,7 @@ class MemClient:
                         break
                     data += chunk
                 if data.strip() == b"PONG":
+                    s.settimeout(10)   # 连接成功后放宽超时，供后续大数据读写
                     self.s = s
                     self.port = port
                     return
@@ -163,7 +200,7 @@ class MemClient:
             except Exception as e:
                 last_err = e
                 continue
-        raise IOError(f"未找到 mGBA 内存桥接服务（端口 {self.port}+）。"
+        raise IOError(f"未找到 mGBA 内存桥接服务（端口 {self.port}~{self.port + 7}）。"
                       f"请确认已在 mGBA 中加载 mercury_bridge.lua。错误: {last_err}")
 
     def close(self):
@@ -341,6 +378,8 @@ class App:
         self.mem_mode = "TCP 桥接"   # 显示用
         self.gdb = None              # 兼容旧引用
         self.trainer = Trainer(self)  # 占位，连接后重建
+        self.lock = threading.Lock()  # 串行化 socket 读写，避免并发破坏协议
+        self._connecting = False      # 防重复连接
         self.names = load_names()
         self.breeds = self.names.get("breeds", {})
         self.items = self.names.get("items", {})
@@ -484,15 +523,22 @@ class App:
         if not sel:
             messagebox.showinfo("提示", "请先在左侧列表选中一行")
             return
+        slot = int(self.bag_tree.item(sel[0], "values")[0])
         try:
-            slot = int(self.bag_tree.item(sel[0], "values")[0])
             iid = int(self.var_item_id.get())
             qty = int(self.var_item_qty.get())
-            self.trainer.set_bag_item(slot, iid, qty)
-            self.status.set(f"已写入背包槽 {slot}")
-            self._refresh()
-        except Exception as e:
-            messagebox.showerror("写入失败", str(e))
+        except ValueError:
+            messagebox.showerror("输入错误", "道具 ID / 数量必须是整数")
+            return
+        def worker():
+            try:
+                with self.lock:
+                    self.trainer.set_bag_item(slot, iid, qty)
+                self.root.after(0, lambda: self.status.set(f"已写入背包槽 {slot}"))
+                self.root.after(0, self._refresh)
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror("写入失败", str(e)))
+        threading.Thread(target=worker, daemon=True).start()
 
     def _clear_bag_selected(self):
         if self.mem is None:
@@ -500,35 +546,55 @@ class App:
         sel = self.bag_tree.selection()
         if not sel:
             return
-        try:
-            slot = int(self.bag_tree.item(sel[0], "values")[0])
-            self.trainer.set_bag_item(slot, 0, 0)
-            self.status.set(f"已清空背包槽 {slot}")
-            self._refresh()
-        except Exception as e:
-            messagebox.showerror("清空失败", str(e))
+        slot = int(self.bag_tree.item(sel[0], "values")[0])
+        def worker():
+            try:
+                with self.lock:
+                    self.trainer.set_bag_item(slot, 0, 0)
+                self.root.after(0, lambda: self.status.set(f"已清空背包槽 {slot}"))
+                self.root.after(0, self._refresh)
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror("清空失败", str(e)))
+        threading.Thread(target=worker, daemon=True).start()
 
     # ---- 动作 ----
     def _connect(self):
-        try:
-            if self.mem is None:
-                self._do_connect()
-            self.trainer.locate()
-            self.status.set(f"已连接 ({self.mem_mode}) 0x{self.trainer.money_addr:08X}")
-        except Exception as e:
-            self.status.set("连接失败")
-            self.mem = None
-            self.trainer = Trainer(None)
-            messagebox.showerror(
-                "连接失败",
-                "无法连接 mGBA 的内存服务。\n\n"
-                "推荐方式（无需 GDB/无需 cmd）：\n"
-                "  1. 正常双击启动 mGBA 并进入游戏\n"
-                "  2. mGBA 菜单 Tools -> Scripting ->\n"
-                "     File -> Load Script 加载 mercury_bridge.lua\n"
-                "  3. 再点本窗口的「连接」\n\n"
-                "旧方式（GDB 桩）：mGBA.exe -g \"游戏.gba\"\n\n"
-                f"错误: {e}")
+        """在后台线程连接，避免端口扫描/握手阻塞 UI 造成卡死。"""
+        if getattr(self, "_connecting", False):
+            return
+        self._connecting = True
+        self.status.set("连接中...")
+        def worker():
+            try:
+                if self.mem is None:
+                    self._do_connect()
+                self.trainer.locate()
+                # 切回主线程更新 UI
+                self.root.after(0, lambda: self._on_connected())
+            except Exception as e:
+                self.mem = None
+                self.trainer = Trainer(None)
+                err = str(e)
+                self.root.after(0, lambda: self._on_connect_fail(err))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_connected(self):
+        self._connecting = False
+        self.status.set(f"已连接 ({self.mem_mode}) 0x{self.trainer.money_addr:08X}")
+
+    def _on_connect_fail(self, err):
+        self._connecting = False
+        self.status.set("连接失败")
+        messagebox.showerror(
+            "连接失败",
+            "无法连接 mGBA 的内存服务。\n\n"
+            "推荐方式（无需 GDB/无需 cmd）：\n"
+            "  1. 正常双击启动 mGBA 并进入游戏\n"
+            "  2. mGBA 菜单 Tools -> Scripting ->\n"
+            "     File -> Load Script 加载 mercury_bridge.lua\n"
+            "  3. 再点本窗口的「连接」\n\n"
+            "旧方式（GDB 桩）：mGBA.exe -g \"游戏.gba\"\n\n"
+            f"错误: {err}")
 
     def _do_connect(self):
         """优先尝试 TCP 桥接，失败则回退 GDB 桩。"""
@@ -554,79 +620,108 @@ class App:
     def _refresh(self):
         if self.mem is None:
             return
-        try:
-            self.trainer.locate()
-            self.var_money.set(str(self.trainer.get_money()))
-            self.var_coins.set(str(self.trainer.get_coins()))
-            party = self.trainer.get_party()
-            for i, p in enumerate(party):
-                if i >= 6:
-                    break
-                row = self.party_rows[i]
-                name = self.breeds.get(str(p["species"])) or self.breeds.get(p["species"]) or f"未知#{p['species']}"
-                row["species"].set(f"{p['species']:03d} - {name}")
-                row["level"].delete(0, "end"); row["level"].insert(0, str(p["level"]))
-                row["exp"].delete(0, "end"); row["exp"].insert(0, str(p["exp"]))
-                row["hp"].delete(0, "end"); row["hp"].insert(0, str(p["hp"]))
-                row["maxhp"].delete(0, "end"); row["maxhp"].insert(0, str(p["maxhp"]))
-            # 背包
-            for item in self.bag_tree.get_children():
-                self.bag_tree.delete(item)
-            for it in self.trainer.get_bag():
-                iname = self.items.get(str(it["id"])) or f"扩展道具#{it['id']}"
-                self.bag_tree.insert("", "end", values=(it["slot"], it["id"], iname, it["qty"]))
-            self.status.set("已刷新")
-        except Exception as e:
-            self.status.set("读取失败")
-            messagebox.showerror("读取失败", str(e))
+        def worker():
+            try:
+                with self.lock:
+                    self.trainer.locate()
+                    money = self.trainer.get_money()
+                    coins = self.trainer.get_coins()
+                    party = self.trainer.get_party()
+                    bag = self.trainer.get_bag()
+                self.root.after(0, lambda: self._apply_refresh(money, coins, party, bag))
+            except Exception as e:
+                self.root.after(0, lambda: self._on_read_fail(e))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _apply_refresh(self, money, coins, party, bag):
+        self.var_money.set(str(money))
+        self.var_coins.set(str(coins))
+        for i, p in enumerate(party):
+            if i >= 6:
+                break
+            row = self.party_rows[i]
+            name = self.breeds.get(str(p["species"])) or self.breeds.get(p["species"]) or f"未知#{p['species']}"
+            row["species"].set(f"{p['species']:03d} - {name}")
+            row["level"].delete(0, "end"); row["level"].insert(0, str(p["level"]))
+            row["exp"].delete(0, "end"); row["exp"].insert(0, str(p["exp"]))
+            row["hp"].delete(0, "end"); row["hp"].insert(0, str(p["hp"]))
+            row["maxhp"].delete(0, "end"); row["maxhp"].insert(0, str(p["maxhp"]))
+        # 背包
+        for item in self.bag_tree.get_children():
+            self.bag_tree.delete(item)
+        for it in bag:
+            iname = self.items.get(str(it["id"])) or f"扩展道具#{it['id']}"
+            self.bag_tree.insert("", "end", values=(it["slot"], it["id"], iname, it["qty"]))
+        self.status.set("已刷新")
+
+    def _on_read_fail(self, e):
+        self.status.set("读取失败")
+        messagebox.showerror("读取失败", str(e))
 
     def _write_all(self):
         if self.mem is None:
             return
-        try:
-            self.trainer.locate()
-            # 数值
+        # 先把用户输入取到主线程（避免跨线程访问 Tk 变量）
+        money = self.var_money.get()
+        coins = self.var_coins.get()
+        rows_data = []
+        for row in self.party_rows:
+            rows_data.append((row["species"].get(), row["level"].get(),
+                              row["exp"].get(), row["hp"].get(), row["maxhp"].get()))
+        def worker():
             try:
-                self.trainer.set_money(int(self.var_money.get()))
-                self.trainer.set_coins(int(self.var_coins.get()))
-            except ValueError:
-                pass
-            # 队伍
-            for i, row in enumerate(self.party_rows):
-                try:
-                    label = row["species"].get()
-                    if label in self.species_by_label:
-                        self.trainer.set_party_species(i, self.species_by_label[label])
-                    elif label.strip():
-                        # 手动输入纯编号（改版扩展精灵）
-                        self.trainer.set_party_species(i, int(label.strip()))
-                except Exception:
-                    pass
-                try:
-                    self.trainer.set_party_level(i, int(row["level"].get()))
-                except ValueError:
-                    pass
-                try:
-                    self.trainer.set_party_exp(i, int(row["exp"].get()))
-                except ValueError:
-                    pass
-                try:
-                    hp = int(row["hp"].get())
-                    mhp = int(row["maxhp"].get())
-                    self.trainer.set_party_hp(i, hp, mhp)
-                except ValueError:
-                    pass
-            self.status.set("已写入")
-        except Exception as e:
-            self.status.set("写入失败")
-            messagebox.showerror("写入失败", str(e))
+                with self.lock:
+                    self.trainer.locate()
+                    # 数值
+                    try:
+                        self.trainer.set_money(int(money))
+                        self.trainer.set_coins(int(coins))
+                    except ValueError:
+                        pass
+                    # 队伍
+                    for i, (label, lv, exp, hp, mhp) in enumerate(rows_data):
+                        try:
+                            if label in self.species_by_label:
+                                self.trainer.set_party_species(i, self.species_by_label[label])
+                            elif label.strip():
+                                self.trainer.set_party_species(i, int(label.strip()))
+                        except Exception:
+                            pass
+                        try:
+                            self.trainer.set_party_level(i, int(lv))
+                        except ValueError:
+                            pass
+                        try:
+                            self.trainer.set_party_exp(i, int(exp))
+                        except ValueError:
+                            pass
+                        try:
+                            self.trainer.set_party_hp(i, int(hp), int(mhp))
+                        except ValueError:
+                            pass
+                self.root.after(0, lambda: self.status.set("已写入"))
+            except Exception as e:
+                self.root.after(0, lambda: self._on_write_fail(e))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_write_fail(self, e):
+        self.status.set("写入失败")
+        messagebox.showerror("写入失败", str(e))
 
     def _auto_refresh(self):
-        if self.mem is not None:
-            try:
-                self.var_money.set(str(self.trainer.get_money()))
-            except Exception:
-                pass
+        # 只在空闲时轻量刷新金钱，且不阻塞主线程；读失败静默忽略
+        if self.mem is not None and not getattr(self, "_refreshing", False):
+            self._refreshing = True
+            def worker():
+                try:
+                    with self.lock:
+                        money = self.trainer.get_money()
+                    self.root.after(0, lambda: self.var_money.set(str(money)))
+                except Exception:
+                    pass
+                finally:
+                    self._refreshing = False
+            threading.Thread(target=worker, daemon=True).start()
         self.root.after(1500, self._auto_refresh)
 
 

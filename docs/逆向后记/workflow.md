@@ -3,10 +3,20 @@
 ## 1. mGBA GDB 桩（RSP 协议）
 
 - 启动：`mGBA.exe -g game.gba`（端口 2345）；`-t 存档.ss1` 直接进游戏内状态。
-- 单连接：断开后需重启 mGBA。
+- 单连接：断开后需重启 mGBA（一个连接断开后桩进入 CLOSE_WAIT 脏状态，新连接 ConnectionRefused）。
 - 读内存：`$m<addr>,<len>#<ck>` → `$<hex>#<ck>`；写内存：`$M<addr>,<len>:<hex>#<ck>` → `$OK#...`。
 - `<ck>` = 载荷字节和 & 0xFF；单次读取建议 ≤ 0x80 字节分块。
 - 复用 `scripts/gdbmem.py` 中的 `GDBClient`（read/write/r8/r16/r32/w8/w16/w32）。
+
+### 关键协议行为（mGBA 特有，易踩坑）
+
+- **连接会暂停游戏**：桩在客户端连接时调用 `mDebuggerEnter(DEBUGGER_ENTER_ATTACHED)` 暂停游戏，
+  然后**被动等待客户端命令**（不主动发包，`_gdbStubEntered` 对 ATTACHED 不发送任何通知）。
+- **连接后必须发 `c`（continue）让游戏恢复运行**，否则游戏一直停在暂停态，读内存返回空/超时，
+  表现为「连接成功但读不出数据 / 卡死」。
+- 客户端应主动发 `?`（查询 halt reason）或 `qSupported` 完成握手，再发 `c`。
+- GUI 修改器中**所有 socket 操作必须放到后台线程**（不要在主线程同步阻塞），否则桩无响应时
+  UI 假死（用户看到的就是「卡死」）。用 `threading.Lock` 串行化 socket 访问 + `select` 超时兜底。
 
 ## 2. 用已知值搜索定位地址
 
