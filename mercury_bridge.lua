@@ -123,6 +123,16 @@ local function handle_line(line)
     return resp
 end
 
+-- 客户端断开处理（需在 on_client_received 之前定义，否则被当作全局变量导致 nil 报错）
+local function on_client_error()
+    if not client then return end
+    local c = client
+    client = nil
+    buf = ""
+    log("client disconnected")
+    c:close()
+end
+
 -- 客户端数据回调
 local function on_client_received()
     if not client then return end
@@ -148,15 +158,6 @@ local function on_client_received()
             return
         end
     end
-end
-
-local function on_client_error()
-    if not client then return end
-    local c = client
-    client = nil
-    buf = ""
-    log("client disconnected")
-    c:close()
 end
 
 local function on_accept()

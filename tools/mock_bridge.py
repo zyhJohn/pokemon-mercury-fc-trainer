@@ -21,6 +21,7 @@ w8(0x02024029, 6)
 # 队伍第1只：personality=0x1C3EF035, species 放明文 chunk
 party = 0x02024284
 w32(party, 0x1C3EF035)
+# personality % 24 = 0x1C3EF035 % 24 = 21 (0x15) -> ORDER[21]="MAEG"，E 子结构在 index 2，M 在 index 0
 # species 明文放在 growth chunk（简化：直接放 0x20+0*12 处 = species 159 蓝鳄）
 w16(party + 0x20, 159)
 w8(party + 0x54, 31)   # level
@@ -29,6 +30,22 @@ w16(party + 0x58, 107) # maxhp
 # 背包 0x0203BB20：第一格 伤药(ID13)x5
 w16(0x0203BB20, 13)
 w16(0x0203BB22, 5)
+# 训练师名（SaveBlock1+0，Gen III 编码 zyh -> z=0xEE, y=0xED, h=0xDC）
+w8(SB1 + 0x00, 0xEE); w8(SB1 + 0x01, 0xED); w8(SB1 + 0x02, 0xDC); w8(SB1 + 0x03, 0xFF)
+# 性别 0（男）
+w8(SB1 + 0x08, 0)
+# 队伍第1只 IV/EV：personality%24=21 -> ORDER[21]="MAEG"
+# E 子结构在 0x20 + 2*12 = 0x38，M 在 0x20 + 0*12 = 0x20
+# 但 mock 里 species 也放在 0x20，会冲突。这里把 personality 改成 %24=0（GAEM）更简单清晰：
+w32(party, 0x1C3EF030)  # %24 = 0x30%24 = 0 -> GAEM，G=0x20, E=0x38, M=0x44
+# EV 放在 E 子结构 0x38：HP=10,攻=20,防=30,速=40,特攻=50,特防=60
+for k, v in enumerate([10,20,30,40,50,60]):
+    w8(party + 0x38 + k, v)
+# IV 放在 M 子结构 0x44 + 4 = 0x48：HP=31,攻=30,防=29,速=28,特攻=27,特防=26
+iv_val = 0
+for k, v in enumerate([31,30,29,28,27,26]):
+    iv_val |= (v & 0x1F) << (5*k)
+w32(party + 0x48, iv_val)
 
 def handle(line):
     line = line.strip()

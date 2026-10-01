@@ -47,6 +47,11 @@ ADDR = {
     "partyCount": 0x02024029,      # 队伍数量
     "bag": 0x0203BB20,             # 背包道具口袋（实测定位，[ID 2B][数量 2B] 明文）
     "bagSlots": 64,                # 道具口袋槽位上限
+    "trainerNameOff": 0x0000,      # 训练师名（SaveBlock1 + 0，7 字节，Gen III 字符编码）
+    "rivalNameOff": 0x0BCC,        # 劲敌名（SaveBlock1 + 0xBCC，7 字节，待实测确认）
+    "genderOff": 0x0008,           # 主角性别（SaveBlock1 + 0x08，1 字节，0=男 1=女）
+    "pcBox": 0x0202B0C0,           # PC 电脑存储（标准火红，待实测确认，每只 80 字节）
+    "pcBoxCount": 420,             # 14 盒 × 30 只
 }
 
 ORDER = ["GAEM", "GAME", "GEAM", "GEMA", "GMAE", "GMEA",
@@ -357,6 +362,102 @@ class Trainer:
         self.g.w16(addr, iid & 0xFFFF)
         self.g.w16(addr + 2, qty & 0xFFFF)
 
+    # ---- 训练师名字 / 性别 ----
+    def get_trainer_name(self):
+        raw = self.g.read(self.sb1 + ADDR["trainerNameOff"], 7)
+        return self._decode_name(raw)
+
+    def set_trainer_name(self, name):
+        self.g.write(self.sb1 + ADDR["trainerNameOff"], self._encode_name(name, 7))
+
+    def get_rival_name(self):
+        raw = self.g.read(self.sb1 + ADDR["rivalNameOff"], 7)
+        return self._decode_name(raw)
+
+    def set_rival_name(self, name):
+        self.g.write(self.sb1 + ADDR["rivalNameOff"], self._encode_name(name, 7))
+
+    def get_gender(self):
+        return self.g.r8(self.sb1 + ADDR["genderOff"])
+
+    def set_gender(self, g):
+        self.g.w8(self.sb1 + ADDR["genderOff"], g & 0xFF)
+
+    @staticmethod
+    def _decode_name(raw):
+        # Gen III 字符编码（火红美版）：A=0xBB..Z=0xD4, a=0xD5..z=0xEE, 0=0xA1..9=0xAA, 0xFF 结尾
+        out = []
+        for b in raw:
+            if b == 0xFF or b == 0:
+                break
+            if 0xA1 <= b <= 0xAA:      # 数字 0-9
+                out.append(chr(ord('0') + (b - 0xA1)))
+            elif 0xAB <= b <= 0xB4:    # 符号（简化处理）
+                out.append('?')
+            elif 0xBB <= b <= 0xD4:    # 大写 A-Z
+                out.append(chr(ord('A') + (b - 0xBB)))
+            elif 0xD5 <= b <= 0xEE:    # 小写 a-z
+                out.append(chr(ord('a') + (b - 0xD5)))
+            else:
+                out.append('?')
+        return "".join(out)
+
+    @staticmethod
+    def _encode_name(name, length):
+        # 将 ASCII 名字编码为 Gen III 字符，不足补 0xFF
+        data = bytearray()
+        for ch in name[:length]:
+            o = ord(ch)
+            if '0' <= ch <= '9':
+                data.append(0xA1 + (o - ord('0')))
+            elif 'A' <= ch <= 'Z':
+                data.append(0xBB + (o - ord('A')))
+            elif 'a' <= ch <= 'z':
+                data.append(0xD5 + (o - ord('a')))
+            else:
+                data.append(0xBB)  # 无法编码的字符用 'A' 占位
+        while len(data) < length:
+            data.append(0xFF)
+        return bytes(data)
+
+    # ---- 个体值 / 努力值 ----
+    def _substruct_pos(self, addr, personality, key):
+        """返回 key(G/A/E/M) 子结构在 addr 处的绝对地址。"""
+        order = ORDER[personality % 24]
+        gpos = order.index(key)
+        return addr + 0x20 + gpos * 12
+
+    def get_evs(self, i):
+        """读取第 i 只精灵的努力值 [HP,攻,防,速,特攻,特防]。"""
+        addr = ADDR["party"] + i * 100
+        personality = self.g.r32(addr)
+        e = self._substruct_pos(addr, personality, "E")
+        chunk = self.g.read(e, 6)
+        return list(chunk)
+
+    def set_evs(self, i, evs):
+        addr = ADDR["party"] + i * 100
+        personality = self.g.r32(addr)
+        e = self._substruct_pos(addr, personality, "E")
+        self.g.write(e, bytes(evs[:6]))
+
+    def get_ivs(self, i):
+        """读取第 i 只精灵的个体值 [HP,攻,防,速,特攻,特防]（各 0-31）。"""
+        addr = ADDR["party"] + i * 100
+        personality = self.g.r32(addr)
+        m = self._substruct_pos(addr, personality, "M")
+        iv = self.g.r32(m + 4)
+        return [(iv >> (5 * k)) & 0x1F for k in range(6)]
+
+    def set_ivs(self, i, ivs):
+        addr = ADDR["party"] + i * 100
+        personality = self.g.r32(addr)
+        m = self._substruct_pos(addr, personality, "M")
+        val = 0
+        for k, v in enumerate(ivs[:6]):
+            val |= (v & 0x1F) << (5 * k)
+        self.g.w32(m + 4, val)
+
 
 # ============ 名称表 ============
 def load_names():
@@ -425,6 +526,16 @@ class App:
         self.tab_bag = ttk.Frame(nb, padding=10)
         nb.add(self.tab_bag, text="背包")
         self._build_bag_tab()
+
+        # ---- 能力值页（个体值/努力值） ----
+        self.tab_stats = ttk.Frame(nb, padding=10)
+        nb.add(self.tab_stats, text="能力值")
+        self._build_stats_tab()
+
+        # ---- 训练师页（名字/性别） ----
+        self.tab_trainer = ttk.Frame(nb, padding=10)
+        nb.add(self.tab_trainer, text="训练师")
+        self._build_trainer_tab()
 
     def _build_val_tab(self):
         f = self.tab_val
@@ -515,6 +626,55 @@ class App:
         if vals:
             self.var_item_id.set(vals[1])
             self.var_item_qty.set(vals[3])
+
+    STAT_NAMES = ["HP", "攻击", "防御", "速度", "特攻", "特防"]
+
+    def _build_stats_tab(self):
+        f = self.tab_stats
+        self.stat_rows = []  # 每只精灵 6 项 {iv: Entry, ev: Entry}
+        header = ttk.Frame(f)
+        header.pack(fill="x", pady=4)
+        for j, s in enumerate(["", "HP", "攻", "防", "速", "特攻", "特防"]):
+            ttk.Label(header, text=s, width=6, anchor="center", font=("", 9, "bold")).grid(row=0, column=j, padx=1)
+        for i in range(6):
+            lf = ttk.LabelFrame(f, text=f"队伍 #{i + 1}")
+            lf.pack(fill="x", padx=6, pady=4)
+            iv_row = ttk.Frame(lf); iv_row.pack(fill="x", pady=2)
+            ttk.Label(iv_row, text="个体值", width=7).pack(side="left", padx=2)
+            ev_row = ttk.Frame(lf); ev_row.pack(fill="x", pady=2)
+            ttk.Label(ev_row, text="努力值", width=7).pack(side="left", padx=2)
+            iv_entries = []
+            ev_entries = []
+            for k in range(6):
+                e = ttk.Entry(iv_row, width=4)
+                e.pack(side="left", padx=1)
+                iv_entries.append(e)
+            for k in range(6):
+                e = ttk.Entry(ev_row, width=4)
+                e.pack(side="left", padx=1)
+                ev_entries.append(e)
+            self.stat_rows.append({"iv": iv_entries, "ev": ev_entries})
+        ttk.Label(f, text="个体值范围 0-31；努力值范围 0-252（单项）。改后点「写入全部」。\n注：该改版可能魔改子结构，写入前建议先在游戏内核对。",
+                  foreground="gray", justify="left").pack(anchor="w", pady=6)
+
+    def _build_trainer_tab(self):
+        f = self.tab_trainer
+        row = 0
+        ttk.Label(f, text="主角名字:").grid(row=row, column=0, sticky="w", pady=6)
+        self.var_trainer_name = tk.StringVar()
+        ttk.Entry(f, textvariable=self.var_trainer_name, width=20).grid(row=row, column=1, sticky="w")
+        row += 1
+        ttk.Label(f, text="劲敌名字:").grid(row=row, column=0, sticky="w", pady=6)
+        self.var_rival_name = tk.StringVar()
+        ttk.Entry(f, textvariable=self.var_rival_name, width=20).grid(row=row, column=1, sticky="w")
+        row += 1
+        ttk.Label(f, text="主角性别:").grid(row=row, column=0, sticky="w", pady=6)
+        self.var_gender = tk.StringVar()
+        gender_cb = ttk.Combobox(f, textvariable=self.var_gender, values=["男", "女"], width=8, state="readonly")
+        gender_cb.grid(row=row, column=1, sticky="w")
+        row += 1
+        ttk.Label(f, text="提示：改完后点顶部「写入全部」。\n名字仅支持英文/数字（Gen III 字符集）。\n劲敌名地址为标准火红偏移，需实测确认。",
+                  foreground="gray", justify="left").grid(row=row, column=0, columnspan=2, sticky="w", pady=10)
 
     def _write_bag_selected(self):
         if self.mem is None:
@@ -628,12 +788,22 @@ class App:
                     coins = self.trainer.get_coins()
                     party = self.trainer.get_party()
                     bag = self.trainer.get_bag()
-                self.root.after(0, lambda: self._apply_refresh(money, coins, party, bag))
+                    # 能力值 + 训练师信息
+                    stats = []
+                    for i in range(len(party)):
+                        stats.append({
+                            "iv": self.trainer.get_ivs(i),
+                            "ev": self.trainer.get_evs(i),
+                        })
+                    tname = self.trainer.get_trainer_name()
+                    rname = self.trainer.get_rival_name()
+                    gender = self.trainer.get_gender()
+                self.root.after(0, lambda: self._apply_refresh(money, coins, party, bag, stats, tname, rname, gender))
             except Exception as e:
                 self.root.after(0, lambda: self._on_read_fail(e))
         threading.Thread(target=worker, daemon=True).start()
 
-    def _apply_refresh(self, money, coins, party, bag):
+    def _apply_refresh(self, money, coins, party, bag, stats, tname, rname, gender):
         self.var_money.set(str(money))
         self.var_coins.set(str(coins))
         for i, p in enumerate(party):
@@ -646,6 +816,18 @@ class App:
             row["exp"].delete(0, "end"); row["exp"].insert(0, str(p["exp"]))
             row["hp"].delete(0, "end"); row["hp"].insert(0, str(p["hp"]))
             row["maxhp"].delete(0, "end"); row["maxhp"].insert(0, str(p["maxhp"]))
+        # 能力值
+        for i, s in enumerate(stats):
+            if i >= 6:
+                break
+            row = self.stat_rows[i]
+            for k in range(6):
+                row["iv"][k].delete(0, "end"); row["iv"][k].insert(0, str(s["iv"][k]))
+                row["ev"][k].delete(0, "end"); row["ev"][k].insert(0, str(s["ev"][k]))
+        # 训练师信息
+        self.var_trainer_name.set(tname)
+        self.var_rival_name.set(rname)
+        self.var_gender.set("男" if gender == 0 else "女")
         # 背包
         for item in self.bag_tree.get_children():
             self.bag_tree.delete(item)
@@ -668,6 +850,16 @@ class App:
         for row in self.party_rows:
             rows_data.append((row["species"].get(), row["level"].get(),
                               row["exp"].get(), row["hp"].get(), row["maxhp"].get()))
+        # 能力值输入
+        stats_data = []
+        for row in self.stat_rows:
+            iv = [e.get() for e in row["iv"]]
+            ev = [e.get() for e in row["ev"]]
+            stats_data.append((iv, ev))
+        # 训练师输入
+        tname = self.var_trainer_name.get()
+        rname = self.var_rival_name.get()
+        gender = 0 if self.var_gender.get() == "男" else 1
         def worker():
             try:
                 with self.lock:
@@ -699,6 +891,22 @@ class App:
                             self.trainer.set_party_hp(i, int(hp), int(mhp))
                         except ValueError:
                             pass
+                    # 能力值
+                    for i, (iv, ev) in enumerate(stats_data):
+                        try:
+                            self.trainer.set_ivs(i, [int(x) for x in iv])
+                        except ValueError:
+                            pass
+                        try:
+                            self.trainer.set_evs(i, [int(x) for x in ev])
+                        except ValueError:
+                            pass
+                    # 训练师信息
+                    if tname.strip():
+                        self.trainer.set_trainer_name(tname)
+                    if rname.strip():
+                        self.trainer.set_rival_name(rname)
+                    self.trainer.set_gender(gender)
                 self.root.after(0, lambda: self.status.set("已写入"))
             except Exception as e:
                 self.root.after(0, lambda: self._on_write_fail(e))
