@@ -1,0 +1,37 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+build/
+
+# ===== PyInstaller 打包产物 =====
+dist/
+*.spec
+*.manifest
+
+# ===== 构建用虚拟环境 =====
+venv-build/
+
+# ===== IDE / 编辑器 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== 系统文件 =====
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ===== 游戏文件（勿上传：涉及版权与个人存档）=====
+*.gba
+*.sav
+*.sav.bak
+*.ss1
+*.ss2
+*.state
+*.sgm
