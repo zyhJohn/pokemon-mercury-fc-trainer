@@ -1,25 +1,33 @@
+import base64
 import json
 import queue
+import secrets
+import struct
 import sys
 import threading
 import tkinter as tk
-from pathlib import Path
-from tkinter import ttk, messagebox, filedialog
-from memory_client import MemClient
-from trainer_core import Trainer
-from pokemon_data import Pokemon, STAT_NAMES, gender, unown_form
-from wiki_catalog import load_catalog, search_rows
 import webbrowser
-import struct
 from datetime import datetime
-import base64
-import secrets
-from sprite_images import icon_species, read_icons
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
+
+from box_data import BoxPokemon
+from memory_client import MemClient
+from pokemon_data import (
+    MINIOR_COLORS,
+    MINIOR_SPECIES,
+    STAT_NAMES,
+    Pokemon,
+    gender,
+    unown_form,
+)
 from pokemon_selector import PokemonSelector
 from scrolling_form import ScrollingForm
 from spinda_images import read_spinda_assets, spinda_png
-from box_data import BoxPokemon
+from sprite_images import icon_species, read_icons
+from trainer_core import Trainer
 from version import APP_VERSION
+from wiki_catalog import load_catalog, search_rows
 
 
 def resource_path(name):
@@ -402,6 +410,20 @@ class App:
         ).pack(side="left")
         row = ttk.Frame(tab)
         row.pack(anchor="w", pady=4)
+        ttk.Label(row, text="小陨星核心颜色（含闪光时的原核心）", width=38).pack(
+            side="left"
+        )
+        self.minior_color = tk.StringVar(value="不适用")
+        ttk.Combobox(
+            row,
+            textvariable=self.minior_color,
+            state="readonly",
+            values=["保持当前"]
+            + [f"{i} - {name}" for i, name in enumerate(MINIOR_COLORS)],
+            width=18,
+        ).pack(side="left")
+        row = ttk.Frame(tab)
+        row.pack(anchor="w", pady=4)
         ttk.Label(row, text="原训练师姓名（最多3汉字或7字节）", width=38).pack(
             side="left"
         )
@@ -480,7 +502,11 @@ class App:
         )
 
     def read_trainer(self):
-        if not self.busy and self.trainer is not None and self.discard_trainer_changes():
+        if (
+            not self.busy
+            and self.trainer is not None
+            and self.discard_trainer_changes()
+        ):
             self.run(
                 "读取训练师资料…",
                 self.trainer.snapshot_trainer,
@@ -491,11 +517,12 @@ class App:
         snap = self.trainer_snapshot
         return (
             snap is None
-            or (
-                self.player_name.get(), self.player_tid.get(), self.player_sid.get()
-            ) == (self.original_player_name, str(snap["tid"]), str(snap["sid"]))
+            or (self.player_name.get(), self.player_tid.get(), self.player_sid.get())
+            == (self.original_player_name, str(snap["tid"]), str(snap["sid"]))
             or messagebox.askyesno(
-                "尚未写入", "训练师资料的修改尚未写入。放弃修改并继续？", parent=self.root
+                "尚未写入",
+                "训练师资料的修改尚未写入。放弃修改并继续？",
+                parent=self.root,
             )
         )
 
@@ -740,6 +767,7 @@ class App:
         editor_tabs.add(basic_scroll, text="能力 / 形态")
         editor_tabs.add(source_scroll, text="来源 / 原训练师")
         letter = tk.StringVar(value=str(unown_form(mon.pid)))
+        core_color = tk.StringVar(value="保持当前")
         pattern_seed = tk.StringVar()
         pattern_photos = []
         pattern_labels = []
@@ -753,6 +781,18 @@ class App:
                     f"{i} - {name}"
                     for i, name in enumerate(self.profile["unown_letters"])
                 ],
+                width=20,
+            ).pack(anchor="w")
+        if mon.species in MINIOR_SPECIES:
+            ttk.Label(
+                basic, text=f"小陨星当前PID核心：{MINIOR_COLORS[mon.pid % 7]}"
+            ).pack(anchor="w", pady=(8, 0))
+            ttk.Combobox(
+                basic,
+                textvariable=core_color,
+                state="readonly",
+                values=["保持当前"]
+                + [f"{i} - {name}" for i, name in enumerate(MINIOR_COLORS)],
                 width=20,
             ).pack(anchor="w")
         shiny = tk.BooleanVar(value=mon.shiny)
@@ -822,6 +862,7 @@ class App:
                 egg,
                 nature,
                 letter,
+                core_color,
                 pattern_seed,
                 ot_name,
                 *source_values.values(),
@@ -855,6 +896,8 @@ class App:
                 details["spinda_seed"] = pattern_seed.get()
             if egg.get() != mon.egg:
                 details["egg"] = egg.get()
+            if core_color.get() != "保持当前":
+                details["minior_color"] = core_color.get().split(" - ", 1)[0]
             return trainer.edit_box(
                 snapshot,
                 slot,
@@ -877,6 +920,11 @@ class App:
                 detail.set(
                     f"检查通过；闪光：{'是' if report['shiny'] else '否'}，EV 总和：{sum(report['evs'])}。\n蛋：{'是' if updated.egg else '否'}；等级：{report['level']}；亲密度/周期：{updated.friendship}。\n性别与特性标志保留；取出时由游戏计算能力值。来源合法性未完整验证。"
                 )
+                if mon.species in MINIOR_SPECIES:
+                    detail.set(
+                        detail.get()
+                        + f"\n核心：{MINIOR_COLORS[updated.pid % 7]}；形态编号 {mon.species} → {updated.species}。闪光颜色以游戏实际显示为准。"
+                    )
                 if mon.species == 308 and self.spinda_assets is not None:
                     pattern_photos.clear()
                     for displayed, label in zip([mon, updated], pattern_labels):
@@ -1338,7 +1386,9 @@ class App:
             if not unchanged:
                 if not self.discard_party_changes():
                     self.pocket.set(previous["pocket"]["name"])
-                    self.status.set("队伍数据已变化，未覆盖当前编辑。请核对后重新读取。")
+                    self.status.set(
+                        "队伍数据已变化，未覆盖当前编辑。请核对后重新读取。"
+                    )
                     return False
                 keep_form = False
         self.snapshot = snap
@@ -1377,6 +1427,7 @@ class App:
                 *self.detail_vars.values(),
                 self.ot_name,
                 self.unown_letter,
+                self.minior_color,
                 self.spinda_seed,
             ]:
                 var.set("")
@@ -1452,6 +1503,7 @@ class App:
                 self.egg,
                 self.ot_name,
                 self.unown_letter,
+                self.minior_color,
                 self.spinda_seed,
                 *self.iv,
                 *self.ev,
@@ -1514,6 +1566,7 @@ class App:
         self.unown_letter.set(
             f"{unown_form(mon.pid)} - 当前字形" if mon.species == 201 else "不适用"
         )
+        self.minior_color.set("保持当前" if mon.species in MINIOR_SPECIES else "不适用")
         metadata = self.profile["species"].get(str(mon.species))
         if metadata:
             abilities = metadata["abilities"]
@@ -1598,6 +1651,8 @@ class App:
             "不适用",
         ):
             changes["unown_letter"] = self.unown_letter.get().split(" - ", 1)[0]
+        if self.minior_color.get() not in ("保持当前", "不适用"):
+            changes["minior_color"] = self.minior_color.get().split(" - ", 1)[0]
         # Untouched HP follows automatic damage-preserving recalculation.
         if self.hp.get() != str(mon.hp):
             changes["hp"] = self.hp.get()

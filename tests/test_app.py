@@ -15,6 +15,19 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_minior_core_form_selection_changes_species_in_preview_only(self):
+        patches, _ = self.app.trainer.edit_pokemon(self.app.snapshot, 0, species=1065)
+        self.mem.put(PARTY, patches[0][2])
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.assertEqual(self.app.minior_color.get(), "保持当前")
+        self.app.minior_color.set("6 - 紫色")
+        prepared, _ = self.app.prepare_mon()
+        updated = Pokemon(prepared[0][2])
+        self.assertEqual((updated.species, updated.pid % 7), (1071, 6))
+        self.app.preview()
+        self.assertIn("紫色", self.app.report.get("1.0", "end"))
+        self.assertEqual(self.mem.writes, 0)
+
     def test_automatic_refresh_retains_party_draft_when_game_bytes_match(self):
         self.app.level.set("75")
         self.app.ot_name.set("小智")

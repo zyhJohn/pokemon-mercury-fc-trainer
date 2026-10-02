@@ -4,11 +4,15 @@ This is structural validation, not an official encounter/RNG legality engine.
 See docs/verified-layout.md for ROM signatures and offline evidence.
 """
 
-from dataclasses import dataclass
 import struct
-from name_codec import encode_name, decode_name
+from dataclasses import dataclass
+
+from name_codec import decode_name, encode_name
 
 STAT_NAMES = ("HP", "攻击", "防御", "速度", "特攻", "特防")
+MINIOR_CORES = tuple(range(1065, 1072))
+MINIOR_SPECIES = (991, *MINIOR_CORES)
+MINIOR_COLORS = ("红色", "蓝色", "橙色", "黄色", "靛色", "绿色", "紫色")
 
 
 def integer(value, low, high, label):
@@ -46,6 +50,38 @@ def unown_form(pid):
     ) % 28
 
 
+def same_pid_form(candidate, original, species):
+    return (species != 201 or unown_form(candidate) == unown_form(original)) and (
+        species not in MINIOR_SPECIES or candidate % 7 == original % 7
+    )
+
+
+def change_minior_color_pid(pid, otid, color):
+    color = integer(color, 0, 6, "小陨星核心颜色")
+    if pid % 7 == color:
+        return pid
+    shiny = shiny_value(pid, otid) < 8
+    if shiny:
+        tx = (otid >> 16) ^ (otid & 65535)
+        values = (
+            ((tx ^ low ^ value) << 16) | low
+            for low in range(pid & 255, 65536, 256)
+            for value in range(8)
+        )
+    else:
+        values = ((high << 16) | (pid & 65535) for high in range(65536))
+    matches = [
+        value
+        for value in values
+        if value % 7 == color
+        and value % 25 == pid % 25
+        and (shiny_value(value, otid) < 8) == shiny
+    ]
+    if not matches:
+        raise ValueError("无法同时保留当前闪光、性格、性别和特性修改核心颜色")
+    return min(matches, key=lambda value: ((value ^ pid).bit_count(), value))
+
+
 def change_shiny_pid(pid, otid, shiny, species):
     """Keep nature, low byte (gender/parity) and Unown letter where applicable.
 
@@ -61,7 +97,7 @@ def change_shiny_pid(pid, otid, shiny, species):
         return (
             candidate % 25 == pid % 25
             and (candidate & 255) == (pid & 255)
-            and (species != 201 or unown_form(candidate) == unown_form(pid))
+            and same_pid_form(candidate, pid, species)
         )
 
     candidates = []
@@ -156,7 +192,7 @@ def change_nature_pid(pid, otid, nature, species):
         for n in values
         if n % 25 == nature
         and (shiny_value(n, otid) < 8) == shiny
-        and (species != 201 or unown_form(n) == unown_form(pid))
+        and same_pid_form(n, pid, species)
     ]
     if not candidates:
         raise ValueError("无法保留闪光、性别和形态修改性格")
@@ -220,7 +256,7 @@ def change_ability_pid(pid, otid, parity, species, ratio):
                 or (shiny_value(candidate, otid) < 8) != shiny
             ):
                 continue
-            if species == 201 and unown_form(candidate) != unown_form(pid):
+            if not same_pid_form(candidate, pid, species):
                 continue
             candidates.append(candidate)
         if candidates:
@@ -422,6 +458,7 @@ class Pokemon:
         egg_cycles=None,
         default_friendship=None,
         spinda_seed=None,
+        minior_color=None,
     ):
         data = bytearray(self.raw)
         if ot_name is not None:
@@ -429,6 +466,14 @@ class Pokemon:
         species = (
             self.species if species is None else integer(species, 1, 65535, "物种")
         )
+        if minior_color is not None:
+            if self.species not in MINIOR_SPECIES or species not in MINIOR_SPECIES:
+                raise ValueError("核心颜色编辑仅适用于小陨星")
+            species = MINIOR_CORES[integer(minior_color, 0, 6, "小陨星核心颜色")]
+        if species != self.species and self.u16(28):
+            raise ValueError(
+                "存在待还原的形态编号，请先让游戏结束形态还原并重新读取后再改物种"
+            )
         level = self.level if level is None else integer(level, 1, 100, "等级")
         if egg is not None:
             if not isinstance(egg, bool):
@@ -507,9 +552,17 @@ class Pokemon:
             if growth is None:
                 raise ValueError("缺少经验成长曲线")
             struct.pack_into("<H", data, 32, species)
-            struct.pack_into(
-                "<I", data, 36, experience_for_level(level, growth, experience_tables)
-            )
+            if (
+                minior_color is None
+                or level != self.level
+                or (egg is True and not self.egg)
+            ):
+                struct.pack_into(
+                    "<I",
+                    data,
+                    36,
+                    experience_for_level(level, growth, experience_tables),
+                )
             data[84] = level
         if held is not None:
             struct.pack_into("<H", data, 34, integer(held, 0, 749, "携带道具"))
@@ -601,6 +654,11 @@ class Pokemon:
             word = struct.unpack_from("<I", data, 72)[0]
             word = (word | 0x40000000) if egg else (word & ~0x40000000)
             struct.pack_into("<I", data, 72, word)
+        if minior_color is not None:
+            pid = change_minior_color_pid(
+                struct.unpack_from("<I", data, 0)[0], otid, minior_color
+            )
+            struct.pack_into("<I", data, 0, pid)
         updated = Pokemon(bytes(data))
         if (
             updated.ivs != self.ivs

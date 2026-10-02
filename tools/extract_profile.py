@@ -51,6 +51,9 @@ SIGNATURES = [
     (0x8005842, 12),
     (0x8006920, 4),
     (0x820F658, 138),
+    (0x9D30C04, 88),
+    (0x9D30C5C, 640),
+    (0x9DD5E68, 16),
 ]
 
 
@@ -111,6 +114,14 @@ def extract(rom, catalog):
         "renderer": 0x820F658,
         "small_font": 0x8840000,
         "normal_font": 0x87D0000,
+    }
+    profile["minior"] = {
+        "shell_species": 991,
+        "core_species": list(struct.unpack("<7H", read(0x9DD5E68, 14))),
+        "colors": ["红色", "蓝色", "橙色", "黄色", "靛色", "绿色", "紫色"],
+        "pid_selector": 0x9D30C04,
+        "form_reversion": 0x9D30C5C,
+        "backup_species_offset": 28,
     }
     profile["spinda"] = {
         "front": struct.unpack("<I", read(0x97BBA40, 4))[0],

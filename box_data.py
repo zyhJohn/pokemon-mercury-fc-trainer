@@ -4,20 +4,24 @@
 into an 80-byte write path: retain all packed fields outside explicit edits.
 """
 
-from dataclasses import dataclass
 import struct
+from dataclasses import dataclass
+
+from name_codec import decode_name, encode_name
 from pokemon_data import (
-    experience_for_level,
-    shiny_value,
-    gender,
-    six,
-    change_shiny_pid,
+    MINIOR_CORES,
+    MINIOR_SPECIES,
+    change_minior_color_pid,
     change_nature_pid,
+    change_shiny_pid,
     change_unown_letter_pid,
+    experience_for_level,
+    gender,
     integer,
     regenerate_spinda_pid,
+    shiny_value,
+    six,
 )
-from name_codec import decode_name, encode_name
 
 
 @dataclass(frozen=True)
@@ -188,10 +192,13 @@ class BoxPokemon:
         ot_name=None,
         spinda_seed=None,
         egg=None,
+        minior_color=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
             raise ValueError("空槽不能创建宝可梦")
+        if minior_color is not None and self.species not in MINIOR_SPECIES:
+            raise ValueError("核心颜色编辑仅适用于小陨星")
         data = bytearray(self.raw)
         if egg is not None:
             if not isinstance(egg, bool):
@@ -298,6 +305,10 @@ class BoxPokemon:
             word = struct.unpack_from("<I", data, 54)[0]
             word = (word | 0x40000000) if egg else (word & ~0x40000000)
             struct.pack_into("<I", data, 54, word)
+        if minior_color is not None:
+            color = integer(minior_color, 0, 6, "小陨星核心颜色")
+            pid = change_minior_color_pid(pid, otid, color)
+            struct.pack_into("<H", data, 28, MINIOR_CORES[color])
         struct.pack_into("<I", data, 0, pid)
         result = BoxPokemon(bytes(data))
         report = result.describe(profile)

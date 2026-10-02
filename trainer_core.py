@@ -1,15 +1,23 @@
 """Verified ROM profile, immutable read snapshots, durable backups and transactions."""
 
 import json
-import struct
 import os
-from pathlib import Path
+import struct
 from datetime import datetime
+from pathlib import Path
 from uuid import uuid4
-from pokemon_data import Pokemon, integer, experience_for_level
+
 from box_data import BoxPokemon
 from move_sources import describe_move_sources
 from name_codec import decode_name, encode_name
+from pokemon_data import (
+    MINIOR_COLORS,
+    MINIOR_CORES,
+    MINIOR_SPECIES,
+    Pokemon,
+    experience_for_level,
+    integer,
+)
 
 PARTY = 0x02024284
 PARTY_COUNT = 0x02024029
@@ -173,6 +181,13 @@ class Trainer:
         slot = integer(slot, 0, len(snap["party"]) - 1, "队伍位置")
         mon = snap["party"][slot]
         species = integer(changes.get("species", mon.species), 1, 65535, "物种")
+        if changes.get("minior_color") is not None:
+            if mon.species not in MINIOR_SPECIES or species not in MINIOR_SPECIES:
+                raise ValueError("核心颜色编辑仅适用于小陨星")
+            species = MINIOR_CORES[
+                integer(changes["minior_color"], 0, 6, "小陨星核心颜色")
+            ]
+            changes["species"] = species
         metadata = self.profile["species"].get(str(species))
         if not metadata:
             raise ValueError("此物种不在已验证的本地 ROM 名单中")
@@ -208,6 +223,17 @@ class Trainer:
     def validate_pokemon(self, mon):
         metadata = self.profile["species"].get(str(mon.species))
         report = mon.validate(metadata["base"] if metadata else None)
+        if mon.u16(28):
+            report["notes"].append(f"游戏形态还原编号为 {mon.u16(28)}，未改写此字段。")
+        if mon.species in MINIOR_SPECIES:
+            color = mon.pid % 7
+            report["notes"].append(
+                f"小陨星核心颜色：{MINIOR_COLORS[color]}（PID余数 {color}）；闪光颜色以游戏实际显示为准。"
+            )
+            if mon.species != MINIOR_CORES[color]:
+                report["notes"].append(
+                    "当前形态编号与核心颜色不同，游戏还原流程会切换到PID对应的核心。"
+                )
         errors = report["errors"]
         if not metadata:
             errors.append("物种不在已验证的本地 ROM 名单中")
