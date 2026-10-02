@@ -480,12 +480,24 @@ class App:
         )
 
     def read_trainer(self):
-        if self.trainer is not None:
+        if not self.busy and self.trainer is not None and self.discard_trainer_changes():
             self.run(
                 "读取训练师资料…",
                 self.trainer.snapshot_trainer,
                 self.apply_trainer_snapshot,
             )
+
+    def discard_trainer_changes(self):
+        snap = self.trainer_snapshot
+        return (
+            snap is None
+            or (
+                self.player_name.get(), self.player_tid.get(), self.player_sid.get()
+            ) == (self.original_player_name, str(snap["tid"]), str(snap["sid"]))
+            or messagebox.askyesno(
+                "尚未写入", "训练师资料的修改尚未写入。放弃修改并继续？", parent=self.root
+            )
+        )
 
     def load_icons(self):
         if self.busy or self.trainer is None or self.snapshot is None:
@@ -1237,7 +1249,11 @@ class App:
     def connect(self):
         if self.busy:
             return
-        if not self.discard_party_changes() or not self.discard_box_changes():
+        if (
+            not self.discard_party_changes()
+            or not self.discard_box_changes()
+            or not self.discard_trainer_changes()
+        ):
             return
         old_mem = self.mem
         self.mem = None
@@ -1299,13 +1315,32 @@ class App:
         pocket = self.pocket_id()
 
         def done(snap):
-            self.apply_snapshot(snap)
-            if after:
+            applied = self.apply_snapshot(snap, preserve_party=after is not None)
+            if after and applied:
                 after()
 
         self.run("读取游戏数据…", lambda: self.trainer.snapshot(pocket), done)
 
-    def apply_snapshot(self, snap):
+    def apply_snapshot(self, snap, preserve_party=False):
+        keep_form = (
+            preserve_party
+            and self.party_form_original is not None
+            and self.party_form_values() != self.party_form_original
+        )
+        if keep_form:
+            previous = self.snapshot
+            unchanged = (
+                previous is not None
+                and previous["saveblock"] == snap["saveblock"]
+                and tuple(mon.raw for mon in previous["party"])
+                == tuple(mon.raw for mon in snap["party"])
+            )
+            if not unchanged:
+                if not self.discard_party_changes():
+                    self.pocket.set(previous["pocket"]["name"])
+                    self.status.set("队伍数据已变化，未覆盖当前编辑。请核对后重新读取。")
+                    return False
+                keep_form = False
         self.snapshot = snap
         self.snapshot_at = datetime.now().astimezone().isoformat()
         self.money.set(str(snap["money"]))
@@ -1326,7 +1361,8 @@ class App:
         if snap["party"]:
             index = min(self.current_slot or 0, len(snap["party"]) - 1)
             self.party_tree.selection_set(str(index))
-            self.select_mon(force=True)
+            if not keep_form:
+                self.select_mon(force=True)
         else:
             self.current_slot = None
             self.party_form_original = None
@@ -1383,7 +1419,9 @@ class App:
             f"已刷新 · {len(snap['party'])} 只宝可梦 · {pocket['name']} {pocket['capacity']} 格"
             + (" · 战斗中：宝可梦仅可查看" if snap["in_battle"] else "")
             + (" · 旧桥接仅可读" if "CRCBATCH" not in self.mem.capabilities else "")
+            + (" · 已保留队伍成员尚未写入的修改" if keep_form else "")
         )
+        return True
 
     def item_name(self, item):
         if not item:
@@ -1695,7 +1733,7 @@ class App:
             self.set_report("未通过：" + str(exc))
         self.nb.select(self.tab_party)
 
-    def commit(self, patches, label):
+    def commit(self, patches, label, preserve_party=True):
         snap = self.snapshot
         pocket = self.pocket_id()
 
@@ -1705,9 +1743,11 @@ class App:
 
         def done(result):
             record, snap = result
-            self.apply_snapshot(snap)
+            applied = self.apply_snapshot(snap, preserve_party=preserve_party)
             self.status.set(
-                "写入完成，已读回核对；原数据已备份。"
+                "本次操作已完成；队伍数据已变化，当前编辑已保留，请重新读取。"
+                if not applied
+                else "写入完成，已读回核对；原数据已备份。"
                 if record["changed"]
                 else "没有变化，无需写入。"
             )
@@ -1717,7 +1757,7 @@ class App:
     def write_mon(self):
         try:
             patches, _ = self.prepare_mon()
-            self.commit(patches, "宝可梦编辑")
+            self.commit(patches, "宝可梦编辑", preserve_party=False)
         except Exception as exc:
             messagebox.showerror("未写入", str(exc))
 
@@ -1843,6 +1883,12 @@ class App:
             filetypes=[("JSON", "*.json")],
         )
         if not path:
+            return
+        if (
+            not self.discard_party_changes()
+            or not self.discard_box_changes()
+            or not self.discard_trainer_changes()
+        ):
             return
         pocket = self.pocket_id()
         box_index = (

@@ -15,6 +15,55 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_automatic_refresh_retains_party_draft_when_game_bytes_match(self):
+        self.app.level.set("75")
+        self.app.ot_name.set("小智")
+        original = self.app.party_form_original
+        fresh = self.app.trainer.snapshot(2)
+        with patch("trainer_app.messagebox.askyesno") as prompt:
+            self.assertTrue(self.app.apply_snapshot(fresh, preserve_party=True))
+            self.root.update()
+            self.assertEqual(self.app.level.get(), "75")
+            self.assertEqual(self.app.ot_name.get(), "小智")
+            self.assertEqual(self.app.party_form_original, original)
+            self.assertEqual(self.app.snapshot["pocket"]["id"], 2)
+            prompt.assert_not_called()
+        updated = Pokemon(self.app.prepare_mon()[0][0][2])
+        self.assertEqual((updated.level, updated.ot_name), (75, "小智"))
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_changed_party_refresh_keeps_old_snapshot_until_discard(self):
+        self.app.level.set("75")
+        original_snapshot = self.app.snapshot
+        raw = bytearray(sample().raw)
+        raw[41] ^= 1
+        self.mem.put(PARTY, raw)
+        fresh = self.app.trainer.snapshot(2)
+        with patch("trainer_app.messagebox.askyesno", return_value=False):
+            self.assertFalse(self.app.apply_snapshot(fresh, preserve_party=True))
+        self.assertIs(self.app.snapshot, original_snapshot)
+        self.assertEqual(self.app.level.get(), "75")
+        patches, _ = self.app.prepare_mon()
+        with self.assertRaises(OSError):
+            self.app.trainer.commit(self.app.snapshot, patches, "stale draft")
+        self.assertEqual(self.mem.writes, 0)
+        with patch("trainer_app.messagebox.askyesno", return_value=True):
+            self.assertTrue(self.app.apply_snapshot(fresh, preserve_party=True))
+        self.assertEqual(self.app.level.get(), str(sample().level))
+
+    def test_trainer_reread_and_reconnect_do_not_discard_draft_on_cancel(self):
+        self.app.apply_trainer_snapshot({
+            "tid": 12, "sid": 34, "name": "小智", "gender": 0,
+            "name_raw": "00", "address": 0x2024588, "raw": b"\0" * 14,
+        })
+        self.app.player_name.set("小明")
+        with patch("trainer_app.messagebox.askyesno", return_value=False), patch.object(self.app, "run") as run:
+            self.app.read_trainer()
+            self.app.connect()
+            run.assert_not_called()
+        self.assertEqual(self.app.player_name.get(), "小明")
+        self.assertIsNotNone(self.app.trainer_snapshot)
+
     def test_spinda_pattern_generation_is_explicit_preview_only(self):
         from pokemon_data import experience_for_level, calculate_stats
 
