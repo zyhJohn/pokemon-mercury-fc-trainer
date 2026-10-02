@@ -6,6 +6,7 @@ See docs/verified-layout.md for ROM signatures and offline evidence.
 
 from dataclasses import dataclass
 import struct
+from name_codec import encode_name, decode_name
 
 STAT_NAMES = ("HP", "攻击", "防御", "速度", "特攻", "特防")
 
@@ -90,6 +91,48 @@ def gender(pid, ratio):
     if ratio == 0:
         return "雄性"
     return "雌性" if (pid & 255) < ratio else "雄性"
+
+
+def change_unown_letter_pid(pid, otid, letter, ratio=255, preserve_parity=False):
+    letter = integer(letter, 0, 27, "未知图腾字形")
+    if unown_form(pid) == letter:
+        return pid
+    shiny = shiny_value(pid, otid) < 8
+    old_gender = gender(pid, ratio)
+
+    def matches(candidate):
+        return (
+            candidate % 25 == pid % 25
+            and unown_form(candidate) == letter
+            and gender(candidate, ratio) == old_gender
+            and (not preserve_parity or candidate & 1 == pid & 1)
+            and (shiny_value(candidate, otid) < 8) == shiny
+        )
+
+    candidates = []
+    if shiny:
+        tx = (otid >> 16) ^ (otid & 65535)
+        for low in range(65536):
+            if gender(low, ratio) != old_gender:
+                continue
+            for v in range(8):
+                candidate = ((tx ^ low ^ v) << 16) | low
+                if matches(candidate):
+                    candidates.append(candidate)
+    else:
+        # Eight selected bits encode the letter; five free bits cover all
+        # 25 nature residues without changing gender or selected form bits.
+        for encoded in range(letter, 256, 28):
+            base = pid & ~0x03030303
+            for byte in range(4):
+                base |= ((encoded >> (byte * 2)) & 3) << (byte * 8)
+            for free in range(32):
+                candidate = (base & ~0x007C0000) | (free << 18)
+                if matches(candidate):
+                    candidates.append(candidate)
+    if not candidates:
+        raise ValueError("此字形无法同时保留当前闪光、性格、性别和特性；未修改")
+    return min(candidates, key=lambda n: ((n ^ pid).bit_count(), n))
 
 
 def change_nature_pid(pid, otid, nature, species):
@@ -208,6 +251,30 @@ class Pokemon:
         return self.u32(4)
 
     @property
+    def friendship(self):
+        return self.raw[41]
+
+    @property
+    def met_location(self):
+        return self.raw[69]
+
+    @property
+    def met_level(self):
+        return self.raw[70] & 127
+
+    @property
+    def ball(self):
+        return self.raw[42]
+
+    @property
+    def ot_gender(self):
+        return self.raw[71] >> 7
+
+    @property
+    def ot_name(self):
+        return decode_name(self.raw[20:27])
+
+    @property
     def species(self):
         return self.u16(32)
 
@@ -316,13 +383,77 @@ class Pokemon:
         ability_slot=None,
         abilities=None,
         gender_ratio=None,
+        friendship=None,
+        met_location=None,
+        met_level=None,
+        ball=None,
+        ot_gender=None,
+        ot_tid=None,
+        ot_sid=None,
+        unown_letter=None,
+        ot_name=None,
+        egg=None,
+        egg_cycles=None,
+        default_friendship=None,
     ):
         data = bytearray(self.raw)
+        if ot_name is not None:
+            data[20:27] = encode_name(ot_name, 7)
         species = (
             self.species if species is None else integer(species, 1, 65535, "物种")
         )
         level = self.level if level is None else integer(level, 1, 100, "等级")
-        if species != self.species or level != self.level:
+        if egg is not None:
+            if not isinstance(egg, bool):
+                raise ValueError("蛋状态必须为是/否")
+            if egg != self.egg:
+                if egg:
+                    if egg_cycles is None:
+                        raise ValueError("缺少已核对的孵化周期")
+                    level = 1
+                    if friendship is None:
+                        friendship = egg_cycles
+                    if met_level is None:
+                        met_level = 0
+                elif friendship is None:
+                    if default_friendship is None:
+                        raise ValueError("缺少已核对的基础亲密度")
+                    friendship = default_friendship
+        for value, offset, maximum, label in [
+            (friendship, 41, 255, "亲密度/孵化周期"),
+            (met_location, 69, 255, "相遇地点编号"),
+            (ball, 42, 255, "捕获球编号"),
+        ]:
+            if value is not None:
+                data[offset] = integer(value, 0, maximum, label)
+        if met_level is not None:
+            data[70] = (data[70] & 128) | integer(met_level, 0, 127, "相遇等级")
+        if ot_gender is not None:
+            data[71] = (data[71] & 127) | (
+                integer(ot_gender, 0, 1, "原训练师性别") << 7
+            )
+        tid = (
+            self.otid & 65535
+            if ot_tid is None
+            else integer(ot_tid, 0, 65535, "原训练师 TID")
+        )
+        sid = (
+            self.otid >> 16
+            if ot_sid is None
+            else integer(ot_sid, 0, 65535, "原训练师 SID")
+        )
+        otid = tid | sid << 16
+        if otid != self.otid:
+            target_shiny = self.shiny if shiny is None else shiny
+            if not isinstance(target_shiny, bool):
+                raise ValueError("闪光状态必须为是/否")
+            pid = change_shiny_pid(self.pid, otid, target_shiny, species)
+            struct.pack_into("<II", data, 0, pid, otid)
+        if (
+            species != self.species
+            or level != self.level
+            or (egg is True and not self.egg)
+        ):
             if growth is None:
                 raise ValueError("缺少经验成长曲线")
             struct.pack_into("<H", data, 32, species)
@@ -374,13 +505,18 @@ class Pokemon:
             data[56:62] = bytes(evs)
         if nature is not None:
             struct.pack_into(
-                "<I", data, 0, change_nature_pid(self.pid, self.otid, nature, species)
+                "<I",
+                data,
+                0,
+                change_nature_pid(
+                    struct.unpack_from("<I", data, 0)[0], otid, nature, species
+                ),
             )
         if shiny is not None:
             if not isinstance(shiny, bool):
                 raise ValueError("闪光状态必须为是/否")
             pid = change_shiny_pid(
-                struct.unpack_from("<I", data, 0)[0], self.otid, shiny, species
+                struct.unpack_from("<I", data, 0)[0], otid, shiny, species
             )
             struct.pack_into("<I", data, 0, pid)
         if ability_slot is not None:
@@ -394,8 +530,27 @@ class Pokemon:
                 if gender_ratio is None:
                     raise ValueError("缺少性别比例数据")
                 pid = struct.unpack_from("<I", data, 0)[0]
-                pid = change_ability_pid(pid, self.otid, slot, species, gender_ratio)
+                pid = change_ability_pid(pid, otid, slot, species, gender_ratio)
                 struct.pack_into("<I", data, 0, pid)
+        if unown_letter is not None:
+            if species != 201:
+                raise ValueError("字形编辑仅适用于未知图腾")
+            if gender_ratio is None or not abilities:
+                raise ValueError("缺少已核对的性别/特性信息")
+            pid = struct.unpack_from("<I", data, 0)[0]
+            pid = change_unown_letter_pid(
+                pid,
+                otid,
+                unown_letter,
+                gender_ratio,
+                bool(abilities[1]) and not bool(data[75] & 128),
+            )
+            struct.pack_into("<I", data, 0, pid)
+        if egg is not None:
+            data[19] = (data[19] | 4) if egg else (data[19] & ~4)
+            word = struct.unpack_from("<I", data, 72)[0]
+            word = (word | 0x40000000) if egg else (word & ~0x40000000)
+            struct.pack_into("<I", data, 72, word)
         updated = Pokemon(bytes(data))
         if (
             updated.ivs != self.ivs

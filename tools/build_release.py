@@ -53,7 +53,12 @@ def main():
         "启动修改器.ps1",
         "README.md",
     ]
-    for name in ["verified-layout.md", "development-status.md"]:
+    for name in [
+        "verified-layout.md",
+        "development-status.md",
+        "next-stage-plan.md",
+        "cross-machine-handoff.md",
+    ]:
         source = ROOT / "docs" / name
         if source.exists():
             target = ROOT / "dist" / "docs" / name

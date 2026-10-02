@@ -44,6 +44,9 @@ SIGNATURES = [
     (0x9D3D69E, 10),
     (0x9D073D6, 10),
     (0x9D07430, 8),
+    (0x80CC1E4, 32),
+    (0x803FBE8, 26),
+    (0x804037C, 26),
 ]
 
 
@@ -93,6 +96,37 @@ def extract(rom, catalog):
     profile["tm_moves"] = list(struct.unpack("<128H", read(tm_moves, 256)))
     profile["tm_compatibility"] = {}
     profile["battle_flag"] = {"address": 0x03003529, "mask": 2}
+    profile["trainer"] = {
+        "pointer_address": 0x0300500C,
+        "id_offset": 10,
+        "header_size": 14,
+    }
+    icon_table = struct.unpack("<I", read(0x8097050, 4))[0]
+    palette_records = struct.unpack("<I", read(0x80971F0, 4))[0]
+    palette_indices = struct.unpack("<I", read(0x80971F4, 4))[0]
+    profile["icons"] = {}
+    for row in catalog["categories"]["pokemon"]:
+        ident = row["id"]
+        tile = struct.unpack("<I", read(icon_table + ident * 4, 4))[0]
+        index = read(palette_indices + ident, 1)[0]
+        palette = struct.unpack("<I", read(palette_records + index * 8, 4))[0]
+        if not (
+            0x8000000 <= tile <= 0xA000000 - 512
+            and 0x8000000 <= palette <= 0xA000000 - 32
+        ):
+            raise ValueError("Icon pointers outside verified ROM")
+        profile["icons"][str(ident)] = {"tiles": tile, "palette": palette}
+    profile["unown_icon_ids"] = [201] + list(range(413, 440))
+    profile["unown_letters"] = [chr(65 + i) for i in range(26)] + ["!", "?"]
+    profile["female_icon_ids"] = {
+        "502": 744,
+        "503": 745,
+        "574": 703,
+        "645": 704,
+        "646": 705,
+        "776": 831,
+    }
+    profile["dynamic_icon_species"] = [824]
     storage_table = 0x9DD71AC
     profile["storage"] = {
         "record_size": 58,
@@ -115,6 +149,8 @@ def extract(rom, catalog):
             profile["species"][str(ident)] = {
                 "base": list(b[:6]),
                 "gender_ratio": b[16],
+                "egg_cycles": b[17],
+                "friendship": b[18],
                 "growth": b[19],
                 "abilities": [b[22], b[23], b[26]],
                 "name": row["name"],

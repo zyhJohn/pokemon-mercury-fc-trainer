@@ -9,6 +9,7 @@ from uuid import uuid4
 from pokemon_data import Pokemon, integer, experience_for_level
 from box_data import BoxPokemon
 from move_sources import describe_move_sources
+from name_codec import decode_name, encode_name
 
 PARTY = 0x02024284
 PARTY_COUNT = 0x02024029
@@ -72,6 +73,52 @@ class Trainer:
             raise ValueError("该物种种族值尚未验证")
         return data["base"]
 
+    def snapshot_trainer(self):
+        self.verify()
+        layout = self.profile["trainer"]
+        pointer = layout["pointer_address"]
+        address = self.g.r32(pointer)
+        if address % 4 or not 0x02000000 <= address <= 0x02040000 - 14:
+            raise ValueError("训练师结构指针无效，请进入游戏后再读取")
+        raw = self.g.read(address, 14)
+        if self.g.r32(pointer) != address or self.g.read(address, 14) != raw:
+            raise ValueError("读取时训练师资料已变化，请重新读取")
+        tid, sid = struct.unpack_from("<HH", raw, 10)
+        return {
+            "address": address,
+            "raw": raw,
+            "tid": tid,
+            "sid": sid,
+            "name_raw": raw[:8].hex(),
+            "name": decode_name(raw[:8]),
+            "gender": raw[8],
+        }
+
+    def edit_trainer_ids(self, trainer_snap, tid, sid):
+        after = struct.pack(
+            "<HH",
+            integer(tid, 0, 65535, "玩家 TID"),
+            integer(sid, 0, 65535, "玩家 SID"),
+        )
+        return [(trainer_snap["address"] + 10, trainer_snap["raw"][10:14], after)]
+
+    def commit_trainer_ids(self, trainer_snap, tid, sid):
+        snap = self.snapshot()
+        snap["trainer"] = trainer_snap
+        return self.commit(
+            snap, self.edit_trainer_ids(trainer_snap, tid, sid), "玩家训练师 ID"
+        )
+
+    def commit_trainer_profile(self, trainer_snap, tid, sid, name=None):
+        snap = self.snapshot()
+        snap["trainer"] = trainer_snap
+        patches = self.edit_trainer_ids(trainer_snap, tid, sid)
+        if name is not None:
+            patches.append(
+                (trainer_snap["address"], trainer_snap["raw"][:8], encode_name(name, 8))
+            )
+        return self.commit(snap, patches, "玩家训练师资料")
+
     def snapshot_box(self, box_index):
         self.verify()
         layout = self.profile.get("storage")
@@ -133,6 +180,11 @@ class Trainer:
             item = self.profile["items"].get(str(held))
             if held and (not item or item["pocket"] in (2, 4)):
                 raise ValueError("重要道具与学习器不能作为携带道具")
+        if "ball" in changes:
+            ball = integer(changes["ball"], 0, 255, "捕获球编号")
+            item = self.profile["items"].get(str(ball))
+            if ball != mon.ball and (not item or item["pocket"] != 3):
+                raise ValueError("新捕获球编号须属于本改版的精灵球口袋")
         updated, report = mon.edit(
             base=metadata["base"],
             growth=metadata["growth"],
@@ -140,6 +192,8 @@ class Trainer:
             move_data=self.profile.get("moves"),
             abilities=metadata["abilities"],
             gender_ratio=metadata["gender_ratio"],
+            egg_cycles=metadata["egg_cycles"],
+            default_friendship=metadata["friendship"],
             **changes,
         )
         report = self.validate_pokemon(updated)
@@ -245,12 +299,26 @@ class Trainer:
             ),
             (PARTY_COUNT, bytes([len(snap["party"])]), bytes([len(snap["party"])])),
         ]
+        if "trainer" in snap:
+            guards.append(
+                (
+                    self.profile["trainer"]["pointer_address"],
+                    struct.pack("<I", snap["trainer"]["address"]),
+                    struct.pack("<I", snap["trainer"]["address"]),
+                )
+            )
         box_edit = any(self.is_box_patch(a, len(before)) for a, before, _ in changes)
-        if box_edit or any(
-            a < PARTY + 600 and a + len(before) > PARTY for a, before, _ in changes
+        if (
+            "trainer" in snap
+            or box_edit
+            or any(
+                a < PARTY + 600 and a + len(before) > PARTY for a, before, _ in changes
+            )
         ):
             if snap["in_battle"]:
-                raise ValueError("战斗中仅可查看宝可梦；请结束战斗并刷新后再写入")
+                raise ValueError(
+                    "战斗中仅可查看宝可梦/训练师；请结束战斗并刷新后再写入"
+                )
             guards.append(
                 (
                     self.profile["battle_flag"]["address"],
@@ -339,6 +407,13 @@ class Trainer:
                 and (address - p["address"]) % 4 == 0
                 for p in self.profile["pockets"]
             )
+            if not valid and len(before) in (4, 8) and self.profile.get("trainer"):
+                trainer_snap = self.snapshot_trainer()
+                if (len(before) == 4 and address == trainer_snap["address"] + 10) or (
+                    len(before) == 8 and address == trainer_snap["address"]
+                ):
+                    snap["trainer"] = trainer_snap
+                    valid = True
             if not valid:
                 raise ValueError("备份中包含不支持恢复的地址或字段")
             patches.append((address, before, after))

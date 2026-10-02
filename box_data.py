@@ -13,6 +13,7 @@ from pokemon_data import (
     six,
     change_shiny_pid,
     change_nature_pid,
+    change_unown_letter_pid,
 )
 
 
@@ -141,7 +142,9 @@ class BoxPokemon:
         )
         return result
 
-    def edit(self, profile, *, ivs=None, evs=None, shiny=None, nature=None):
+    def edit(
+        self, profile, *, ivs=None, evs=None, shiny=None, nature=None, unown_letter=None
+    ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
             raise ValueError("空槽不能创建宝可梦")
@@ -164,6 +167,19 @@ class BoxPokemon:
             if not isinstance(shiny, bool):
                 raise ValueError("闪光状态必须为是/否")
             pid = change_shiny_pid(pid, self.otid, shiny, self.species)
+        if unown_letter is not None:
+            if self.species != 201:
+                raise ValueError("字形编辑仅适用于未知图腾")
+            metadata = profile["species"].get(str(self.species))
+            if metadata is None:
+                raise ValueError("缺少已核对物种信息")
+            pid = change_unown_letter_pid(
+                pid,
+                self.otid,
+                unown_letter,
+                metadata["gender_ratio"],
+                bool(metadata["abilities"][1]) and not self.ability_flag,
+            )
         struct.pack_into("<I", data, 0, pid)
         result = BoxPokemon(bytes(data))
         report = result.describe(profile)

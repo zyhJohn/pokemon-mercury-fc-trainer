@@ -101,7 +101,19 @@ PC 有 25 盒，每盒 30 格，每格 **58 字节**。`0x0808BA18` 跳转到 `0
 
 ### 事务行为
 
-新版 Lua v3 协议 `BATCHCRC` 在同一回调内先检查 ROM CRC32、比较所有预期字节，再写入。比较包括 31 处 ROM 特征、SaveBlock 指针、队伍数量、战斗标志和被编辑对象；盒内写入增加 PC 格式特征。任一字节不符返回 `ERR stale`，CRC32 不符返回 `ERR rom`，均不写入。旧版直接 WRITE 和无 CRC 的 BATCH 指令不再支持。v1/v2 桥接在界面中仅可读取。
+新版 Lua v3 协议 `BATCHCRC` 在同一回调内先检查 ROM CRC32、比较所有预期字节，再写入。比较包括 34 处 ROM 特征、SaveBlock 指针、队伍数量、战斗标志和被编辑对象；盒内写入增加 PC 格式特征。任一字节不符返回 `ERR stale`，CRC32 不符返回 `ERR rom`，均不写入。旧版直接 WRITE 和无 CRC 的 BATCH 指令不再支持。v1/v2 桥接在界面中仅可读取。
+
+### 下一阶段新增字段
+
+`GetMonData` 为 `0x0803FBE8`，`SetMonData` 为 `0x0804037C`。实际函数对照确认：亲密度/蛋周期 offset41；捕获球 offset42（完整字节，不是原版来源字中的4位）；地点offset69；相遇等级offset70低7位；OT性别offset71 bit7；OT姓名offset20..26；OT ID offset4..7。其余来源打包位保持原样。
+
+玩家 SaveBlock2 指针 `0x0300500C`：姓名前8字节，公开/隐藏 ID 在 +10/+12。`GetCombinedOTId`（`0x080CC1E4`）实际读取这4字节；`StringExpandPlaceholders`（`0x08008FCC`）读取玩家姓名。新增名字写入使用有限单字节字符表，参考 [引擎字符表](https://raw.githubusercontent.com/pret/pokefirered/master/charmap.txt)，与当前样本 `ee ed dc` 一致。中文字符映射未核实；主角性别 +8 仅只读，未开放写入。
+
+蛋切换同步header19 bit2与IV字bit30，保留隐藏特性bit31。转换为蛋设为1级，使用ROM经验表，默认周期来自种族记录offset17，普通基础亲密度offset18。实际步数函数 `0x080463B8` 在隔离内存中能处理6个转换样本并触发待孵化；这不等于已经验证完整动画和存档重载。取消标记保留原昵称，不伪装成自然孵化流程。
+
+图标指针表：`0x08097050` → `0x097BFC14`；调色板记录表 `0x080971F0` → `0x083D4038`；物种调色板索引表 `0x080971F4` → `0x097BF602`。图块为32×32、4bpp、512字节，调色板32字节。实际 `GetMonIconTiles`/`GetValidMonIconPalettePtr` 验证1432项。雌性图标映射从改版钩子核对，物种824的图标受运行状态影响，暂回退文字；蛋图标同样回退文字，闪光使用标记，未伪造闪光图标配色。
+
+`GetUnownLetterFromPersonality`（`0x08082AB8`）与图标函数对照56组字形变体。28种本地图块经目视核对，0..25为A..Z，26为“!”，27为“?”；与参考百科给出的标点顺序不同。字形PID搜索保留约束，但不再固定整个低字节。PC 字形仅改PID，其余58字节数据保留。
 
 CRC32 为 `B4AF11C8`，使用 mGBA 0.10.5 的 `emu:checksum()`：源码 `src/core/scripting.c` 明确返回默认 CRC32 的四字节大端字符串；`src/gba/core.c` 返回模拟器加载 ROM 时记录的 `romCrc32`。它用于辨别加载文件版本，运行时另以指令特征与目标数据比较，不能视为密码学认证或任意热补丁检测。
 

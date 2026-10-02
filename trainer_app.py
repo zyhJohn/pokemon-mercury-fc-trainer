@@ -7,11 +7,13 @@ from pathlib import Path
 from tkinter import ttk, messagebox, filedialog
 from memory_client import MemClient
 from trainer_core import Trainer
-from pokemon_data import Pokemon, STAT_NAMES, gender
+from pokemon_data import Pokemon, STAT_NAMES, gender, unown_form
 from wiki_catalog import load_catalog, search_rows
 import webbrowser
 import struct
 from datetime import datetime
+import base64
+from sprite_images import icon_species, read_icons
 
 
 def resource_path(name):
@@ -38,6 +40,8 @@ class App:
         self.results = queue.Queue()
         self.current_slot = None
         self.box_snapshot = None
+        self.trainer_snapshot = None
+        self.icon_images = {}
         self.current_bag_slot = None
         self.status = tk.StringVar(
             value="未连接。请在 mGBA 加载本项目新版 mercury_bridge.lua"
@@ -63,6 +67,7 @@ class App:
             ("刷新", self.refresh),
             ("导出诊断", self.export),
             ("恢复备份", self.restore),
+            ("加载游戏微缩图", self.load_icons),
         ]:
             self.button(top, text, cmd, side="left", padx=3)
         ttk.Label(self.root, textvariable=self.status, wraplength=900, padding=8).pack(
@@ -84,17 +89,21 @@ class App:
         )
         ttk.Label(
             self.tab_values,
-            text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n训练师名字/性别地址尚未核实，已停止旧版推测地址的写入。",
+            text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家 ID 在“训练师”页编辑；姓名与主角性别等待完整核验。",
         ).pack(anchor="w")
         self.tab_party = ttk.Frame(self.nb, padding=8)
         self.nb.add(self.tab_party, text="宝可梦编辑")
         self.party_tree = ttk.Treeview(
             self.tab_party,
             columns=("name", "level"),
-            show="headings",
+            show="tree headings",
+            style="MercuryParty.Treeview",
             height=6,
             selectmode="browse",
         )
+        ttk.Style(self.root).configure("MercuryParty.Treeview", rowheight=66)
+        self.party_tree.heading("#0", text="形象")
+        self.party_tree.column("#0", width=72, stretch=False)
         self.party_tree.heading("name", text="队伍")
         self.party_tree.heading("level", text="等级")
         self.party_tree.column("name", width=170)
@@ -332,6 +341,187 @@ class App:
         self.button(ed, "清空选中", lambda: self.write_item(True), side="left", padx=5)
         self._build_boxes()
         self._build_catalog()
+        self._build_details()
+        self._build_trainer()
+
+    def _build_details(self):
+        tab = ttk.Frame(self.nb, padding=12)
+        self.nb.add(tab, text="来源 / 原训练师")
+        ttk.Label(tab, textvariable=self.identity, wraplength=900).pack(
+            anchor="w", pady=6
+        )
+        ttk.Label(
+            tab,
+            text="先选择队伍成员。地点暂显示原始编号；捕获球按本改版编号填写。\n修改原训练师 ID 时保留当前选择的闪光状态；字段有效不代表遭遇来源已认证。\n转为蛋时同步两处标志、设为1级及默认周期；取消蛋标记不等于执行自然孵化。",
+            wraplength=900,
+        ).pack(anchor="w", pady=6)
+        self.detail_vars = {}
+        self.egg = tk.BooleanVar()
+        ttk.Checkbutton(tab, text="蛋（转换时请先检查预览）", variable=self.egg).pack(
+            anchor="w", pady=4
+        )
+        for key, label in [
+            ("friendship", "亲密度 / 孵化周期（0～255）"),
+            ("met_location", "相遇地点编号（0～255）"),
+            ("met_level", "相遇等级原始值（0～127）"),
+            ("ball", "捕获球编号"),
+            ("ot_tid", "原训练师 TID"),
+            ("ot_sid", "原训练师 SID"),
+            ("ot_gender", "原训练师性别（0男 / 1女）"),
+        ]:
+            row = ttk.Frame(tab)
+            row.pack(anchor="w", pady=4)
+            ttk.Label(row, text=label, width=38).pack(side="left")
+            var = tk.StringVar()
+            self.detail_vars[key] = var
+            ttk.Entry(row, textvariable=var, width=18).pack(side="left")
+        row = ttk.Frame(tab)
+        row.pack(anchor="w", pady=4)
+        ttk.Label(row, text="未知图腾字形", width=38).pack(side="left")
+        self.unown_letter = tk.StringVar(value="不适用")
+        ttk.Combobox(
+            row,
+            textvariable=self.unown_letter,
+            state="readonly",
+            values=["保持当前"]
+            + [
+                f"{i} - {letter}"
+                for i, letter in enumerate(self.profile["unown_letters"])
+            ],
+            width=18,
+        ).pack(side="left")
+        self.button(tab, "检查与预览", self.preview, anchor="w", pady=8)
+        row = ttk.Frame(tab)
+        row.pack(anchor="w", pady=4)
+        ttk.Label(row, text="原训练师姓名（英文/数字，最多7字）", width=38).pack(
+            side="left"
+        )
+        self.ot_name = tk.StringVar()
+        self.original_ot_name = ""
+        ttk.Entry(row, textvariable=self.ot_name, width=18).pack(side="left")
+        self.button(tab, "写入当前宝可梦", self.write_mon, anchor="w", pady=8)
+        self.detail_preview = tk.StringVar()
+        ttk.Label(tab, textvariable=self.detail_preview, wraplength=900).pack(
+            anchor="w", pady=8
+        )
+
+    def _build_trainer(self):
+        tab = ttk.Frame(self.nb, padding=12)
+        self.tab_trainer = tab
+        self.nb.add(tab, text="训练师")
+        self.player_tid = tk.StringVar()
+        self.player_sid = tk.StringVar()
+        self.player_name = tk.StringVar()
+        self.original_player_name = ""
+        self.player_detail = tk.StringVar(
+            value="连接后点击读取。主角性别目前只读；中文姓名编码待核验。"
+        )
+        ttk.Label(tab, textvariable=self.player_detail, wraplength=900).pack(
+            anchor="w", pady=8
+        )
+        for label, var in [
+            ("姓名（英文/数字，最多7字）", self.player_name),
+            ("玩家 TID（0～65535）", self.player_tid),
+            ("玩家 SID（0～65535）", self.player_sid),
+        ]:
+            row = ttk.Frame(tab)
+            row.pack(anchor="w", pady=6)
+            ttk.Label(row, text=label, width=30).pack(side="left")
+            ttk.Entry(row, textvariable=var, width=18).pack(side="left")
+        ttk.Label(
+            tab,
+            text="仅修改玩家 ID，不自动改变队伍或 PC 的原训练师资料。\n现有宝可梦可能因此被视为外来宝可梦；修改前后请核对训练师卡。",
+            wraplength=900,
+        ).pack(anchor="w", pady=8)
+        self.detail_image = ttk.Label(tab)
+        self.detail_image.pack(anchor="w")
+        self.button(tab, "读取训练师资料", self.read_trainer, anchor="w", pady=6)
+        self.button(tab, "写入训练师资料", self.write_trainer_ids, anchor="w", pady=6)
+
+    def apply_trainer_snapshot(self, snap):
+        self.trainer_snapshot = snap
+        self.player_tid.set(str(snap["tid"]))
+        self.player_sid.set(str(snap["sid"]))
+        self.original_player_name = (
+            snap["name"] if snap["name"] is not None else "（未知编码，原样保留）"
+        )
+        self.player_name.set(self.original_player_name)
+        self.player_detail.set(
+            f"完整 ID：{snap['sid'] * 65536 + snap['tid']:08X}；主角性别原始值：{snap['gender']}\n姓名原始编码：{snap['name_raw']}；中文编码未核验，不支持自动转换。"
+        )
+
+    def read_trainer(self):
+        if self.trainer is not None:
+            self.run(
+                "读取训练师资料…",
+                self.trainer.snapshot_trainer,
+                self.apply_trainer_snapshot,
+            )
+
+    def load_icons(self):
+        if self.busy or self.trainer is None or self.snapshot is None:
+            return
+        trainer = self.trainer
+        pokemon = list(self.snapshot["party"])
+        try:
+            patches, _ = self.prepare_mon()
+            preview_mon = Pokemon(patches[0][2])
+            pokemon.append(preview_mon)
+        except ValueError:
+            preview_mon = None
+        if self.box_snapshot is not None:
+            pokemon += list(self.box_snapshot["pokemon"])
+
+        def job():
+            trainer.verify()
+            result = read_icons(trainer.g, self.profile, pokemon)
+            trainer.verify()
+            return result
+
+        def done(result):
+            for ident, png in result.items():
+                self.icon_images[ident] = tk.PhotoImage(
+                    master=self.root, data=base64.b64encode(png)
+                )
+            for slot, mon in enumerate(self.snapshot["party"]):
+                self.party_tree.item(str(slot), image=self.mon_image(mon))
+            if self.box_snapshot is not None:
+                for slot, mon in enumerate(self.box_snapshot["pokemon"]):
+                    self.box_tree.item(str(slot), image=self.mon_image(mon))
+            if preview_mon is not None:
+                self.detail_image.configure(image=self.mon_image(preview_mon))
+            self.status.set("已从当前 ROM 加载微缩图；图像保存在本次会话，不写入游戏。")
+
+        self.run("读取游戏微缩图…", job, done)
+
+    def mon_image(self, mon):
+        return self.icon_images.get(icon_species(mon, self.profile), "")
+
+    def write_trainer_ids(self):
+        if self.busy or self.trainer is None or self.trainer_snapshot is None:
+            return
+        trainer = self.trainer
+        snap = self.trainer_snapshot
+        tid, sid = self.player_tid.get(), self.player_sid.get()
+        name = (
+            None
+            if self.player_name.get() == self.original_player_name
+            else self.player_name.get()
+        )
+
+        def job():
+            result = trainer.commit_trainer_profile(snap, tid, sid, name)
+            return result, trainer.snapshot_trainer()
+
+        def done(result):
+            self.apply_trainer_snapshot(result[1])
+            self.status.set(
+                "训练师资料已写入并读回核对，原值已备份。"
+                if result[0]["changed"]
+                else "没有变化，无需写入。"
+            )
+
+        self.run("校验并写入训练师资料…", job, done)
 
     def _build_boxes(self):
         tab = ttk.Frame(self.nb, padding=10)
@@ -358,10 +548,14 @@ class App:
         self.box_tree = ttk.Treeview(
             box,
             columns=("slot", "species", "level", "shiny"),
-            show="headings",
+            show="tree headings",
+            style="MercuryBox.Treeview",
             selectmode="browse",
             height=10,
         )
+        ttk.Style(self.root).configure("MercuryBox.Treeview", rowheight=38)
+        self.box_tree.heading("#0", text="形象")
+        self.box_tree.column("#0", width=46, stretch=False)
         for key, label, width in [
             ("slot", "位置", 50),
             ("species", "宝可梦", 300),
@@ -407,6 +601,7 @@ class App:
                 "",
                 "end",
                 iid=str(i),
+                image=self.mon_image(mon),
                 values=(
                     i + 1,
                     name,
@@ -431,12 +626,25 @@ class App:
         trainer = self.trainer
         window = tk.Toplevel(self.root)
         window.title(f"第 {snapshot['index'] + 1} 盒 · 第 {slot + 1} 格")
-        window.geometry("650x390")
+        window.geometry("650x430")
         frame = ttk.Frame(window, padding=12)
         frame.pack(fill="both", expand=True)
         ttk.Label(
             frame, text=self.names["breeds"].get(str(mon.species), str(mon.species))
         ).pack(anchor="w")
+        letter = tk.StringVar(value=str(unown_form(mon.pid)))
+        if mon.species == 201:
+            ttk.Label(frame, text="未知图腾字形").pack(anchor="w", pady=(8, 0))
+            ttk.Combobox(
+                frame,
+                textvariable=letter,
+                state="readonly",
+                values=[
+                    f"{i} - {name}"
+                    for i, name in enumerate(self.profile["unown_letters"])
+                ],
+                width=20,
+            ).pack(anchor="w")
         shiny = tk.BooleanVar(value=mon.shiny)
         nature = tk.StringVar(
             value=f"{mon.pid % 25} - {self.names['pers'].get(str(mon.pid % 25), str(mon.pid % 25))}"
@@ -477,6 +685,11 @@ class App:
                 evs=[v.get() for v in ev],
                 nature=nature.get().split(" - ", 1)[0],
                 shiny=shiny.get(),
+                **(
+                    {"unown_letter": letter.get().split(" - ", 1)[0]}
+                    if mon.species == 201
+                    else {}
+                ),
             )
 
         def preview():
@@ -813,6 +1026,11 @@ class App:
         self.snapshot = None
         self.snapshot_at = None
         self.current_slot = None
+        self.trainer_snapshot = None
+        self.player_tid.set("")
+        self.player_sid.set("")
+        self.player_name.set("")
+        self.player_detail.set("连接已改变，请重新读取训练师资料。")
         self.box_snapshot = None
         self.box_tree.delete(*self.box_tree.get_children())
         self.box_detail.set("请连接后重新读取盒子。")
@@ -852,6 +1070,9 @@ class App:
         if after is None and self.nb.select() == str(self.tab_boxes):
             self.read_box()
             return
+        if after is None and self.nb.select() == str(self.tab_trainer):
+            self.read_trainer()
+            return
         pocket = self.pocket_id()
 
         def done(snap):
@@ -870,7 +1091,14 @@ class App:
         for i, mon in enumerate(snap["party"]):
             name = self.names["breeds"].get(str(mon.species), f"未收录#{mon.species}")
             self.party_tree.insert(
-                "", "end", iid=str(i), values=(f"{i + 1}. {name}", mon.level)
+                "",
+                "end",
+                iid=str(i),
+                image=self.mon_image(mon),
+                values=(
+                    f"{i + 1}. {name}{' ★' if mon.shiny else ''}{'（蛋）' if mon.egg else ''}",
+                    mon.level,
+                ),
             )
         if snap["party"]:
             index = min(self.current_slot or 0, len(snap["party"]) - 1)
@@ -886,6 +1114,7 @@ class App:
                 self.nature,
                 *self.iv,
                 *self.ev,
+                *self.detail_vars.values(),
             ]:
                 var.set("")
             self.identity.set("队伍为空")
@@ -954,6 +1183,25 @@ class App:
         self.hp.set(str(mon.hp))
         self.held.set(f"{mon.held} - {self.item_name(mon.held) if mon.held else '无'}")
         self.shiny.set(mon.shiny)
+        self.egg.set(mon.egg)
+        for key, var in self.detail_vars.items():
+            value = (
+                mon.otid & 65535
+                if key == "ot_tid"
+                else mon.otid >> 16
+                if key == "ot_sid"
+                else getattr(mon, key)
+            )
+            var.set(str(value))
+        self.detail_preview.set("")
+        self.detail_image.configure(image=self.mon_image(mon))
+        self.original_ot_name = (
+            mon.ot_name if mon.ot_name is not None else "（未知编码，原样保留）"
+        )
+        self.ot_name.set(self.original_ot_name)
+        self.unown_letter.set(
+            f"{unown_form(mon.pid)} - 当前字形" if mon.species == 201 else "不适用"
+        )
         metadata = self.profile["species"].get(str(mon.species))
         if metadata:
             abilities = metadata["abilities"]
@@ -1016,6 +1264,25 @@ class App:
             "held": self.held.get().split(" - ", 1)[0],
             "nature": self.nature.get().split(" - ", 1)[0],
         }
+        for key, var in self.detail_vars.items():
+            before = (
+                mon.otid & 65535
+                if key == "ot_tid"
+                else mon.otid >> 16
+                if key == "ot_sid"
+                else getattr(mon, key)
+            )
+            if var.get() != str(before):
+                changes[key] = var.get()
+        if self.egg.get() != mon.egg:
+            changes["egg"] = self.egg.get()
+        if self.ot_name.get() != self.original_ot_name:
+            changes["ot_name"] = self.ot_name.get()
+        if changes["species"] == "201" and self.unown_letter.get() not in (
+            "保持当前",
+            "不适用",
+        ):
+            changes["unown_letter"] = self.unown_letter.get().split(" - ", 1)[0]
         # Untouched HP follows automatic damage-preserving recalculation.
         if self.hp.get() != str(mon.hp):
             changes["hp"] = self.hp.get()
@@ -1126,6 +1393,13 @@ class App:
                 f"{name} {old}→{new}"
                 for name, old, new in zip(STAT_NAMES, original.stats, updated.stats)
             ]
+            self.detail_preview.set(
+                f"检查通过；OT ID：{original.otid:08X} → {updated.otid:08X}；闪光：{'是' if updated.shiny else '否'}\n"
+                f"亲密度/周期：{original.friendship} → {updated.friendship}；地点：{original.met_location} → {updated.met_location}；相遇等级：{original.met_level} → {updated.met_level}\n"
+                f"捕获球：{original.ball} → {updated.ball}；原训练师性别：{original.ot_gender} → {updated.ot_gender}。来源合法性未完整验证。"
+                f"\n蛋：{original.egg} → {updated.egg}；等级：{original.level} → {updated.level}。"
+            )
+            self.detail_image.configure(image=self.mon_image(updated))
             self.set_report(
                 "结构与数值检查通过（不是官方合法性认证）\n"
                 + f"PID：{original.pid:08X} → {updated.pid:08X}；闪光：{'是' if updated.shiny else '否'}\n"
@@ -1138,6 +1412,7 @@ class App:
                 + "\n".join(report["notes"])
             )
         except Exception as exc:
+            self.detail_preview.set("未通过：" + str(exc))
             self.set_report("未通过：" + str(exc))
         self.nb.select(self.tab_party)
 
@@ -1254,6 +1529,11 @@ class App:
                 "index": self.box_snapshot["index"],
                 "raw_hex": self.box_snapshot["raw"].hex(),
             }
+        if self.trainer_snapshot is not None:
+            data["trainer"] = {
+                **self.trainer_snapshot,
+                "raw": self.trainer_snapshot["raw"].hex(),
+            }
         try:
             Path(path).write_text(
                 json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -1289,18 +1569,22 @@ class App:
         box_index = (
             self.box_snapshot["index"] if self.box_snapshot is not None else None
         )
+        had_trainer = self.trainer_snapshot is not None
 
         def job():
             result = self.trainer.restore(path)
             box = (
                 self.trainer.snapshot_box(box_index) if box_index is not None else None
             )
-            return result, self.trainer.snapshot(pocket), box
+            trainer_snap = self.trainer.snapshot_trainer() if had_trainer else None
+            return result, self.trainer.snapshot(pocket), box, trainer_snap
 
         def done(result):
             self.apply_snapshot(result[1])
             if result[2] is not None:
                 self.apply_box_snapshot(result[2])
+            if result[3] is not None:
+                self.apply_trainer_snapshot(result[3])
             self.status.set("已恢复并读回核对；恢复动作也已保存备份。")
 
         self.run("检查备份与当前游戏数据…", job, done)

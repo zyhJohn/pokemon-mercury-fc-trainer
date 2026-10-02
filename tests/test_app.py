@@ -15,6 +15,23 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_details_form_name_ids_and_egg_preview_do_not_write(self):
+        self.app.detail_vars["ot_sid"].set("12345")
+        self.app.detail_vars["met_location"].set("222")
+        self.app.detail_vars["ball"].set("4")
+        self.app.ot_name.set("RED")
+        self.app.egg.set(True)
+        patches, _ = self.app.prepare_mon()
+        mon = Pokemon(patches[0][2])
+        self.assertTrue(mon.egg)
+        self.assertEqual(mon.level, 1)
+        self.assertEqual(mon.met_location, 222)
+        self.assertEqual(mon.otid >> 16, 12345)
+        self.assertEqual(mon.ot_name, "RED")
+        self.app.preview()
+        self.assertIn("检查通过", self.app.detail_preview.get())
+        self.assertEqual(self.mem.writes, 0)
+
     def test_failed_connection_can_export_diagnostics(self):
         self.app.snapshot = None
         self.app.mem = None
