@@ -1,0 +1,347 @@
+"""Verified ROM profile, immutable read snapshots, durable backups and transactions."""
+
+import json
+import struct
+import os
+from pathlib import Path
+from datetime import datetime
+from uuid import uuid4
+from pokemon_data import Pokemon, integer, experience_for_level
+from box_data import BoxPokemon
+from move_sources import describe_move_sources
+
+PARTY = 0x02024284
+PARTY_COUNT = 0x02024029
+SAVE_POINTER = 0x03005008
+
+
+class Trainer:
+    def __init__(self, mem, profile, backup_dir):
+        self.g = mem
+        self.profile = profile
+        self.backup_dir = Path(backup_dir)
+        self.verified = False
+
+    def verify(self):
+        self.verified = False
+        if "ROMCRC" in self.g.capabilities:
+            expected = self.profile["rom_crc32"]
+            if self.g.command("ROMCRC").decode("ascii").lower() != expected:
+                raise ValueError("当前 ROM 的完整 CRC32 与已验证版本不同，未开放编辑")
+            self.g.expected_rom_crc32 = expected
+        for signature in self.profile["signatures"]:
+            expected = bytes.fromhex(signature["hex"])
+            if self.g.read(signature["address"], len(expected)) != expected:
+                raise ValueError("当前 ROM 与已验证水银 FC 布局不匹配，未开放编辑")
+        self.verified = True
+
+    def locate(self):
+        address = self.g.r32(SAVE_POINTER)
+        if address % 4 or not 0x02000000 <= address <= 0x02040000 - 0x296:
+            raise ValueError("存档结构指针无效，请进入游戏后再刷新")
+        return address
+
+    def snapshot(self, pocket_id=1):
+        self.verify()
+        sb = self.locate()
+        count = self.g.r8(PARTY_COUNT)
+        battle_raw = self.g.read(self.profile["battle_flag"]["address"], 1)
+        if not 0 <= count <= 6:
+            raise ValueError("队伍数量异常")
+        party = tuple(Pokemon(self.g.read(PARTY + i * 100, 100)) for i in range(count))
+        money = self.g.read(sb + 0x290, 6)
+        pocket = self.profile["pockets"][integer(pocket_id, 1, 5, "口袋") - 1]
+        bag = self.g.read(pocket["address"], pocket["capacity"] * 4)
+        if self.locate() != sb or self.g.r8(PARTY_COUNT) != count:
+            raise ValueError("读取时游戏数据发生变化，请刷新")
+        return {
+            "saveblock": sb,
+            "money_raw": money,
+            "money": struct.unpack_from("<I", money)[0],
+            "coins": struct.unpack_from("<H", money, 4)[0],
+            "party": party,
+            "pocket": pocket,
+            "bag": bag,
+            "battle_raw": battle_raw,
+            "in_battle": bool(battle_raw[0] & self.profile["battle_flag"]["mask"]),
+        }
+
+    def base_stats(self, species):
+        data = self.profile["species"].get(str(species))
+        if not data:
+            raise ValueError("该物种种族值尚未验证")
+        return data["base"]
+
+    def snapshot_box(self, box_index):
+        self.verify()
+        layout = self.profile.get("storage")
+        if not layout:
+            raise ValueError("当前配置未包含已核对的 PC 盒子结构")
+        index = integer(box_index, 0, len(layout["box_addresses"]) - 1, "盒子位置")
+        for signature in layout["signatures"]:
+            expected = bytes.fromhex(signature["hex"])
+            if self.g.read(signature["address"], len(expected)) != expected:
+                raise ValueError("当前 ROM 的 PC 压缩结构不匹配")
+        address = layout["box_addresses"][index]
+        size = layout["slots_per_box"] * layout["record_size"]
+        if (
+            layout["record_size"] != 58
+            or not 0x02000000 <= address <= 0x02040000 - size
+        ):
+            raise ValueError("PC 盒子地址或记录大小异常")
+        raw = self.g.read(address, size)
+        if raw != self.g.read(address, size):
+            raise ValueError("读取时盒子内容已变化，请重新读取")
+        return {
+            "index": index,
+            "address": address,
+            "raw": raw,
+            "pokemon": tuple(BoxPokemon(raw[i : i + 58]) for i in range(0, size, 58)),
+        }
+
+    def edit_box(self, snap, slot, **changes):
+        slot = integer(slot, 0, 29, "盒子位置")
+        address = self.profile["storage"]["box_addresses"][snap["index"]]
+        if snap["address"] != address:
+            raise ValueError("盒子快照地址不一致")
+        mon = snap["pokemon"][slot]
+        updated, report = mon.edit(self.profile, **changes)
+        return [(address + slot * 58, mon.raw, updated.raw)], report
+
+    def is_box_patch(self, address, size):
+        return size == 58 and any(
+            a <= address < a + 30 * 58 and (address - a) % 58 == 0
+            for a in self.profile.get("storage", {}).get("box_addresses", [])
+        )
+
+    def commit_box(self, patches, label):
+        if not patches or not all(
+            self.is_box_patch(a, len(before)) for a, before, _ in patches
+        ):
+            raise ValueError("不是支持的盒子编辑记录")
+        return self.commit(self.snapshot(), patches, label)
+
+    def edit_pokemon(self, snap, slot, **changes):
+        slot = integer(slot, 0, len(snap["party"]) - 1, "队伍位置")
+        mon = snap["party"][slot]
+        species = integer(changes.get("species", mon.species), 1, 65535, "物种")
+        metadata = self.profile["species"].get(str(species))
+        if not metadata:
+            raise ValueError("此物种不在已验证的本地 ROM 名单中")
+        if "held" in changes:
+            held = integer(changes["held"], 0, 749, "携带道具")
+            item = self.profile["items"].get(str(held))
+            if held and (not item or item["pocket"] in (2, 4)):
+                raise ValueError("重要道具与学习器不能作为携带道具")
+        updated, report = mon.edit(
+            base=metadata["base"],
+            growth=metadata["growth"],
+            experience_tables=self.profile.get("experience_tables"),
+            move_data=self.profile.get("moves"),
+            abilities=metadata["abilities"],
+            gender_ratio=metadata["gender_ratio"],
+            **changes,
+        )
+        report = self.validate_pokemon(updated)
+        if report["errors"]:
+            raise ValueError("；".join(report["errors"]))
+        return [(PARTY + 100 * slot, mon.raw, updated.raw)], report
+
+    def validate_pokemon(self, mon):
+        metadata = self.profile["species"].get(str(mon.species))
+        report = mon.validate(metadata["base"] if metadata else None)
+        errors = report["errors"]
+        if not metadata:
+            errors.append("物种不在已验证的本地 ROM 名单中")
+        else:
+            if 1 <= mon.level <= 100:
+                tables = self.profile.get("experience_tables")
+                low = experience_for_level(mon.level, metadata["growth"], tables)
+                high = (
+                    experience_for_level(mon.level + 1, metadata["growth"], tables) - 1
+                    if mon.level < 100
+                    else low
+                )
+                if not low <= mon.experience <= high:
+                    errors.append("经验值与当前等级不一致")
+            abilities = metadata["abilities"]
+            slot = (
+                2
+                if mon.ability_flag and abilities[2]
+                else (mon.pid & 1 if abilities[1] else 0)
+            )
+            report["ability_slot"] = slot
+            if not abilities[slot]:
+                errors.append("当前特性槽位无可用特性")
+        item = self.profile["items"].get(str(mon.held))
+        if mon.held and (not item or item["pocket"] in (2, 4)):
+            errors.append("携带道具编号无效或属于重要道具/学习器")
+        seen = set()
+        for i, (move, pp) in enumerate(zip(mon.moves, mon.pp)):
+            bonus = (mon.raw[40] >> (2 * i)) & 3
+            if not move:
+                if pp or bonus:
+                    errors.append(f"空招式槽 {i + 1} 的 PP 或提升次数非零")
+                continue
+            if move in seen:
+                errors.append(f"招式 {move} 重复")
+            seen.add(move)
+            data = self.profile.get("moves", {}).get(str(move))
+            if not data:
+                errors.append(f"招式 {move} 尚无已验证的 ROM 数据")
+            elif pp > data["pp"] * (5 + bonus) // 5:
+                errors.append(f"招式槽 {i + 1} 的 PP 超过上限")
+        if not seen and not mon.egg:
+            errors.append("非蛋宝可梦至少需要一个招式")
+        report["structural_ok"] = not errors
+        report["move_sources"] = describe_move_sources(
+            mon.species, mon.level, mon.moves, self.profile
+        )
+        return report
+
+    def edit_money(self, snap, money, coins):
+        money = integer(money, 0, 999999, "金钱")
+        coins = integer(coins, 0, 9999, "代币")
+        return [
+            (
+                snap["saveblock"] + 0x290,
+                snap["money_raw"],
+                struct.pack("<IH", money, coins),
+            )
+        ]
+
+    def edit_bag(self, snap, slot, item, quantity, delete=False):
+        pocket = snap["pocket"]
+        slot = integer(slot, 0, pocket["capacity"] - 1, "槽位")
+        old = snap["bag"][slot * 4 : slot * 4 + 4]
+        if delete:
+            updated = b"\0" * 4
+        else:
+            item = integer(item, 0, 749, "道具编号")
+            metadata = self.profile["items"].get(str(item))
+            if not metadata or metadata["pocket"] != pocket["id"]:
+                raise ValueError("道具编号不属于当前口袋（以本地 ROM 数据为准）")
+            if pocket["id"] == 2:
+                old_id, old_qty = struct.unpack("<HH", old)
+                quantity = old_qty if item == old_id else 1
+            else:
+                quantity = integer(quantity, 1, 999, "数量")
+            updated = struct.pack("<HH", item, quantity)
+        return [(pocket["address"] + 4 * slot, old, updated)]
+
+    def commit(self, snap, patches, label):
+        self.verify()
+        if not {"BATCH", "ROMCRC", "CRCBATCH"} <= self.g.capabilities:
+            raise ValueError("请重新加载新版 mercury_bridge.lua 后再写入")
+        changes = [p for p in patches if p[1] != p[2]]
+        if not changes:
+            return {"changed": False, "backup": None}
+        # Compare count and pointer inside the emulator callback along with edits.
+        guards = [
+            (
+                SAVE_POINTER,
+                struct.pack("<I", snap["saveblock"]),
+                struct.pack("<I", snap["saveblock"]),
+            ),
+            (PARTY_COUNT, bytes([len(snap["party"])]), bytes([len(snap["party"])])),
+        ]
+        box_edit = any(self.is_box_patch(a, len(before)) for a, before, _ in changes)
+        if box_edit or any(
+            a < PARTY + 600 and a + len(before) > PARTY for a, before, _ in changes
+        ):
+            if snap["in_battle"]:
+                raise ValueError("战斗中仅可查看宝可梦；请结束战斗并刷新后再写入")
+            guards.append(
+                (
+                    self.profile["battle_flag"]["address"],
+                    snap["battle_raw"],
+                    snap["battle_raw"],
+                )
+            )
+        if box_edit:
+            guards += [
+                (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
+                for s in self.profile["storage"]["signatures"]
+            ]
+        # Also reject a ROM swap between Python validation and the callback.
+        guards += [
+            (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
+            for s in self.profile["signatures"]
+        ]
+        self.backup_dir.mkdir(parents=True, exist_ok=True)
+        path = self.backup_dir / (
+            datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid4().hex[:8] + ".json"
+        )
+        record = {
+            "schema": 1,
+            "label": label,
+            "rom_sha256": self.profile["rom_sha256"],
+            "status": "prepared",
+            "patches": [
+                {"address": a, "before": b.hex(), "after": c.hex()}
+                for a, b, c in changes
+            ],
+            "party_before": [mon.raw.hex() for mon in snap["party"]],
+        }
+
+        def save_record():
+            temp = path.with_suffix(".tmp")
+            with temp.open("w", encoding="utf-8") as f:
+                json.dump(record, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            temp.replace(path)
+
+        save_record()  # Fail closed when a backup cannot be written.
+        try:
+            self.g.batch(guards + changes)
+            for address, _, after in changes:
+                if self.g.read(address, len(after)) != after:
+                    raise IOError(
+                        "写后读回不一致；可能游戏正在更新数据，请先核对备份与游戏当前状态"
+                    )
+            record["status"] = "verified"
+        except Exception as exc:
+            record["status"] = "failed-or-unconfirmed"
+            record["error"] = str(exc)
+            save_record()
+            raise IOError(f"{exc}\n备份：{path}") from exc
+        save_record()
+        return {"changed": True, "backup": str(path)}
+
+    def restore(self, path):
+        record = json.loads(Path(path).read_text(encoding="utf-8"))
+        if (
+            record.get("schema") != 1
+            or record.get("rom_sha256") != self.profile["rom_sha256"]
+        ):
+            raise ValueError("备份格式或 ROM 版本不匹配")
+        if record.get("status") != "verified":
+            raise ValueError("此备份的写入未被确认完成，不能自动恢复；请先导出诊断核对")
+        snap = self.snapshot()
+        patches = []
+        for item in record.get("patches", []):
+            address = item["address"]
+            before = bytes.fromhex(item["after"])
+            after = bytes.fromhex(item["before"])
+            if len(before) != len(after):
+                raise ValueError("备份字节长度不一致")
+            valid = (
+                len(before) == 100
+                and PARTY <= address < PARTY + len(snap["party"]) * 100
+                and (address - PARTY) % 100 == 0
+            )
+            valid = valid or (len(before) == 6 and address == snap["saveblock"] + 0x290)
+            valid = valid or self.is_box_patch(address, len(before))
+            valid = valid or any(
+                len(before) == 4
+                and p["address"] <= address < p["address"] + p["capacity"] * 4
+                and (address - p["address"]) % 4 == 0
+                for p in self.profile["pockets"]
+            )
+            if not valid:
+                raise ValueError("备份中包含不支持恢复的地址或字段")
+            patches.append((address, before, after))
+        if not patches or len(patches) > 16:
+            raise ValueError("备份修改记录数量异常")
+        return self.commit(snap, patches, "恢复备份 " + Path(path).name)

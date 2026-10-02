@@ -1,3 +1,5 @@
+> 历史资料：以下为旧实现或通用 Gen III 记录，部分推测已被本地 ROM 核对推翻。当前水银 FC 实现以 [已验证布局](../verified-layout.md) 为准。
+
 # 逆向后记（Reverse Engineering Notes）
 
 本目录收录本次「宝可梦水银FC」内存逆向定位与修改器开发过程中，WorkBuddy（AI 助手）产出的完整工作流程、过程记录与可复用产物，供 GitHub 二次开发参考。

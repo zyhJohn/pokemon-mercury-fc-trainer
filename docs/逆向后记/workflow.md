@@ -1,3 +1,5 @@
+> 历史资料：以下为旧实现或通用 Gen III 记录，部分推测已被本地 ROM 核对推翻。当前水银 FC 实现以 [已验证布局](../verified-layout.md) 为准。
+
 # 内存地址定位工作流详解
 
 ## 0. mGBA Lua 脚本加载（mercury_bridge.lua 等桥接脚本）

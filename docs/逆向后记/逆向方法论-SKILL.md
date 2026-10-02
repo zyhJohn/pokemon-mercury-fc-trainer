@@ -1,3 +1,5 @@
+> 历史资料：以下为旧实现或通用 Gen III 记录，部分推测已被本地 ROM 核对推翻。当前水银 FC 实现以 [已验证布局](../verified-layout.md) 为准。
+
 ---
 name: gba-memory-hacking
 description: GBA 改版/原版游戏的内存逆向定位与修改器开发工作流。当用户需要分析 GBA 游戏（尤其是宝可梦/火红改版）的内存地址、金手指、存档结构，或需要为 mGBA/VBA 编写/适配内存修改器、定位金钱/背包/队伍等数据地址时使用。覆盖 mGBA GDB 调试桩读写内存、Gen III 存档结构解析、用已知值搜索定位内存地址、Tkinter 图形修改器开发。触发词：GBA 金手指、内存修改器、内存地址定位、宝可梦改版、mGBA 修改器、PokemonMemHack、火红改版、存档分析。

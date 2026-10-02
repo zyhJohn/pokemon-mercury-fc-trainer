@@ -33,5 +33,14 @@ desktop.ini
 *.sav.bak
 *.ss1
 *.ss2
+*.ss[0-9]*
+*.sav.*
 *.state
 *.sgm
+work/
+backups/
+diagnostics/
+outputs/
+trainer-settings.json
+sprite-cache/
+.ruff_cache/

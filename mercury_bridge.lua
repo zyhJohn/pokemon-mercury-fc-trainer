@@ -1,220 +1,134 @@
--- mercury_bridge.lua
--- 宝可梦水银FC 修改器 内存桥接脚本
--- 在 mGBA 内部监听 TCP 端口，向外部修改器提供内存读写服务，
--- 替代 GDB 调试桩（无需 -g 参数、无需 cmd 启动 mGBA）。
---
--- 用法：mGBA 菜单 Tools -> Scripting -> File -> Load Script 选择本文件。
--- 加载后脚本常驻，直到关闭 mGBA。
---
--- 协议（纯文本，每条命令以换行结尾，响应以换行结尾）：
---   READ  <hex addr> <hex len>       -> 返回 hex 字节串
---   READ8 <hex addr>                 -> 返回十进制（0-255）
---   READ16<hex addr>                 -> 返回十进制
---   READ32<hex addr>                 -> 返回十进制
---   WRITE8 <hex addr> <dec val>      -> OK / ERR
---   WRITE16<hex addr> <dec val>      -> OK / ERR
---   WRITE32<hex addr> <dec val>      -> OK / ERR
---   WRITE <hex addr> <hex bytes>     -> OK / ERR
---   PING                             -> PONG
---
--- 端口默认 8888，被占用时自动 +1 递增，最终端口打印到 console。
-
-local PORT = 8888
-local server = nil
-local client = nil
-local buf = ""
-
-local function log(msg)
-    console:log("[mercury] " .. tostring(msg))
+-- Mercury bridge v3. Load via mGBA Tools > Scripting > File > Load Script.
+-- BATCH compares all expected bytes before writing in one Lua callback.
+local PORT, MAX_LINE = 8888, 24000
+local server, client = nil, nil
+local input, output = "", ""
+local function hex(bytes)
+    return (bytes:gsub(".", function(c) return string.format("%02x", string.byte(c)) end))
 end
-
-local function hex_to_num(s)
-    return tonumber(s, 16)
+local function unhex(value)
+    if #value % 2 ~= 0 or value:find("[^%x]") then return nil end
+    return (value:gsub("%x%x", function(pair) return string.char(tonumber(pair,16)) end))
 end
-
-local function num_to_hex_str(bytes)
-    -- bytes 是 string，转成小写十六进制
-    return (bytes:gsub(".", function(c)
-        return string.format("%02x", string.byte(c))
-    end))
+local function readable(address, size)
+    return size >= 1 and size <= 4096 and (
+        (address >= 0x02000000 and address + size <= 0x02040000) or
+        (address >= 0x03000000 and address + size <= 0x03008000) or
+        (address >= 0x08000000 and address + size <= 0x0A000000))
 end
-
--- 处理一行命令
-local function handle_line(line)
-    line = line:match("^%s*(.-)%s*$")  -- trim
-    if line == "" then return nil end
-
-    local cmd, rest = line:match("^(%S+)%s*(.*)$")
-    if not cmd then return nil end
-
-    local resp = nil
-
-    if cmd == "PING" then
-        resp = "PONG"
-
-    elseif cmd == "READ" then
-        local addr_s, len_s = rest:match("^(%x+)%s+(%x+)$")
-        if addr_s and len_s then
-            local addr = hex_to_num(addr_s)
-            local len = hex_to_num(len_s)
-            local bytes = emu:readRange(addr, len)
-            resp = num_to_hex_str(bytes)
-        else
-            resp = "ERR bad args"
+local function batch(rest)
+    if rest == "" or rest:sub(-1) == ";" or rest:find(";;",1,true) then return "ERR format" end
+    local patches, total = {}, 0
+    for part in rest:gmatch("[^;]+") do
+        local addr, before, after = part:match("^(%x+):(%x+):(%x+)$")
+        if not addr then return "ERR format" end
+        addr, before, after = tonumber(addr,16), unhex(before), unhex(after)
+        if not before or not after or #before == 0 or #before ~= #after then return "ERR length" end
+        local compareOnly = before == after
+        if not readable(addr,#before) or
+            (not compareOnly and not (addr >= 0x02000000 and addr + #before <= 0x02040000)) then
+            return "ERR range"
         end
-
-    elseif cmd == "READ8" then
-        local addr = hex_to_num(rest)
-        if addr then
-            resp = tostring(emu:read8(addr))
-        else resp = "ERR bad addr" end
-
-    elseif cmd == "READ16" then
-        local addr = hex_to_num(rest)
-        if addr then
-            resp = tostring(emu:read16(addr))
-        else resp = "ERR bad addr" end
-
-    elseif cmd == "READ32" then
-        local addr = hex_to_num(rest)
-        if addr then
-            resp = tostring(emu:read32(addr))
-        else resp = "ERR bad addr" end
-
-    elseif cmd == "WRITE8" then
-        local addr_s, val_s = rest:match("^(%x+)%s+(%d+)$")
-        if addr_s and val_s then
-            emu:write8(hex_to_num(addr_s), tonumber(val_s))
-            resp = "OK"
-        else resp = "ERR bad args" end
-
-    elseif cmd == "WRITE16" then
-        local addr_s, val_s = rest:match("^(%x+)%s+(%d+)$")
-        if addr_s and val_s then
-            emu:write16(hex_to_num(addr_s), tonumber(val_s))
-            resp = "OK"
-        else resp = "ERR bad args" end
-
-    elseif cmd == "WRITE32" then
-        local addr_s, val_s = rest:match("^(%x+)%s+(%d+)$")
-        if addr_s and val_s then
-            emu:write32(hex_to_num(addr_s), tonumber(val_s))
-            resp = "OK"
-        else resp = "ERR bad args" end
-
-    elseif cmd == "WRITE" then
-        local addr_s, hex_s = rest:match("^(%x+)%s+(%x+)$")
-        if addr_s and hex_s then
-            local addr = hex_to_num(addr_s)
-            local bytes = hex_s:gsub("%x%x", function(pair)
-                return string.char(tonumber(pair, 16))
-            end)
-            local ok = true
-            for i = 1, #bytes do
-                emu:write8(addr + i - 1, string.byte(bytes, i))
-            end
-            resp = "OK"
-        else resp = "ERR bad args" end
-
-    else
-        resp = "ERR unknown cmd"
+        for _, p in ipairs(patches) do
+            if addr < p.addr + #p.before and p.addr < addr + #before then return "ERR overlap" end
+        end
+        patches[#patches+1] = {addr=addr,before=before,after=after}
+        total = total + #before
+        if #patches > 64 or total > 4096 then return "ERR limit" end
     end
-
-    return resp
+    for _,p in ipairs(patches) do
+        if emu:readRange(p.addr,#p.before) ~= p.before then return "ERR stale" end
+    end
+    for _,p in ipairs(patches) do
+        if p.before ~= p.after then
+            for i=1,#p.after do emu:write8(p.addr+i-1,string.byte(p.after,i)) end
+        end
+    end
+    return "OK"
 end
-
--- 客户端断开处理（需在 on_client_received 之前定义，否则被当作全局变量导致 nil 报错）
-local function on_client_error()
-    if not client then return end
-    local c = client
-    client = nil
-    buf = ""
-    log("client disconnected")
-    c:close()
+local function handle(line)
+    if #line > MAX_LINE then return "ERR limit" end
+    if line == "PING" then return "PONG" end
+    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH" end
+    if line == "ROMCRC" then return hex(emu:checksum()) end
+    local cmd, rest = line:match("^(%S+)%s+(.*)$")
+    if cmd == "BATCHCRC" then
+        local expected, patches=rest:match("^(%x+)%s+(.+)$")
+        if not expected or #expected ~= 8 then return "ERR format" end
+        if hex(emu:checksum()) ~= expected:lower() then return "ERR rom" end
+        return batch(patches)
+    end
+    if cmd == "READ" then
+        local addr, count = rest:match("^(%x+)%s+(%x+)$")
+        if not addr then return "ERR format" end
+        addr,count = tonumber(addr,16),tonumber(count,16)
+        if not readable(addr,count) then return "ERR range" end
+        return hex(emu:readRange(addr,count))
+    end
+    return "ERR unsupported"
 end
-
--- 客户端数据回调
-local function on_client_received()
-    if not client then return end
-    while true do
-        local chunk, err = client:receive(4096)
-        if chunk then
-            buf = buf .. chunk
-            -- 按行切分处理
-            while true do
-                local nl = buf:find("\n", 1, true)
-                if not nl then break end
-                local line = buf:sub(1, nl - 1)
-                buf = buf:sub(nl + 1)
-                local resp = handle_line(line)
-                if resp then
-                    client:send(resp .. "\n")
-                end
-            end
-        else
-            if err and err ~= socket.ERRORS.AGAIN then
-                on_client_error()
-            end
+-- Explicitly enabled only by the offline test harness.
+if MERCURY_BRIDGE_TEST then return handle end
+local function disconnect()
+    if client then client:close() end
+    client=nil
+    input,output="",""
+end
+local function flush()
+    while client and #output > 0 do
+        local sent,err=client:send(output)
+        if not sent or sent <= 0 then
+            if err ~= socket.ERRORS.AGAIN then disconnect() end
             return
         end
+        output=output:sub(sent+1)
     end
 end
-
-local function on_accept()
-    if client then
-        -- 已有客户端，拒绝新连接（单连接，简化处理）
-        local c = server:accept()
-        if c then c:close() end
-        return
-    end
-    client = server:accept()
-    if client then
-        log("client connected")
-        client:add("received", on_client_received)
-        client:add("error", on_client_error)
-    end
-end
-
--- 启动服务
-local function start()
-    local port = PORT
-    local bound = false
-    while not bound and port < PORT + 100 do
-        server, err = socket.bind(nil, port)
-        if err then
-            if err == socket.ERRORS.ADDRESS_IN_USE then
-                port = port + 1
-            else
-                log("bind error: " .. tostring(err))
-                return
-            end
-        else
-            local ok
-            ok, err = server:listen()
-            if err then
-                server:close()
-                server = nil
-                log("listen error: " .. tostring(err))
-                return
-            end
-            bound = true
+local function received()
+    while client do
+        local data,err=client:receive(4096)
+        if not data or #data==0 then
+            if err ~= socket.ERRORS.AGAIN then disconnect() end
+            return
+        end
+        input=input..data
+        if #input > MAX_LINE then disconnect(); return end
+        while true do
+            local nl=input:find("\n",1,true)
+            if not nl then break end
+            local line=input:sub(1,nl-1)
+            input=input:sub(nl+1)
+            local ok,response=pcall(handle,line)
+            output=output..(ok and response or "ERR internal").."\n"
+            if #output>32768 then disconnect(); return end
+            flush()
         end
     end
-    if not bound then
-        log("failed to bind any port")
-        return
-    end
-    server:add("received", on_accept)
-    log("listening on port " .. port)
 end
-
--- 等待游戏加载后启动（emu 对象在游戏加载后可用）
-local started = false
-callbacks:add("frame", function()
-    if not started then
-        started = true
-        start()
+local function accept()
+    local incoming=server:accept()
+    if not incoming then return end
+    if client then incoming:close(); return end
+    client=incoming
+    input,output="",""
+    client:add("received",function() if client == incoming then received() end end)
+    client:add("error",function() if client == incoming then disconnect() end end)
+end
+for port=PORT,PORT+7 do
+    local candidate,err=socket.bind("127.0.0.1",port)
+    if candidate then
+        local _,listenError=candidate:listen()
+        if not listenError then
+            server=candidate
+            server:add("received",accept)
+            console:log("[mercury v3] listening on 127.0.0.1:"..port)
+            break
+        end
+        candidate:close()
+    elseif err ~= socket.ERRORS.ADDRESS_IN_USE then
+        console:log("[mercury v3] bind error: "..tostring(err))
+        break
     end
-end)
-
-log("script loaded")
+end
+callbacks:add("frame",flush)
+if not server then console:log("[mercury v3] no port available") end
