@@ -61,7 +61,10 @@ SIGNATURES = [
     (0x80C4D40, 56),
     (0x80C4D78, 128),
     (0x9D260F4, 40),
-    (0x9D310F4, 100),
+    (0x9D310F4, 96),
+    (0x9D31154, 460),
+    (0x9D5B8FC, 36),
+    (0x9DD5E9A, 100),
 ]
 
 
@@ -140,6 +143,20 @@ def extract(rom, catalog):
         "nature_selector": 0x9D260F4,
         "form_setter": 0x9D310F4,
     }
+    special_z_table = struct.unpack("<I", read(0x9D5B91C, 4))[0]
+    profile["held_forms"] = {
+        "arceus_types": list(struct.unpack("<25H", read(0x9DD5E9A, 50))),
+        "silvally_types": list(struct.unpack("<25H", read(0x9DD5ECC, 50))),
+        "special_z_crystals": [
+            struct.unpack("<H", read(special_z_table + 2 + 8 * i, 2))[0]
+            for i in range(31)
+        ],
+        "special_z_table": special_z_table,
+        "form_setter": 0x9D31154,
+    }
+    profile["signatures"].append(
+        {"address": special_z_table, "hex": read(special_z_table, 248).hex()}
+    )
     location_table = struct.unpack("<I", read(0x80C4DB8, 4))[0]
     profile["met_location_table"] = location_table
     profile["met_locations"] = {}
@@ -238,6 +255,8 @@ def extract(rom, catalog):
             profile["items"][str(ident)] = {
                 "pocket": b[26],
                 "price": struct.unpack_from("<H", b, 16)[0],
+                "hold_effect": b[18],
+                "hold_parameter": b[19],
             }
             if b[26] == 4:
                 index = b[25] - 1 if b[25] else (ident - 289) & 255

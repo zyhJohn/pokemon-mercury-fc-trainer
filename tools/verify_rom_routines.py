@@ -28,7 +28,8 @@ from trainer_core import Trainer
 
 
 class RomCPU:
-    def __init__(self, rom, state):
+    def __init__(self, rom, state, timeout_us=200000):
+        self.timeout_us = timeout_us
         self.cpu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
         for a, size, data in [
             (0x8000000, len(rom), rom),
@@ -45,7 +46,9 @@ class RomCPU:
             self.cpu.reg_write(register, value)
         self.cpu.reg_write(UC_ARM_REG_SP, 0x3007E00)
         self.cpu.reg_write(UC_ARM_REG_LR, 0x2001101)
-        self.cpu.emu_start(address | 1, 0x2001100, timeout=200000, count=1000000)
+        self.cpu.emu_start(
+            address | 1, 0x2001100, timeout=self.timeout_us, count=1000000
+        )
         if self.cpu.reg_read(UC_ARM_REG_PC) != 0x2001100:
             raise ValueError("ROM routine did not return within its limit")
         return self.cpu.reg_read(UC_ARM_REG_R0)

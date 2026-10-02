@@ -8,6 +8,7 @@ import struct
 from dataclasses import dataclass
 
 from name_codec import decode_name, encode_name
+from held_forms import resolve_held_form
 from pokemon_data import (
     MINIOR_CORES,
     MINIOR_SPECIES,
@@ -200,6 +201,7 @@ class BoxPokemon:
         egg=None,
         minior_color=None,
         nickname=None,
+        held=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
@@ -207,6 +209,26 @@ class BoxPokemon:
         if minior_color is not None and self.species not in MINIOR_SPECIES:
             raise ValueError("核心颜色编辑仅适用于小陨星")
         data = bytearray(self.raw)
+        if held is not None:
+            held = integer(held, 0, 749, "携带道具")
+            item = profile["items"].get(str(held))
+            if held != self.held and held and (not item or item["pocket"] in (2, 4)):
+                raise ValueError("重要道具与学习器不能作为携带道具")
+            metadata = profile["species"].get(str(self.species))
+            if metadata is None:
+                raise ValueError("缺少已核对物种信息")
+            abilities = metadata["abilities"]
+            slot = (
+                2
+                if self.ability_flag and abilities[2]
+                else self.pid & 1
+                if abilities[1]
+                else 0
+            )
+            species = resolve_held_form(
+                self.species, self.species, self.held, held, abilities[slot], profile
+            )
+            struct.pack_into("<HH", data, 28, species, held)
         if nickname is not None:
             data[8:18] = encode_name(nickname, 10, maximum=10)
         if egg is not None:

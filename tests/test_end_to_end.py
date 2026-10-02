@@ -173,6 +173,33 @@ class EndToEndTests(unittest.TestCase):
         self.trainer.restore(result["backup"])
         self.assertEqual(self.client.read(address, 58), bytes(raw))
 
+    def test_item_dependent_forms_write_readback_restore_over_actual_lua_tcp(self):
+        from tests.test_box import packed_box
+
+        initial = self.trainer.snapshot()
+        patches, _ = self.trainer.edit_pokemon(initial, 0, species=546)
+        original = patches[0][2]
+        self.memory.put(PARTY, original)
+        snapshot = self.trainer.snapshot()
+        patches, _ = self.trainer.edit_pokemon(snapshot, 0, held=490)
+        result = self.trainer.commit(snapshot, patches, "held form integration")
+        self.assertEqual(Pokemon(self.client.read(PARTY, 100)).species, 720)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(PARTY, 100), original)
+        for signature in self.profile["storage"]["signatures"]:
+            self.memory.put(signature["address"], bytes.fromhex(signature["hex"]))
+        raw = bytearray(packed_box())
+        struct.pack_into("<H", raw, 28, 990)
+        raw[39:44] = (757).to_bytes(5, "little")
+        address = self.profile["storage"]["box_addresses"][24]
+        self.memory.put(address, raw)
+        snapshot = self.trainer.snapshot_box(24)
+        patches, _ = self.trainer.edit_box(snapshot, 0, held=507)
+        result = self.trainer.commit_box(patches, "PC held form integration")
+        self.assertEqual(self.client.read(address, 58), patches[0][2])
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(address, 58), bytes(raw))
+
 
 if __name__ == "__main__":
     unittest.main()

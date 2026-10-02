@@ -10,6 +10,7 @@ from uuid import uuid4
 from box_data import BoxPokemon
 from move_sources import describe_move_sources
 from name_codec import decode_name, encode_name
+from held_forms import held_form_family, held_form_species, resolve_held_form
 from pokemon_data import (
     MINIOR_COLORS,
     MINIOR_CORES,
@@ -221,6 +222,27 @@ class Trainer:
             item = self.profile["items"].get(str(held))
             if held and (not item or item["pocket"] in (2, 4)):
                 raise ValueError("重要道具与学习器不能作为携带道具")
+        selected_ability = (
+            integer(changes["ability_slot"], 0, 2, "特性槽位")
+            if changes.get("ability_slot") is not None
+            else 2
+            if mon.ability_flag and metadata["abilities"][2]
+            else mon.pid & 1
+            if metadata["abilities"][1]
+            else 0
+        )
+        resolved = resolve_held_form(
+            mon.species,
+            species,
+            mon.held,
+            integer(changes.get("held", mon.held), 0, 749, "携带道具"),
+            metadata["abilities"][selected_ability],
+            self.profile,
+        )
+        if resolved != species:
+            species = resolved
+            changes["species"] = species
+            metadata = self.profile["species"][str(species)]
         self.check_capture_ball(mon, changes)
         self.check_met_location(mon, changes)
         updated, report = mon.edit(
@@ -302,6 +324,20 @@ class Trainer:
             report["ability_slot"] = slot
             if not abilities[slot]:
                 errors.append("当前特性槽位无可用特性")
+            if (
+                held_form_family(mon.species) is not None
+                and str(mon.held) in self.profile["items"]
+            ):
+                target = held_form_species(
+                    mon.species, mon.held, abilities[slot], self.profile
+                )
+                report["notes"].append(
+                    "已核对的持物形态在改变携带道具时同步，能力值及特性以目标形态为准。"
+                )
+                if target != mon.species:
+                    report["notes"].append(
+                        f"当前持物对应形态编号 {target}，与已保存形态不同；未改变持物/物种时保持原值。"
+                    )
         item = self.profile["items"].get(str(mon.held))
         if mon.held and (not item or item["pocket"] in (2, 4)):
             errors.append("携带道具编号无效或属于重要道具/学习器")

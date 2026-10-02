@@ -15,6 +15,59 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_held_form_party_and_pc_preview_explain_species_changes(self):
+        from tests.test_box import packed_box
+        from box_data import BoxPokemon
+
+        patches, _ = self.app.trainer.edit_pokemon(self.app.snapshot, 0, species=546)
+        self.mem.put(PARTY, patches[0][2])
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.app.held.set("490")
+        patches, _ = self.app.prepare_mon()
+        self.assertEqual(Pokemon(patches[0][2]).species, 720)
+        self.app.preview()
+        self.assertIn("持物形态", self.app.detail_preview.get())
+        raw = bytearray(packed_box())
+        raw[39:44] = (757).to_bytes(5, "little")
+        struct.pack_into("<H", raw, 28, 990)
+        content = bytes(raw) + b"\0" * 58 * 29
+        self.app.apply_box_snapshot(
+            {
+                "index": 0,
+                "address": self.app.profile["storage"]["box_addresses"][0],
+                "raw": content,
+                "pokemon": tuple(
+                    BoxPokemon(content[i : i + 58]) for i in range(0, len(content), 58)
+                ),
+            }
+        )
+        self.app.box_tree.selection_set("0")
+        self.root.update()
+        self.app.box_editor_values[9].set("507 - 格斗存储碟")
+
+        def children(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from children(child)
+
+        widgets = list(children(self.app.box_editor))
+        button = next(
+            widget
+            for widget in widgets
+            if widget.winfo_class() == "TButton" and widget.cget("text") == "检查与预览"
+        )
+        button.invoke()
+        labels = [
+            widget.cget("textvariable")
+            for widget in widgets
+            if widget.winfo_class() == "TLabel" and widget.cget("textvariable")
+        ]
+        texts = [self.root.getvar(var) for var in labels]
+        self.assertTrue(
+            any("持物形态" in value and "银伴战兽" in value for value in texts)
+        )
+        self.assertEqual(self.mem.writes, 0)
+
     def test_fill_current_player_ot_drafts_in_party_and_pc_without_writes(self):
         from name_codec import encode_name
         from tests.test_box import packed_box

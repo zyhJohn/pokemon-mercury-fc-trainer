@@ -12,6 +12,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from box_data import BoxPokemon
+from held_forms import held_form_family
 from memory_client import MemClient
 from pokemon_data import (
     MINIOR_COLORS,
@@ -556,6 +557,45 @@ class App:
         )
         return entry
 
+    def held_item_entry(self, parent, var):
+        choices = ["0 - 无"] + [
+            f"{ident} - {self.item_name(ident)}"
+            for ident in sorted(map(int, self.profile["items"]))
+            if ident and self.profile["items"][str(ident)]["pocket"] not in (2, 4)
+        ]
+        entry = ttk.Combobox(parent, textvariable=var, values=choices, width=28)
+        entry.bind(
+            "<KeyRelease>",
+            lambda _: entry.configure(
+                values=[
+                    value
+                    for value in choices
+                    if var.get().casefold() in value.casefold()
+                ]
+            ),
+        )
+        return entry
+
+    def held_form_summary(self, original, updated):
+        if held_form_family(updated.species) is None:
+            return ""
+
+        def name(mon):
+            return self.names["breeds"].get(str(mon.species), str(mon.species))
+
+        def ability(mon):
+            slots = self.profile["species"][str(mon.species)]["abilities"]
+            slot = (
+                2 if mon.ability_flag and slots[2] else mon.pid & 1 if slots[1] else 0
+            )
+            return self.names["specs"].get(str(slots[slot]), str(slots[slot]))
+
+        return (
+            f"\n持物形态：{name(original)} → {name(updated)}；"
+            f"携带道具：{self.item_name(original.held)} → {self.item_name(updated.held)}；"
+            f"特性：{ability(original)} → {ability(updated)}。"
+        )
+
     def _build_trainer(self):
         tab = ttk.Frame(self.nb, padding=12)
         self.tab_trainer = tab
@@ -930,6 +970,7 @@ class App:
         source_values = {}
         for key, label, value in [
             ("friendship", "亲密度 / 孵化周期", mon.friendship),
+            ("held", "携带道具", mon.held),
             ("ball", "捕获球编号", mon.ball),
             ("met_location", "相遇地点编号", mon.met_location),
             ("met_level", "相遇等级", mon.met_level),
@@ -945,6 +986,9 @@ class App:
             if key == "met_location":
                 var.set(self.location_label(value))
                 self.location_entry(row, var, 28).pack(side="left")
+            elif key == "held":
+                var.set(f"{value} - {self.item_name(value)}")
+                self.held_item_entry(row, var).pack(side="left")
             else:
                 ttk.Entry(row, textvariable=var, width=12).pack(side="left")
         original_sources = {key: var.get() for key, var in source_values.items()}
@@ -1026,7 +1070,7 @@ class App:
                 raise ValueError("连接已经改变，请重新打开此编辑窗口")
             details = {
                 key: var.get().split(" - ", 1)[0]
-                if key == "met_location"
+                if key in ("met_location", "held")
                 else var.get()
                 for key, var in source_values.items()
                 if var.get() != original_sources[key]
@@ -1069,6 +1113,7 @@ class App:
                         + f"\n核心：{MINIOR_COLORS[updated.pid % 7]}；形态编号 {mon.species} → {updated.species}。闪光颜色以游戏实际显示为准。"
                     )
                 detail.set(detail.get() + self.nature_form_summary(mon, updated))
+                detail.set(detail.get() + self.held_form_summary(mon, updated))
                 if mon.species == 308 and self.spinda_assets is not None:
                     pattern_photos.clear()
                     for displayed, label in zip([mon, updated], pattern_labels):
@@ -1928,6 +1973,7 @@ class App:
                 f"\n昵称：{original.nickname or '未知编码'} → {updated.nickname or '未知编码'}"
                 f"\n蛋：{original.egg} → {updated.egg}；等级：{original.level} → {updated.level}。"
                 + self.nature_form_summary(original, updated)
+                + self.held_form_summary(original, updated)
             )
             self.detail_image.configure(image=self.mon_image(updated))
             self.show_spinda_patterns(updated)

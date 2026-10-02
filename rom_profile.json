@@ -186,7 +186,23 @@
     },
     {
       "address": 164827380,
-      "hex": "73b5134b00224121050000f043f96b460004104e000c9c1d2080b04202d00e4b984212d12800f4f7ebff00280ad026802388002b05d022000b212800074b00f029f973bd044b2380f2e70023fbe7c04645fd030875040000a9040000d10404080022f0b5"
+      "hex": "73b5134b00224121050000f043f96b460004104e000c9c1d2080b04202d00e4b984212d12800f4f7ebff00280ad026802388002b05d022000b212800074b00f029f973bd044b2380f2e70023fbe7c04645fd030875040000a9040000d1040408"
+    },
+    {
+      "address": 164827476,
+      "hex": "0022f0b587b004ab01919c1d0b215f4b2280060000f00ef907003000d6f764fd039001980cf0faf9050001980cf006fa574a3f0402903b0c93423cd80f3a934227d2b43a934200d162e019d8043a934200d166e04f4a934200d16de02388002b0cd03f0c9f4209d030004b4b22000b2100f0e0f83000494b00f0dcf807b0f0bd47498b425dd047498b4246d0464a9342e4d1039bb42be1d1482d6ed1434b029a32335000c35a238004abda880633002a2ad13d4a58e03e4a934237d007d83d4a9342cbd33c4a93423bd93c4adfe73c4a93420bd006d8463a9342bfd1592dbdd02c4b18e037495b18102bb7d8039ba72b15d1572d05d12d4b029964334800c35a23802388002b0ad004ab06331b88a8e75a2da3d1234b2380a0e75a2d9ed022809ce7582d00d099e7214bf4e78623582d00d193e79b00eee7592d00d08ee7e623f8e704ab0633562d0ad102980a38052806d85af705fd0b030510050e164a1a801a88002ad0d10e4a1a8077e7bb229200f5e7154af3e70f4af1e7822d94d101982af012fb002889d08ee7c046e9fb0308df020000190200007d0304087de40308be020000ce02000022020000685edd0997030000eb020000ee02000042030000de030000e8fbffffed020000"
+    },
+    {
+      "address": 165001468,
+      "hex": "1f230749da008a1afa321288824204d0013b002bf6d1180070470120fce7c046388bdd09"
+    },
+    {
+      "address": 165502618,
+      "hex": "0000d002d102d202d302d402d502d602d7020000d802d902da02db02dc02dd02de02df020000d102000000000000420300000000180419041a041b041c041d041e041f040000200421042204230424042504260427040000190400000000000028040000"
+    },
+    {
+      "address": 165514040,
+      "hex": "fe03560255003c03ad0357026702400385005802a2023d03b003590249024103e9035a0248024503f1035b025602480338045b0256024803c2035c02ad01430316045c02ad0143033a045c02ad014303fb035d0265024a0397005e025e003f03e3035f02cf01440330045f02cf0144031900600258013a034504610255003b034604610255003b034704610255003b034804610255003b034904610255003b034a04610255003b034b04610255003b03b3036202640242038f00630278013e03f00364026b024703370464026b024703ea03650258024603ec03650258024603eb03650258024603ed036502580246033904140296024903"
     }
   ],
   "species": {
@@ -28834,3247 +28850,4741 @@
   "items": {
     "0": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "1": {
       "pocket": 3,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "2": {
       "pocket": 3,
-      "price": 800
+      "price": 800,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "3": {
       "pocket": 3,
-      "price": 600
+      "price": 600,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "4": {
       "pocket": 3,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "5": {
       "pocket": 3,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "6": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "7": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "8": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "9": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "10": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "11": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "12": {
       "pocket": 3,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "13": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 20
     },
     "14": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "15": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "16": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "17": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "18": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "19": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 255
     },
     "20": {
       "pocket": 1,
-      "price": 2500
+      "price": 2500,
+      "hold_effect": 0,
+      "hold_parameter": 255
     },
     "21": {
       "pocket": 1,
-      "price": 1500
+      "price": 1500,
+      "hold_effect": 0,
+      "hold_parameter": 200
     },
     "22": {
       "pocket": 1,
-      "price": 700
+      "price": 700,
+      "hold_effect": 0,
+      "hold_parameter": 50
     },
     "23": {
       "pocket": 1,
-      "price": 400
+      "price": 400,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "24": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "25": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "26": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 50
     },
     "27": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 60
     },
     "28": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 80
     },
     "29": {
       "pocket": 1,
-      "price": 600
+      "price": 600,
+      "hold_effect": 0,
+      "hold_parameter": 100
     },
     "30": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "31": {
       "pocket": 1,
-      "price": 1200
+      "price": 1200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "32": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "33": {
       "pocket": 1,
-      "price": 2800
+      "price": 2800,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "34": {
       "pocket": 1,
-      "price": 1200
+      "price": 1200,
+      "hold_effect": 0,
+      "hold_parameter": 10
     },
     "35": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 255
     },
     "36": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 10
     },
     "37": {
       "pocket": 1,
-      "price": 4500
+      "price": 4500,
+      "hold_effect": 0,
+      "hold_parameter": 255
     },
     "38": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "39": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "40": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "41": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "42": {
       "pocket": 1,
-      "price": 400
+      "price": 400,
+      "hold_effect": 0,
+      "hold_parameter": 50
     },
     "43": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 150
     },
     "44": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 1,
+      "hold_parameter": 20
     },
     "45": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "46": {
       "pocket": 1,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "47": {
       "pocket": 1,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "48": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "49": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "50": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "51": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "52": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "53": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "54": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "55": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "56": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "57": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "58": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "59": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "60": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "61": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "62": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "63": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "64": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "65": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "66": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "67": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "68": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "69": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "70": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "71": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "72": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "73": {
       "pocket": 1,
-      "price": 1500
+      "price": 1500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "74": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "75": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "76": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "77": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "78": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "79": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "80": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "81": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "82": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "83": {
       "pocket": 1,
-      "price": 700
+      "price": 700,
+      "hold_effect": 0,
+      "hold_parameter": 200
     },
     "84": {
       "pocket": 1,
-      "price": 900
+      "price": 900,
+      "hold_effect": 0,
+      "hold_parameter": 250
     },
     "85": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "86": {
       "pocket": 1,
-      "price": 400
+      "price": 400,
+      "hold_effect": 0,
+      "hold_parameter": 100
     },
     "87": {
       "pocket": 1,
-      "price": 2100
+      "price": 2100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "88": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "89": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "90": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "91": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "92": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "93": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "94": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "95": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "96": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "97": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "98": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "99": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "100": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "101": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "102": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "103": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "104": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "105": {
       "pocket": 1,
-      "price": 15000
+      "price": 15000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "106": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "107": {
       "pocket": 1,
-      "price": 8000
+      "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "108": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "109": {
       "pocket": 1,
-      "price": 12000
+      "price": 12000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "110": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "111": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "112": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "113": {
       "pocket": 1,
-      "price": 20000
+      "price": 20000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "114": {
       "pocket": 1,
-      "price": 25000
+      "price": 25000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "115": {
       "pocket": 1,
-      "price": 40000
+      "price": 40000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "116": {
       "pocket": 1,
-      "price": 900
+      "price": 900,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "117": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "118": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "119": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 41,
+      "hold_parameter": 0
     },
     "120": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 30,
+      "hold_parameter": 10
     },
     "121": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "122": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "123": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "124": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "125": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "126": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "127": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "128": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "129": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "130": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "131": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "132": {
       "pocket": 1,
-      "price": 50
+      "price": 50,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "133": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 2,
+      "hold_parameter": 0
     },
     "134": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 3,
+      "hold_parameter": 0
     },
     "135": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 4,
+      "hold_parameter": 0
     },
     "136": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 5,
+      "hold_parameter": 0
     },
     "137": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 6,
+      "hold_parameter": 0
     },
     "138": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 7,
+      "hold_parameter": 10
     },
     "139": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 1,
+      "hold_parameter": 10
     },
     "140": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 8,
+      "hold_parameter": 0
     },
     "141": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 9,
+      "hold_parameter": 0
     },
     "142": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 1,
+      "hold_parameter": 30
     },
     "143": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 10,
+      "hold_parameter": 8
     },
     "144": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 11,
+      "hold_parameter": 8
     },
     "145": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 12,
+      "hold_parameter": 8
     },
     "146": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 13,
+      "hold_parameter": 8
     },
     "147": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 14,
+      "hold_parameter": 8
     },
     "148": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "149": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "150": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "151": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "152": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "153": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "154": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 1
     },
     "155": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 2
     },
     "156": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 4
     },
     "157": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 5
     },
     "158": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 0,
+      "hold_parameter": 3
     },
     "159": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "160": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "161": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "162": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "163": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "164": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "165": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "166": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "167": {
       "pocket": 5,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "168": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 15,
+      "hold_parameter": 4
     },
     "169": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 16,
+      "hold_parameter": 4
     },
     "170": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 17,
+      "hold_parameter": 4
     },
     "171": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 18,
+      "hold_parameter": 4
     },
     "172": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 19,
+      "hold_parameter": 4
     },
     "173": {
       "pocket": 5,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 20,
+      "hold_parameter": 4
     },
     "174": {
       "pocket": 5,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 21,
+      "hold_parameter": 4
     },
     "175": {
       "pocket": 5,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 128,
+      "hold_parameter": 0
     },
     "176": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "177": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "178": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "179": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 22,
+      "hold_parameter": 10
     },
     "180": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 23,
+      "hold_parameter": 0
     },
     "181": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 24,
+      "hold_parameter": 0
     },
     "182": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "183": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 26,
+      "hold_parameter": 20
     },
     "184": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 27,
+      "hold_parameter": 0
     },
     "185": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 28,
+      "hold_parameter": 0
     },
     "186": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 29,
+      "hold_parameter": 0
     },
     "187": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 30,
+      "hold_parameter": 10
     },
     "188": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 31,
+      "hold_parameter": 10
     },
     "189": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 32,
+      "hold_parameter": 10
     },
     "190": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 33,
+      "hold_parameter": 0
     },
     "191": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 34,
+      "hold_parameter": 0
     },
     "194": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 37,
+      "hold_parameter": 0
     },
     "195": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 38,
+      "hold_parameter": 0
     },
     "196": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 39,
+      "hold_parameter": 10
     },
     "197": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 40,
+      "hold_parameter": 0
     },
     "198": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 41,
+      "hold_parameter": 0
     },
     "199": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 42,
+      "hold_parameter": 20
     },
     "200": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 43,
+      "hold_parameter": 10
     },
     "201": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 44,
+      "hold_parameter": 0
     },
     "202": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 45,
+      "hold_parameter": 0
     },
     "203": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 46,
+      "hold_parameter": 20
     },
     "204": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 47,
+      "hold_parameter": 20
     },
     "205": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 48,
+      "hold_parameter": 20
     },
     "206": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 49,
+      "hold_parameter": 20
     },
     "207": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 50,
+      "hold_parameter": 20
     },
     "208": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 51,
+      "hold_parameter": 20
     },
     "209": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 52,
+      "hold_parameter": 20
     },
     "210": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 53,
+      "hold_parameter": 20
     },
     "211": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 54,
+      "hold_parameter": 20
     },
     "212": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 55,
+      "hold_parameter": 20
     },
     "213": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 56,
+      "hold_parameter": 20
     },
     "214": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 57,
+      "hold_parameter": 20
     },
     "215": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 58,
+      "hold_parameter": 20
     },
     "216": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 59,
+      "hold_parameter": 20
     },
     "217": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 60,
+      "hold_parameter": 20
     },
     "218": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 61,
+      "hold_parameter": 0
     },
     "219": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 62,
+      "hold_parameter": 8
     },
     "220": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 52,
+      "hold_parameter": 10
     },
     "221": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 22,
+      "hold_parameter": 10
     },
     "222": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 63,
+      "hold_parameter": 0
     },
     "223": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 64,
+      "hold_parameter": 0
     },
     "224": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 65,
+      "hold_parameter": 0
     },
     "225": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 66,
+      "hold_parameter": 0
     },
     "226": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "227": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "228": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "229": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "230": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "231": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "232": {
       "pocket": 1,
-      "price": 500
+      "price": 500,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "233": {
       "pocket": 1,
-      "price": 2200
+      "price": 2200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "234": {
       "pocket": 1,
-      "price": 2200
+      "price": 2200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "235": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "236": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "237": {
       "pocket": 1,
-      "price": 6000
+      "price": 6000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "238": {
       "pocket": 1,
-      "price": 6000
+      "price": 6000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "239": {
       "pocket": 3,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "240": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "241": {
       "pocket": 3,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "242": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "243": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "244": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "245": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "246": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "247": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "248": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "249": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "250": {
       "pocket": 3,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "251": {
       "pocket": 3,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "252": {
       "pocket": 3,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "253": {
       "pocket": 3,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "254": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "255": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "256": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "257": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "258": {
       "pocket": 1,
-      "price": 100
+      "price": 100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "259": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "260": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "261": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "262": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "263": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "264": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "265": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "266": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "267": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "268": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "269": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "270": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "271": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "272": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "273": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "274": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "275": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "276": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 93,
+      "hold_parameter": 0
     },
     "277": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 93,
+      "hold_parameter": 1
     },
     "278": {
       "pocket": 2,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "279": {
       "pocket": 2,
-      "price": 65535
+      "price": 65535,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "280": {
       "pocket": 2,
-      "price": 65535
+      "price": 65535,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "281": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "282": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "283": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "284": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "285": {
       "pocket": 2,
-      "price": 65535
+      "price": 65535,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "286": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "287": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "288": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "289": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 0,
       "move": 264
     },
     "290": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 1,
       "move": 337
     },
     "291": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 2,
       "move": 352
     },
     "292": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 3,
       "move": 347
     },
     "293": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 4,
       "move": 46
     },
     "294": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 5,
       "move": 92
     },
     "295": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 6,
       "move": 258
     },
     "296": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 7,
       "move": 339
     },
     "297": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 8,
       "move": 331
     },
     "298": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 9,
       "move": 237
     },
     "299": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 10,
       "move": 241
     },
     "300": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 11,
       "move": 269
     },
     "301": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 12,
       "move": 58
     },
     "302": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 13,
       "move": 59
     },
     "303": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 14,
       "move": 63
     },
     "304": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 15,
       "move": 113
     },
     "305": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 16,
       "move": 182
     },
     "306": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 17,
       "move": 240
     },
     "307": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 18,
       "move": 202
     },
     "308": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 19,
       "move": 219
     },
     "309": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 20,
       "move": 218
     },
     "310": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 21,
       "move": 76
     },
     "311": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 22,
       "move": 231
     },
     "312": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 23,
       "move": 85
     },
     "313": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 24,
       "move": 87
     },
     "314": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 25,
       "move": 89
     },
     "315": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 26,
       "move": 216
     },
     "316": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 27,
       "move": 91
     },
     "317": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 28,
       "move": 94
     },
     "318": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 29,
       "move": 247
     },
     "319": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 30,
       "move": 280
     },
     "320": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 31,
       "move": 104
     },
     "321": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 32,
       "move": 115
     },
     "322": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 33,
       "move": 351
     },
     "323": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 34,
       "move": 53
     },
     "324": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 35,
       "move": 188
     },
     "325": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 36,
       "move": 201
     },
     "326": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 37,
       "move": 126
     },
     "327": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 38,
       "move": 317
     },
     "328": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 39,
       "move": 332
     },
     "329": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 40,
       "move": 259
     },
     "330": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 41,
       "move": 263
     },
     "331": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 42,
       "move": 290
     },
     "332": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 43,
       "move": 156
     },
     "333": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 44,
       "move": 213
     },
     "334": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 45,
       "move": 168
     },
     "335": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 46,
       "move": 211
     },
     "336": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 47,
       "move": 285
     },
     "337": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 48,
       "move": 355
     },
     "338": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 49,
       "move": 315
     },
     "339": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 120,
       "move": 15
     },
     "340": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 121,
       "move": 19
     },
     "341": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 122,
       "move": 57
     },
     "342": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 123,
       "move": 70
     },
     "343": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 124,
       "move": 250
     },
     "344": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 125,
       "move": 249
     },
     "345": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 126,
       "move": 127
     },
     "346": {
       "pocket": 4,
       "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 127,
       "move": 392
     },
     "347": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "348": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "349": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "350": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "351": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "352": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "353": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "354": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "355": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "356": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "357": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "358": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "359": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "360": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "361": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "362": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "363": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "364": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "365": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "366": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "367": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "368": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "369": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "370": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "371": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "372": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "373": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "374": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "376": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 50,
       "move": 395
     },
     "377": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 51,
       "move": 374
     },
     "378": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 52,
       "move": 373
     },
     "379": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 53,
       "move": 206
     },
     "380": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 54,
       "move": 460
     },
     "381": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 55,
       "move": 409
     },
     "382": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 56,
       "move": 364
     },
     "383": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 57,
       "move": 203
     },
     "384": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 58,
       "move": 370
     },
     "385": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 59,
       "move": 371
     },
     "386": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 60,
       "move": 261
     },
     "387": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 61,
       "move": 318
     },
     "388": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 62,
       "move": 422
     },
     "389": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 63,
       "move": 153
     },
     "390": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 64,
       "move": 397
     },
     "391": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 65,
       "move": 430
     },
     "392": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 66,
       "move": 278
     },
     "393": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 67,
       "move": 376
     },
     "394": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 68,
       "move": 393
     },
     "395": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 69,
       "move": 148
     },
     "396": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 70,
       "move": 429
     },
     "397": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 71,
       "move": 360
     },
     "398": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 72,
       "move": 86
     },
     "399": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 73,
       "move": 510
     },
     "400": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 74,
       "move": 14
     },
     "401": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 75,
       "move": 468
     },
     "402": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 76,
       "move": 406
     },
     "403": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 77,
       "move": 417
     },
     "404": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 78,
       "move": 367
     },
     "405": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 79,
       "move": 157
     },
     "406": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 80,
       "move": 400
     },
     "407": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 81,
       "move": 214
     },
     "408": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 82,
       "move": 459
     },
     "409": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 83,
       "move": 424
     },
     "410": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 84,
       "move": 138
     },
     "411": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 85,
       "move": 377
     },
     "412": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 86,
       "move": 207
     },
     "413": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 87,
       "move": 451
     },
     "414": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 88,
       "move": 442
     },
     "415": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 89,
       "move": 164
     },
     "416": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 90,
       "move": 449
     },
     "417": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 91,
       "move": 443
     },
     "418": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 92,
       "move": 444
     },
     "419": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 93,
       "move": 474
     },
     "420": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 94,
       "move": 419
     },
     "421": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 95,
       "move": 404
     },
     "422": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 96,
       "move": 407
     },
     "423": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 97,
       "move": 414
     },
     "424": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 98,
       "move": 423
     },
     "425": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 99,
       "move": 570
     },
     "426": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 100,
       "move": 571
     },
     "427": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 101,
       "move": 466
     },
     "428": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 102,
       "move": 531
     },
     "429": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 103,
       "move": 502
     },
     "430": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 104,
       "move": 582
     },
     "431": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 105,
       "move": 610
     },
     "432": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 106,
       "move": 440
     },
     "433": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 107,
       "move": 418
     },
     "434": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 108,
       "move": 516
     },
     "435": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 109,
       "move": 465
     },
     "436": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 110,
       "move": 508
     },
     "437": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 111,
       "move": 503
     },
     "438": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 112,
       "move": 538
     },
     "439": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 113,
       "move": 506
     },
     "440": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 114,
       "move": 671
     },
     "441": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 115,
       "move": 632
     },
     "442": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 116,
       "move": 643
     },
     "443": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 117,
       "move": 579
     },
     "444": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 118,
       "move": 675
     },
     "445": {
       "pocket": 4,
       "price": 8000,
+      "hold_effect": 0,
+      "hold_parameter": 0,
       "tm_index": 119,
       "move": 267
     },
     "446": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 10
     },
     "447": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 11
     },
     "448": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 13
     },
     "449": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 12
     },
     "450": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 15
     },
     "451": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 1
     },
     "452": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 3
     },
     "453": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 4
     },
     "454": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 2
     },
     "455": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 14
     },
     "456": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 6
     },
     "457": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 5
     },
     "458": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 7
     },
     "459": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 16
     },
     "460": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 17
     },
     "461": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 8
     },
     "462": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 0
     },
     "463": {
       "pocket": 5,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 127,
+      "hold_parameter": 0
     },
     "464": {
       "pocket": 5,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 96,
+      "hold_parameter": 0
     },
     "465": {
       "pocket": 5,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 121,
+      "hold_parameter": 0
     },
     "466": {
       "pocket": 5,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 121,
+      "hold_parameter": 1
     },
     "467": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 95,
+      "hold_parameter": 23
     },
     "468": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 122,
+      "hold_parameter": 0
     },
     "469": {
       "pocket": 5,
-      "price": 20
+      "price": 20,
+      "hold_effect": 123,
+      "hold_parameter": 0
     },
     "470": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "471": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "472": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "473": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "474": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "475": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "476": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "477": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "478": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "479": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "480": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "481": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "482": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "483": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "484": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "485": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "486": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "487": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 88,
+      "hold_parameter": 0
     },
     "488": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 89,
+      "hold_parameter": 0
     },
     "489": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 90,
+      "hold_parameter": 0
     },
     "490": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 1
     },
     "491": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 2
     },
     "492": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 3
     },
     "493": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 4
     },
     "494": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 5
     },
     "495": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 6
     },
     "496": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 7
     },
     "497": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 8
     },
     "498": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 10
     },
     "499": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 11
     },
     "500": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 12
     },
     "501": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 13
     },
     "502": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 14
     },
     "503": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 15
     },
     "504": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 16
     },
     "505": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 17
     },
     "506": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 72,
+      "hold_parameter": 23
     },
     "507": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 1
     },
     "508": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 2
     },
     "509": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 3
     },
     "510": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 4
     },
     "511": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 5
     },
     "512": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 6
     },
     "513": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 7
     },
     "514": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 8
     },
     "515": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 10
     },
     "516": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 11
     },
     "517": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 12
     },
     "518": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 13
     },
     "519": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 14
     },
     "520": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 15
     },
     "521": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 16
     },
     "522": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 17
     },
     "523": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 87,
+      "hold_parameter": 23
     },
     "524": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 86,
+      "hold_parameter": 10
     },
     "525": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 86,
+      "hold_parameter": 11
     },
     "526": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 86,
+      "hold_parameter": 13
     },
     "527": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 86,
+      "hold_parameter": 15
     },
     "528": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "529": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "530": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "531": {
       "pocket": 1,
-      "price": 300
+      "price": 300,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "532": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "533": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "534": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "535": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "536": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 1
     },
     "537": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 2
     },
     "538": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 3
     },
     "539": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 4
     },
     "540": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 5
     },
     "541": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "542": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "543": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 140,
+      "hold_parameter": 0
     },
     "544": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "545": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "546": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "547": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "548": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "549": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "550": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "551": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "552": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "553": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "554": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "555": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "556": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "557": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "558": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "559": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "560": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "561": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "562": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "563": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "564": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "565": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "566": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "567": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "568": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "569": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "570": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "571": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "572": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "573": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "574": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "575": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "576": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "577": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "578": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "579": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 73,
+      "hold_parameter": 0
     },
     "580": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 0
     },
     "581": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 1
     },
     "582": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 2
     },
     "583": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 3
     },
     "584": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 4
     },
     "585": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 5
     },
     "586": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 6
     },
     "587": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 7
     },
     "588": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 8
     },
     "589": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 10
     },
     "590": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 11
     },
     "591": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 12
     },
     "592": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 13
     },
     "593": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 14
     },
     "594": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 15
     },
     "595": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 16
     },
     "596": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 17
     },
     "597": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 23
     },
     "598": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "599": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "600": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "601": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "602": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "603": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "604": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "605": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "606": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "607": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "608": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "609": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "610": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "611": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "612": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "613": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 130,
+      "hold_parameter": 255
     },
     "614": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "615": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "616": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "617": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "618": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "619": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "620": {
       "pocket": 1,
-      "price": 200
+      "price": 200,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "621": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "622": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "623": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "624": {
       "pocket": 1,
-      "price": 20000
+      "price": 20000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "625": {
       "pocket": 1,
-      "price": 30000
+      "price": 30000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "626": {
       "pocket": 1,
-      "price": 40000
+      "price": 40000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "627": {
       "pocket": 1,
-      "price": 50000
+      "price": 50000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "628": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "629": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "630": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "631": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "632": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "633": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "634": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "635": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "636": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "637": {
       "pocket": 1,
-      "price": 7000
+      "price": 7000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "638": {
       "pocket": 1,
-      "price": 2100
+      "price": 2100,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "639": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "640": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "641": {
       "pocket": 1,
-      "price": 6000
+      "price": 6000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "642": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 24,
+      "hold_parameter": 2
     },
     "643": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 24,
+      "hold_parameter": 3
     },
     "644": {
       "pocket": 1,
-      "price": 350
+      "price": 350,
+      "hold_effect": 24,
+      "hold_parameter": 5
     },
     "645": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 24,
+      "hold_parameter": 6
     },
     "646": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 24,
+      "hold_parameter": 4
     },
     "647": {
       "pocket": 1,
-      "price": 3000
+      "price": 3000,
+      "hold_effect": 24,
+      "hold_parameter": 1
     },
     "648": {
       "pocket": 1,
-      "price": 11000
+      "price": 11000,
+      "hold_effect": 32,
+      "hold_parameter": 10
     },
     "649": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 97,
+      "hold_parameter": 0
     },
     "650": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 57,
+      "hold_parameter": 20
     },
     "651": {
       "pocket": 1,
-      "price": 6000
+      "price": 6000,
+      "hold_effect": 33,
+      "hold_parameter": 0
     },
     "652": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 47,
+      "hold_parameter": 20
     },
     "653": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 48,
+      "hold_parameter": 20
     },
     "654": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 52,
+      "hold_parameter": 20
     },
     "655": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 0
     },
     "656": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 1
     },
     "657": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 2
     },
     "658": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 3
     },
     "659": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 4
     },
     "660": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 5
     },
     "661": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 6
     },
     "662": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 7
     },
     "663": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 8
     },
     "664": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 10
     },
     "665": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 11
     },
     "666": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 12
     },
     "667": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 13
     },
     "668": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 14
     },
     "669": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 15
     },
     "670": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 16
     },
     "671": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 17
     },
     "672": {
       "pocket": 1,
-      "price": 2000
+      "price": 2000,
+      "hold_effect": 94,
+      "hold_parameter": 23
     },
     "673": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 83,
+      "hold_parameter": 10
     },
     "674": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 112,
+      "hold_parameter": 0
     },
     "675": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 119,
+      "hold_parameter": 0
     },
     "676": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 92,
+      "hold_parameter": 0
     },
     "677": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 82,
+      "hold_parameter": 0
     },
     "678": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 74,
+      "hold_parameter": 0
     },
     "679": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 126,
+      "hold_parameter": 0
     },
     "680": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 75,
+      "hold_parameter": 0
     },
     "681": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 76,
+      "hold_parameter": 0
     },
     "682": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 69,
+      "hold_parameter": 0
     },
     "683": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 39,
+      "hold_parameter": 100
     },
     "684": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 124,
+      "hold_parameter": 20
     },
     "685": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 111,
+      "hold_parameter": 0
     },
     "686": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 98,
+      "hold_parameter": 0
     },
     "687": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 97,
+      "hold_parameter": 0
     },
     "688": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 91,
+      "hold_parameter": 0
     },
     "689": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 77,
+      "hold_parameter": 0
     },
     "690": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 81,
+      "hold_parameter": 0
     },
     "691": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 78,
+      "hold_parameter": 0
     },
     "692": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 80,
+      "hold_parameter": 0
     },
     "693": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 79,
+      "hold_parameter": 0
     },
     "694": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 108,
+      "hold_parameter": 0
     },
     "695": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 29,
+      "hold_parameter": 2
     },
     "696": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 29,
+      "hold_parameter": 1
     },
     "697": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 117,
+      "hold_parameter": 0
     },
     "698": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 115,
+      "hold_parameter": 0
     },
     "699": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 104,
+      "hold_parameter": 0
     },
     "700": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 71,
+      "hold_parameter": 0
     },
     "701": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 107,
+      "hold_parameter": 0
     },
     "702": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 68,
+      "hold_parameter": 0
     },
     "703": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 103,
+      "hold_parameter": 0
     },
     "704": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 113,
+      "hold_parameter": 0
     },
     "705": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 114,
+      "hold_parameter": 0
     },
     "706": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 99,
+      "hold_parameter": 0
     },
     "707": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 102,
+      "hold_parameter": 0
     },
     "708": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 105,
+      "hold_parameter": 0
     },
     "709": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 106,
+      "hold_parameter": 0
     },
     "710": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 85,
+      "hold_parameter": 0
     },
     "711": {
       "pocket": 1,
-      "price": 1000
+      "price": 1000,
+      "hold_effect": 70,
+      "hold_parameter": 0
     },
     "712": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 109,
+      "hold_parameter": 0
     },
     "713": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 116,
+      "hold_parameter": 0
     },
     "714": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 84,
+      "hold_parameter": 0
     },
     "715": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 125,
+      "hold_parameter": 0
     },
     "716": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 118,
+      "hold_parameter": 0
     },
     "717": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 101,
+      "hold_parameter": 2
     },
     "718": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 120,
+      "hold_parameter": 1
     },
     "719": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 120,
+      "hold_parameter": 2
     },
     "720": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 120,
+      "hold_parameter": 3
     },
     "721": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 120,
+      "hold_parameter": 4
     },
     "722": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 132,
+      "hold_parameter": 0
     },
     "723": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 133,
+      "hold_parameter": 0
     },
     "724": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 134,
+      "hold_parameter": 0
     },
     "725": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 135,
+      "hold_parameter": 0
     },
     "726": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 136,
+      "hold_parameter": 0
     },
     "727": {
       "pocket": 1,
-      "price": 4000
+      "price": 4000,
+      "hold_effect": 137,
+      "hold_parameter": 0
     },
     "728": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "729": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "730": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "731": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "732": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "733": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "734": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "735": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "736": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "737": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "738": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "739": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "740": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "741": {
       "pocket": 2,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "742": {
       "pocket": 1,
-      "price": 0
+      "price": 0,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "743": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "744": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "745": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "746": {
       "pocket": 1,
-      "price": 65535
+      "price": 65535,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "747": {
       "pocket": 1,
-      "price": 65535
+      "price": 65535,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "748": {
       "pocket": 1,
-      "price": 5000
+      "price": 5000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     },
     "749": {
       "pocket": 1,
-      "price": 10000
+      "price": 10000,
+      "hold_effect": 0,
+      "hold_parameter": 0
     }
   },
   "pockets": [
@@ -223167,6 +224677,97 @@
     ],
     "nature_selector": 164782324,
     "form_setter": 164827380
+  },
+  "held_forms": {
+    "arceus_types": [
+      0,
+      720,
+      721,
+      722,
+      723,
+      724,
+      725,
+      726,
+      727,
+      0,
+      728,
+      729,
+      730,
+      731,
+      732,
+      733,
+      734,
+      735,
+      0,
+      721,
+      0,
+      0,
+      0,
+      834,
+      0
+    ],
+    "silvally_types": [
+      0,
+      1048,
+      1049,
+      1050,
+      1051,
+      1052,
+      1053,
+      1054,
+      1055,
+      0,
+      1056,
+      1057,
+      1058,
+      1059,
+      1060,
+      1061,
+      1062,
+      1063,
+      0,
+      1049,
+      0,
+      0,
+      0,
+      1064,
+      0
+    ],
+    "special_z_crystals": [
+      598,
+      599,
+      600,
+      601,
+      602,
+      603,
+      603,
+      604,
+      604,
+      604,
+      605,
+      606,
+      607,
+      607,
+      608,
+      609,
+      609,
+      609,
+      609,
+      609,
+      609,
+      609,
+      610,
+      611,
+      612,
+      612,
+      613,
+      613,
+      613,
+      613,
+      532
+    ],
+    "special_z_table": 165514040,
+    "form_setter": 164827476
   },
   "met_location_table": 146976768,
   "met_locations": {

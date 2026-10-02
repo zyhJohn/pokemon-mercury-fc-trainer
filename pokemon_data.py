@@ -8,6 +8,7 @@ import struct
 from dataclasses import dataclass
 
 from name_codec import decode_name, encode_name
+from held_forms import held_form_family
 
 STAT_NAMES = ("HP", "攻击", "防御", "速度", "特攻", "特防")
 MINIOR_CORES = tuple(range(1065, 1072))
@@ -585,6 +586,10 @@ class Pokemon:
                     and not (
                         self.species in TOXTRICITY_SPECIES
                         and species in TOXTRICITY_SPECIES
+                    )
+                    and not (
+                        held_form_family(self.species) is not None
+                        and held_form_family(self.species) == held_form_family(species)
                     )
                 )
                 or level != self.level
