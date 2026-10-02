@@ -113,6 +113,22 @@ class Trainer:
         )
         return [(trainer_snap["address"] + 10, trainer_snap["raw"][10:14], after)]
 
+    def read_player_ot(self):
+        player = self.snapshot_trainer()
+        values = {
+            "ot_tid": player["tid"],
+            "ot_sid": player["sid"],
+            "ot_gender": integer(player["gender"], 0, 1, "玩家性别"),
+        }
+        note = "已读取玩家资料并填入原训练师草稿；请检查预览后再写入。"
+        try:
+            encode_name(player["name"], 7)
+        except ValueError:
+            note += " 玩家姓名无法按已核对编码填入，原训练师姓名保持不变。"
+        else:
+            values["ot_name"] = player["name"]
+        return values, note
+
     def commit_trainer_ids(self, trainer_snap, tid, sid):
         snap = self.snapshot()
         snap["trainer"] = trainer_snap

@@ -443,6 +443,13 @@ class App:
         self.nickname = tk.StringVar()
         self.original_nickname = ""
         ttk.Entry(row, textvariable=self.nickname, width=20).pack(side="left")
+        self.button(
+            tab,
+            "填入当前玩家的原训练师资料（待预览）",
+            self.fill_player_ot,
+            anchor="w",
+            pady=4,
+        )
         self.spinda_seed = tk.StringVar()
         self.button(
             tab,
@@ -473,6 +480,32 @@ class App:
 
     def location_label(self, ident):
         return f"{ident} - {self.profile.get('met_locations', {}).get(str(ident), '未核实地点，保留原值')}"
+
+    def fill_player_ot(self):
+        if self.trainer is None or self.current_slot is None or self.busy:
+            return
+        trainer, slot = self.trainer, self.current_slot
+        original = self.snapshot["party"][slot].raw
+
+        def done(result):
+            if (
+                self.trainer is not trainer
+                or self.current_slot != slot
+                or self.snapshot is None
+                or slot >= len(self.snapshot["party"])
+                or self.snapshot["party"][slot].raw != original
+            ):
+                self.status.set("选中成员已变化，未填入玩家资料。")
+                return
+            values, note = result
+            for key in ("ot_tid", "ot_sid", "ot_gender"):
+                self.detail_vars[key].set(str(values[key]))
+            if "ot_name" in values:
+                self.ot_name.set(values["ot_name"])
+            self.detail_preview.set(note)
+            self.status.set(note)
+
+        self.run("读取当前玩家资料…", trainer.read_player_ot, done)
 
     def nature_form_summary(self, original, updated):
         if updated.species not in TOXTRICITY_SPECIES:
@@ -931,6 +964,26 @@ class App:
             anchor="w", pady=3
         )
         ttk.Entry(sources, textvariable=nickname, width=24).pack(anchor="w")
+
+        def fill_player_ot():
+            if self.busy:
+                return
+
+            def done(result):
+                if self.trainer is not trainer or not frame.winfo_exists():
+                    return
+                values, note = result
+                for key in ("ot_tid", "ot_sid", "ot_gender"):
+                    source_values[key].set(str(values[key]))
+                if "ot_name" in values:
+                    ot_name.set(values["ot_name"])
+                detail.set(note)
+
+            self.run("读取当前玩家资料…", trainer.read_player_ot, done)
+
+        ttk.Button(
+            sources, text="填入当前玩家的原训练师资料（待预览）", command=fill_player_ot
+        ).pack(anchor="w", pady=6)
         ttk.Checkbutton(sources, text="蛋（转换后先检查预览）", variable=egg).pack(
             anchor="w", pady=6
         )

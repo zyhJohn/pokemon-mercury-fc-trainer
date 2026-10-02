@@ -24,7 +24,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe trainer_gui.py
 ```
 
-安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`、`verify_minior.py`、`verify_chinese_names.py`、`verify_locations.py`、`verify_toxtricity.py`、`verify_nicknames.py`和`audit_player_avatar.py`使用与其他ROM工具相同的路径和报告参数。
+安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`、`verify_minior.py`、`verify_chinese_names.py`、`verify_locations.py`、`verify_toxtricity.py`、`verify_nicknames.py`和`audit_player_avatar.py`、`audit_held_forms.py`使用与其他ROM工具相同的路径和报告参数。
 
 实际游戏函数研究另安装：
 

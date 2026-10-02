@@ -15,6 +15,76 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_fill_current_player_ot_drafts_in_party_and_pc_without_writes(self):
+        from name_codec import encode_name
+        from tests.test_box import packed_box
+        from box_data import BoxPokemon
+
+        address = 0x2024588
+        self.mem.put(
+            self.app.profile["trainer"]["pointer_address"], struct.pack("<I", address)
+        )
+        player = encode_name("小智A12", 8) + b"\x01\xa5" + struct.pack("<HH", 123, 456)
+        self.mem.put(address, player)
+        self.app.iv[0].set("31")
+        immediate = lambda label, job, done: done(job())
+        with patch.object(self.app, "run", side_effect=immediate):
+            self.app.fill_player_ot()
+        self.assertEqual(self.app.ot_name.get(), "小智A12")
+        self.assertEqual(self.app.detail_vars["ot_tid"].get(), "123")
+        self.assertEqual(self.app.detail_vars["ot_sid"].get(), "456")
+        self.assertEqual(self.app.detail_vars["ot_gender"].get(), "1")
+        self.assertEqual(self.app.iv[0].get(), "31")
+        patches, _ = self.app.prepare_mon()
+        self.assertEqual(
+            Pokemon(patches[0][2]).shiny, self.app.snapshot["party"][0].shiny
+        )
+
+        raw = bytearray(packed_box())
+        raw[39:44] = (757).to_bytes(5, "little")
+        content = bytes(raw) + b"\0" * 58 * 29
+        self.app.apply_box_snapshot(
+            {
+                "index": 0,
+                "address": self.app.profile["storage"]["box_addresses"][0],
+                "raw": content,
+                "pokemon": tuple(
+                    BoxPokemon(content[i : i + 58]) for i in range(0, len(content), 58)
+                ),
+            }
+        )
+        self.app.box_tree.selection_set("0")
+        self.root.update()
+
+        def children(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from children(child)
+
+        button = next(
+            widget
+            for widget in children(self.app.box_editor)
+            if widget.winfo_class() == "TButton"
+            and widget.cget("text").startswith("填入当前玩家")
+        )
+        with patch.object(self.app, "run", side_effect=immediate):
+            button.invoke()
+        self.assertEqual(self.app.box_editor_values[6].get(), "小智A12")
+        values = [var.get() for var in self.app.box_editor_values]
+        self.assertIn("123", values)
+        self.assertIn("456", values)
+        self.assertEqual(self.mem.read(address, 14), player)
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_fill_player_ot_discards_result_if_selected_member_changes(self):
+        result = ({"ot_tid": 123, "ot_sid": 456, "ot_gender": 1}, "test")
+        self.app.run = lambda label, job, done: setattr(self, "fill_done", done)
+        self.app.fill_player_ot()
+        self.app.current_slot = None
+        self.fill_done(result)
+        self.assertIn("选中成员已变化", self.app.status.get())
+        self.assertEqual(self.mem.writes, 0)
+
     def test_nickname_preview_display_and_pending_edit_guard(self):
         self.app.nickname.set("大力鳄小智")
         patches, _ = self.app.prepare_mon()
@@ -109,12 +179,22 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.app.level.get(), str(sample().level))
 
     def test_trainer_reread_and_reconnect_do_not_discard_draft_on_cancel(self):
-        self.app.apply_trainer_snapshot({
-            "tid": 12, "sid": 34, "name": "小智", "gender": 0,
-            "name_raw": "00", "address": 0x2024588, "raw": b"\0" * 14,
-        })
+        self.app.apply_trainer_snapshot(
+            {
+                "tid": 12,
+                "sid": 34,
+                "name": "小智",
+                "gender": 0,
+                "name_raw": "00",
+                "address": 0x2024588,
+                "raw": b"\0" * 14,
+            }
+        )
         self.app.player_name.set("小明")
-        with patch("trainer_app.messagebox.askyesno", return_value=False), patch.object(self.app, "run") as run:
+        with (
+            patch("trainer_app.messagebox.askyesno", return_value=False),
+            patch.object(self.app, "run") as run,
+        ):
             self.app.read_trainer()
             self.app.connect()
             run.assert_not_called()

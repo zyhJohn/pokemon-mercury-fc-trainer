@@ -93,6 +93,29 @@ class DetailTests(unittest.TestCase):
 
 
 class TrainerIdentityTests(unittest.TestCase):
+    def test_player_ot_read_is_read_only_and_preserves_unknown_names(self):
+        from name_codec import encode_name
+
+        self.mem.put(self.address, encode_name("小智A12", 8))
+        original = self.mem.read(self.address, 14)
+        values, _ = self.trainer.read_player_ot()
+        self.assertEqual(
+            values,
+            {"ot_tid": 12345, "ot_sid": 54321, "ot_gender": 0, "ot_name": "小智A12"},
+        )
+        self.assertEqual(self.mem.read(self.address, 14), original)
+        self.mem.put(self.address, b"\x06\x02" + original[2:])
+        values, note = self.trainer.read_player_ot()
+        self.assertNotIn("ot_name", values)
+        self.assertIn("保持不变", note)
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_invalid_player_gender_not_copied_to_ot(self):
+        self.mem.put(self.address + 8, b"\xff")
+        with self.assertRaisesRegex(ValueError, "玩家性别"):
+            self.trainer.read_player_ot()
+        self.assertEqual(self.mem.writes, 0)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
