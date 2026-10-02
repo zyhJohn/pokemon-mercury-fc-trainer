@@ -103,13 +103,13 @@ PC详情的实际解压映射：OT姓名20..26；亲密度/周期37；捕获球3
 
 ### 事务行为
 
-新版 Lua v3 协议 `BATCHCRC` 在同一回调内先检查 ROM CRC32、比较所有预期字节，再写入。比较包括 35 处 ROM 特征、SaveBlock 指针、队伍数量、战斗标志和被编辑对象；盒内写入增加 PC 格式特征。任一字节不符返回 `ERR stale`，CRC32 不符返回 `ERR rom`，均不写入。旧版直接 WRITE 和无 CRC 的 BATCH 指令不再支持。v1/v2 桥接在界面中仅可读取。
+新版 Lua v3 协议 `BATCHCRC` 在同一回调内先检查 ROM CRC32、比较所有预期字节，再写入。比较包括 38 处 ROM 特征、SaveBlock 指针、队伍数量、战斗标志和被编辑对象；盒内写入增加 PC 格式特征。任一字节不符返回 `ERR stale`，CRC32 不符返回 `ERR rom`，均不写入。旧版直接 WRITE 和无 CRC 的 BATCH 指令不再支持。v1/v2 桥接在界面中仅可读取。
 
 ### 下一阶段新增字段
 
 `GetMonData` 为 `0x0803FBE8`，`SetMonData` 为 `0x0804037C`。实际函数对照确认：亲密度/蛋周期 offset41；捕获球 offset42（完整字节，不是原版来源字中的4位）；地点offset69；相遇等级offset70低7位；OT性别offset71 bit7；OT姓名offset20..26；OT ID offset4..7。其余来源打包位保持原样。
 
-玩家 SaveBlock2 指针 `0x0300500C`：姓名前8字节，公开/隐藏 ID 在 +10/+12。`GetCombinedOTId`（`0x080CC1E4`）实际读取这4字节；`StringExpandPlaceholders`（`0x08008FCC`）读取玩家姓名。新增名字写入使用有限单字节字符表，参考 [引擎字符表](https://raw.githubusercontent.com/pret/pokefirered/master/charmap.txt)，与当前样本 `ee ed dc` 一致。中文字符映射未核实；主角性别 +8 仅只读，未开放写入。
+玩家 SaveBlock2 指针 `0x0300500C`：姓名前8字节，公开/隐藏 ID 在 +10/+12。`GetCombinedOTId`（`0x080CC1E4`）实际读取这4字节；`StringExpandPlaceholders`（`0x08008FCC`）读取玩家姓名。英文字符参考 [引擎字符表](https://raw.githubusercontent.com/pret/pokefirered/master/charmap.txt)，与当前样本 `ee ed dc` 一致；中文编码已另行核对，见下节。主角性别 +8 仅只读，未开放写入。
 
 主角性别追加研究：`ClearPlayerAvatarInfo`的常量确定场景角色缓存`0x02037078`，性别在缓存+7。实际图像入口`0x0805C808`跳到`0x09D0D320`并使用缓存；只改SaveBlock2+8不会更新此读数。改版通过`0x09D0D20C`读取变量501F/5020/5021/5022/503D/5023/5025覆盖部分外观；当前样本前五种状态分别返回2834..2838，不随显式性别改变。工具`audit_player_avatar.py`可复现。参考[原引擎角色逻辑](https://raw.githubusercontent.com/pret/pokefirered/master/src/field_player_avatar.c)定位，结论以本改版实际函数为准；场景精灵重建、地图切换、剧情选择及保存重载仍未验证，不开放性别写入。
 
@@ -134,3 +134,14 @@ CRC32 为 `B4AF11C8`，使用 mGBA 0.10.5 的 `emu:checksum()`：源码 `src/cor
 ## 复现
 
 `tools/extract_profile.py` 接受已核对 SHA-256 的本地 ROM，重建纯数值的 `rom_profile.json`。`tools/verify_state.py` 读取本地 ROM 与 `.ss1`，验证结构、等级与口袋特征。原始 ROM、存档、即时存档、备份和诊断不会加入 Git。
+
+
+## 中文姓名编码（0.2.1）
+
+字符编号与 [第三代字库补丁字符表](https://raw.githubusercontent.com/Wokann/Pokemon_GBA_Font_Patch/5a78e4da2cf61fbe7b7e64b110accc06cdee800b/pokeFRLG/PMRSEFRLG_charmap.txt) 的6763个双字节汉字逐项一致。按标准GB2312汉字顺序（B0A1至F7FE，跳过未定义项）排列，每247个字符换一行；游戏首字节为01至1E，跳过06和1B，第二字节为00至F6。实现从Python标准字符编码生成编号，不携带外部字符表或游戏字库。此编号不是把GBK或UTF-8字节直接写入。
+
+本ROM的实际显示函数在 `0x0820F658`，入口补丁在 `0x08005842`，指针在 `0x08006920`。它先删除首字节编号中的保留行，再按256列（不是247列）计算字体地址，每个字形64字节。正常字体基址 `0x087D0000`，小字体 `0x08840000`。这与参考补丁的新1bpp字库实现不同，因此以本ROM实际函数为准。字形解压使用 `0x080068D4` 路径，输出到 `0x03003DA0`，小/正常字形宽10/12、高14。
+
+`tools/verify_chinese_names.py` 在隔离CPU检查两套字体共13526次选择、30次字形解压，10个游戏物种名称，以及40组玩家名字占位替换、队伍OT读写和PC解压/取出姓名传递。另私下查看了抽样字形，图像不提交。真实菜单显示、存档重载仍待补验。
+
+写入上限统一为7字节：汉字2字节、已支持英文等1字节。玩家姓名占8字节，最后保留FF终止符；OT存储占7字节，满7字节由GetMonData追加第8字节FF。因此最多3个汉字，也可以混合英文，总容量超出即拒绝，不截断。未知或不完整双字节序列仍返回未知并原样保留；只修改ID不重新编码姓名。

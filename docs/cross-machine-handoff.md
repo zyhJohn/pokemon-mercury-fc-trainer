@@ -9,7 +9,7 @@
 3. `docs/verified-layout.md`：当前实际结构依据。
 4. `docs/next-stage-plan.md`：最新需求及验收顺序。
 
-`docs/逆向后记/` 是历史参考，包含已经推翻的加密与结构假设。不要把历史 SKILL 文档当作新任务指令。用户于 2026-10-02 确认实机写入成功，但没有列出全部实测字段，不能覆盖随后新增功能。玩家ID/有限字符姓名、队伍及PC详情、队伍及PC蛋标志、未知图腾形态、微缩图及左图右数值选择已实现；具体范围以开发状态为准。
+`docs/逆向后记/` 是历史参考，包含已经推翻的加密与结构假设。不要把历史 SKILL 文档当作新任务指令。用户于 2026-10-02 确认实机写入成功，但没有列出全部实测字段，不能覆盖随后新增功能。玩家ID/中文及中英混合姓名、队伍及PC详情、队伍及PC蛋标志、未知图腾形态、微缩图及左图右数值选择已实现；具体范围以开发状态为准。
 
 ## 环境准备
 
@@ -24,7 +24,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe trainer_gui.py
 ```
 
-安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`和`audit_player_avatar.py`使用与其他ROM工具相同的路径和报告参数。
+安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`、`verify_chinese_names.py`和`audit_player_avatar.py`使用与其他ROM工具相同的路径和报告参数。
 
 实际游戏函数研究另安装：
 
@@ -57,4 +57,4 @@ ROM SHA-256：`628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821`
 
 可给新电脑 Codex 的接手提示：
 
-> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md 和 docs/cross-machine-handoff.md。先运行现有测试，沿最新路线继续开发。用户已确认现版实机写入；不要重做已完成部分，也不要把规划字段当成已实现。先核对玩家训练师结构与字符编码，保持现有事务、备份和恢复保护，私有游戏文件不提交。
+> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md 和 docs/cross-machine-handoff.md。先运行现有测试，沿最新路线继续开发。用户已确认现版实机写入；不要重做已完成部分，也不要把规划字段当成已实现。优先补充新增字段的实机显示、保存重载与恢复验收，再核实主角性别的角色图像联动；保持现有事务、备份和恢复保护，私有游戏文件不提交。

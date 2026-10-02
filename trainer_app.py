@@ -102,7 +102,7 @@ class App:
         )
         ttk.Label(
             self.tab_values,
-            text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家姓名与 ID 在“训练师”页编辑；中文编码与主角性别联动待核验。",
+            text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家姓名与 ID 在“训练师”页编辑；支持中文姓名；主角性别联动待核验。",
         ).pack(anchor="w")
         self.tab_party = ttk.Frame(self.nb, padding=8)
         self.nb.add(self.tab_party, text="宝可梦编辑")
@@ -402,7 +402,7 @@ class App:
         ).pack(side="left")
         row = ttk.Frame(tab)
         row.pack(anchor="w", pady=4)
-        ttk.Label(row, text="原训练师姓名（英文/数字，最多7字）", width=38).pack(
+        ttk.Label(row, text="原训练师姓名（最多3汉字或7字节）", width=38).pack(
             side="left"
         )
         self.ot_name = tk.StringVar()
@@ -445,13 +445,13 @@ class App:
         self.player_name = tk.StringVar()
         self.original_player_name = ""
         self.player_detail = tk.StringVar(
-            value="连接后点击读取。主角性别目前只读；中文姓名编码待核验。"
+            value="连接后点击读取。支持中文/中英混合姓名；主角性别目前只读。"
         )
         ttk.Label(tab, textvariable=self.player_detail, wraplength=900).pack(
             anchor="w", pady=8
         )
         for label, var in [
-            ("姓名（英文/数字，最多7字）", self.player_name),
+            ("姓名（最多3汉字或7字节）", self.player_name),
             ("玩家 TID（0～65535）", self.player_tid),
             ("玩家 SID（0～65535）", self.player_sid),
         ]:
@@ -476,7 +476,7 @@ class App:
         )
         self.player_name.set(self.original_player_name)
         self.player_detail.set(
-            f"完整 ID：{snap['sid'] * 65536 + snap['tid']:08X}；主角性别原始值：{snap['gender']}\n姓名原始编码：{snap['name_raw']}；中文编码未核验，不支持自动转换。"
+            f"完整 ID：{snap['sid'] * 65536 + snap['tid']:08X}；主角性别原始值：{snap['gender']}\n姓名原始编码：{snap['name_raw']}；汉字占2字节，英文/数字占1字节，总计最多7字节。"
         )
 
     def read_trainer(self):
@@ -790,7 +790,7 @@ class App:
             mon.ot_name if mon.ot_name is not None else "（未知编码，原样保留）"
         )
         ot_name = tk.StringVar(value=original_name)
-        ttk.Label(sources, text="原训练师姓名（英文/数字，最多7字）").pack(
+        ttk.Label(sources, text="原训练师姓名（最多3汉字或7字节）").pack(
             anchor="w", pady=3
         )
         ttk.Entry(sources, textvariable=ot_name, width=24).pack(anchor="w")

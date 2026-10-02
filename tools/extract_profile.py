@@ -48,6 +48,9 @@ SIGNATURES = [
     (0x803FBE8, 26),
     (0x804037C, 26),
     (0x8043458, 284),
+    (0x8005842, 12),
+    (0x8006920, 4),
+    (0x820F658, 138),
 ]
 
 
@@ -101,6 +104,13 @@ def extract(rom, catalog):
         "pointer_address": 0x0300500C,
         "id_offset": 10,
         "header_size": 14,
+    }
+    profile["name_encoding"] = {
+        "chinese_characters": 6763,
+        "maximum_bytes": 7,
+        "renderer": 0x820F658,
+        "small_font": 0x8840000,
+        "normal_font": 0x87D0000,
     }
     profile["spinda"] = {
         "front": struct.unpack("<I", read(0x97BBA40, 4))[0],
