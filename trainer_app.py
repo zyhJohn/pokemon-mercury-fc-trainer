@@ -370,7 +370,7 @@ class App:
         )
         ttk.Label(
             tab,
-            text="先选择队伍成员。地点暂显示原始编号；捕获球按本改版编号填写。\n修改原训练师 ID 时保留当前选择的闪光状态；字段有效不代表遭遇来源已认证。\n转为蛋时同步两处标志、设为1级及默认周期；取消蛋标记不等于执行自然孵化。",
+            text="先选择队伍成员。地点可按中文名搜索选择，原有未知编号保持不变；捕获球按本改版编号填写。\n修改原训练师 ID 时保留当前选择的闪光状态；字段有效不代表遭遇来源已认证。\n转为蛋时同步两处标志、设为1级及默认周期；取消蛋标记不等于执行自然孵化。",
             wraplength=900,
         ).pack(anchor="w", pady=6)
         self.detail_vars = {}
@@ -392,7 +392,10 @@ class App:
             ttk.Label(row, text=label, width=38).pack(side="left")
             var = tk.StringVar()
             self.detail_vars[key] = var
-            ttk.Entry(row, textvariable=var, width=18).pack(side="left")
+            if key == "met_location":
+                self.location_entry(row, var, 28).pack(side="left")
+            else:
+                ttk.Entry(row, textvariable=var, width=18).pack(side="left")
         row = ttk.Frame(tab)
         row.pack(anchor="w", pady=4)
         ttk.Label(row, text="未知图腾字形", width=38).pack(side="left")
@@ -457,6 +460,27 @@ class App:
             anchor="w", pady=8
         )
         scroller.enable_navigation()
+
+    def location_label(self, ident):
+        return f"{ident} - {self.profile.get('met_locations', {}).get(str(ident), '未核实地点，保留原值')}"
+
+    def location_entry(self, parent, var, width):
+        choices = [
+            self.location_label(ident)
+            for ident in sorted(map(int, self.profile.get("met_locations", {})))
+        ]
+        entry = ttk.Combobox(parent, textvariable=var, values=choices, width=width)
+        entry.bind(
+            "<KeyRelease>",
+            lambda _: entry.configure(
+                values=[
+                    value
+                    for value in choices
+                    if var.get().casefold() in value.casefold()
+                ]
+            ),
+        )
+        return entry
 
     def _build_trainer(self):
         tab = ttk.Frame(self.nb, padding=12)
@@ -836,7 +860,11 @@ class App:
             ttk.Label(row, text=label, width=25).pack(side="left")
             var = tk.StringVar(value=str(value))
             source_values[key] = var
-            ttk.Entry(row, textvariable=var, width=12).pack(side="left")
+            if key == "met_location":
+                var.set(self.location_label(value))
+                self.location_entry(row, var, 28).pack(side="left")
+            else:
+                ttk.Entry(row, textvariable=var, width=12).pack(side="left")
         original_sources = {key: var.get() for key, var in source_values.items()}
         original_name = (
             mon.ot_name if mon.ot_name is not None else "（未知编码，原样保留）"
@@ -886,7 +914,9 @@ class App:
             if self.trainer is not trainer:
                 raise ValueError("连接已经改变，请重新打开此编辑窗口")
             details = {
-                key: var.get()
+                key: var.get().split(" - ", 1)[0]
+                if key == "met_location"
+                else var.get()
                 for key, var in source_values.items()
                 if var.get() != original_sources[key]
             }
@@ -1554,7 +1584,7 @@ class App:
                 if key == "ot_sid"
                 else getattr(mon, key)
             )
-            var.set(str(value))
+            var.set(self.location_label(value) if key == "met_location" else str(value))
         self.detail_preview.set("")
         self.detail_image.configure(image=self.mon_image(mon))
         self.spinda_seed.set("")
@@ -1638,8 +1668,9 @@ class App:
                 if key == "ot_sid"
                 else getattr(mon, key)
             )
-            if var.get() != str(before):
-                changes[key] = var.get()
+            value = var.get().split(" - ", 1)[0] if key == "met_location" else var.get()
+            if value != str(before):
+                changes[key] = value
         if self.egg.get() != mon.egg:
             changes["egg"] = self.egg.get()
         if self.ot_name.get() != self.original_ot_name:

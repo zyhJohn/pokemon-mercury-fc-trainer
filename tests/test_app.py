@@ -15,6 +15,22 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_location_name_selection_keeps_unknown_value_until_changed(self):
+        raw = bytearray(sample().raw)
+        raw[69] = 222
+        self.mem.put(PARTY, raw)
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.assertTrue(self.app.detail_vars["met_location"].get().startswith("222 - "))
+        patches, _ = self.app.prepare_mon()
+        self.assertEqual(patches[0][1], patches[0][2])
+        self.app.detail_vars["met_location"].set("213 - 跨海大桥")
+        patches, _ = self.app.prepare_mon()
+        self.assertEqual(Pokemon(patches[0][2]).met_location, 213)
+        self.app.detail_vars["met_location"].set("223")
+        with self.assertRaisesRegex(ValueError, "无效名称指针"):
+            self.app.prepare_mon()
+        self.assertEqual(self.mem.writes, 0)
+
     def test_minior_core_form_selection_changes_species_in_preview_only(self):
         patches, _ = self.app.trainer.edit_pokemon(self.app.snapshot, 0, species=1065)
         self.mem.put(PARTY, patches[0][2])
@@ -171,7 +187,7 @@ class AppTests(unittest.TestCase):
 
     def test_details_form_name_ids_and_egg_preview_do_not_write(self):
         self.app.detail_vars["ot_sid"].set("12345")
-        self.app.detail_vars["met_location"].set("222")
+        self.app.detail_vars["met_location"].set("213")
         self.app.detail_vars["ball"].set("4")
         self.app.ot_name.set("RED")
         self.app.egg.set(True)
@@ -179,7 +195,7 @@ class AppTests(unittest.TestCase):
         mon = Pokemon(patches[0][2])
         self.assertTrue(mon.egg)
         self.assertEqual(mon.level, 1)
-        self.assertEqual(mon.met_location, 222)
+        self.assertEqual(mon.met_location, 213)
         self.assertEqual(mon.otid >> 16, 12345)
         self.assertEqual(mon.ot_name, "RED")
         self.app.preview()

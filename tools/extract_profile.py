@@ -8,8 +8,12 @@ import argparse
 import hashlib
 import json
 import struct
+import sys
 import zlib
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from name_codec import decode_name
 
 ROM_SHA256 = "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821"
 SIGNATURES = [
@@ -54,6 +58,8 @@ SIGNATURES = [
     (0x9D30C04, 88),
     (0x9D30C5C, 640),
     (0x9DD5E68, 16),
+    (0x80C4D40, 56),
+    (0x80C4D78, 128),
 ]
 
 
@@ -123,6 +129,22 @@ def extract(rom, catalog):
         "form_reversion": 0x9D30C5C,
         "backup_species_offset": 28,
     }
+    location_table = struct.unpack("<I", read(0x80C4DB8, 4))[0]
+    profile["met_location_table"] = location_table
+    profile["met_locations"] = {}
+    profile["invalid_location_ids"] = []
+    for location in range(88, 253):
+        pointer = struct.unpack("<I", read(location_table + (location - 88) * 4, 4))[0]
+        if not 0x8000000 <= pointer < 0x8000000 + len(rom):
+            profile["invalid_location_ids"].append(location)
+            continue
+        raw = read(pointer, 128)
+        if b"\xff" not in raw:
+            raise ValueError("Location name lacks a bounded terminator")
+        name = decode_name(raw)
+        if name is None or not name.strip():
+            raise ValueError("Location name uses an unverified encoding")
+        profile["met_locations"][str(location)] = name
     profile["spinda"] = {
         "front": struct.unpack("<I", read(0x97BBA40, 4))[0],
         "palette": struct.unpack("<I", read(0x97D6E60, 4))[0],

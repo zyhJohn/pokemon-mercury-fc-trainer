@@ -161,6 +161,7 @@ class Trainer:
             raise ValueError("盒子快照地址不一致")
         mon = snap["pokemon"][slot]
         self.check_capture_ball(mon, changes)
+        self.check_met_location(mon, changes)
         updated, report = mon.edit(self.profile, **changes)
         return [(address + slot * 58, mon.raw, updated.raw)], report
 
@@ -197,6 +198,7 @@ class Trainer:
             if held and (not item or item["pocket"] in (2, 4)):
                 raise ValueError("重要道具与学习器不能作为携带道具")
         self.check_capture_ball(mon, changes)
+        self.check_met_location(mon, changes)
         updated, report = mon.edit(
             base=metadata["base"],
             growth=metadata["growth"],
@@ -219,6 +221,16 @@ class Trainer:
             item = self.profile["items"].get(str(ball))
             if ball != mon.ball and (not item or item["pocket"] != 3):
                 raise ValueError("新捕获球编号须属于本改版的精灵球口袋")
+
+    def check_met_location(self, mon, changes):
+        if "met_location" in changes:
+            value = integer(changes["met_location"], 0, 255, "相遇地点编号")
+            if value != mon.met_location and value in self.profile.get(
+                "invalid_location_ids", []
+            ):
+                raise ValueError(
+                    "此地点编号在本ROM中对应无效名称指针，不能作为新地点；原有值可保持不变"
+                )
 
     def validate_pokemon(self, mon):
         metadata = self.profile["species"].get(str(mon.species))

@@ -70,7 +70,7 @@ class BoxTests(unittest.TestCase):
             ot_tid=12345,
             ot_sid=54321,
             ot_name="RED",
-            met_location=222,
+            met_location=213,
             met_level=100,
             ball=4,
             friendship=255,
