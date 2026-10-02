@@ -6,6 +6,8 @@
 
 ## 读取顺序
 
+2026-10-02用户追加15项后续需求，已列入`docs/next-stage-plan.md`顶部清单。本次只更新计划，不代表功能已实现。新电脑先按清单制作供审阅的界面原型，整体界面改版等待用户审阅确认；新字段可同时只读核实。定位参考为用户最新存档中代币735、BeautyPoints=5、BracerPoints=220；旧研究副本不保证包含这些值，最新`.sav`及`.ss1`需另行携带并核对。
+
 1. 根目录 `AGENTS.md`、`README.md`。
 2. `docs/development-status.md`：现有功能、验证范围。
 3. `docs/verified-layout.md`：当前实际结构依据。
@@ -61,4 +63,4 @@ ROM SHA-256：`628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821`
 
 可给新电脑 Codex 的接手提示：
 
-> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md 和 docs/cross-machine-handoff.md。先运行现有测试，沿最新路线继续开发。用户已确认现版实机写入；不要重做已完成部分，也不要把规划字段当成已实现。优先补充新增字段的实机显示、保存重载与恢复验收，再核实主角性别的角色图像联动；保持现有事务、备份和恢复保护，私有游戏文件不提交。
+> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md 和 docs/cross-machine-handoff.md。先运行现有测试，沿2026-10-02追加的15项清单继续开发；先给用户界面原型供审阅，再实施整体改版。用户已确认现版实机写入；不要重做已完成部分，也不要把规划字段当成已实现。新字段先核实实际ROM和用户最新存档，补充实机显示、保存重载与恢复验收；玩家/劲敌性别和阵容关联须查清后再联动。保持现有事务、备份和恢复保护，私有游戏文件不提交。
