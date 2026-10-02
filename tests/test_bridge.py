@@ -10,6 +10,15 @@ from tests.test_core import Memory
 
 @unittest.skipIf(LuaRuntime is None, "install lupa to test the actual Lua bridge")
 class LuaTests(unittest.TestCase):
+    def test_batch_verify_confirms_readback_and_reports_failed_write(self):
+        self.assertEqual(self.raw_handle(b"BATCHVERIFYCRC " + self.mem.rom_crc32.encode()
+                                         + b" 2000010:00:01"), b"OK")
+        self.assertEqual(self.mem.read(0x2000010, 1), b"\1")
+        self.lua.globals()[b"emu"][b"write8"] = lambda *_: None
+        self.assertEqual(self.raw_handle(b"BATCHVERIFYCRC " + self.mem.rom_crc32.encode()
+                                         + b" 2000010:01:02"), b"ERR readback")
+        self.assertEqual(self.mem.read(0x2000010, 1), b"\1")
+
     def setUp(self):
         self.lua = LuaRuntime(encoding=None, unpack_returned_tuples=True)
         self.mem = Memory()

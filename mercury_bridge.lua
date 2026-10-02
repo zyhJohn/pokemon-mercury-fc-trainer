@@ -16,7 +16,7 @@ local function readable(address, size)
         (address >= 0x03000000 and address + size <= 0x03008000) or
         (address >= 0x08000000 and address + size <= 0x0A000000))
 end
-local function batch(rest)
+local function batch(rest, verify)
     if rest == "" or rest:sub(-1) == ";" or rest:find(";;",1,true) then return "ERR format" end
     local patches, total = {}, 0
     for part in rest:gmatch("[^;]+") do
@@ -44,19 +44,24 @@ local function batch(rest)
             for i=1,#p.after do emu:write8(p.addr+i-1,string.byte(p.after,i)) end
         end
     end
+    if verify then
+        for _,p in ipairs(patches) do
+            if p.before ~= p.after and emu:readRange(p.addr,#p.after) ~= p.after then return "ERR readback" end
+        end
+    end
     return "OK"
 end
 local function handle(line)
     if #line > MAX_LINE then return "ERR limit" end
     if line == "PING" then return "PONG" end
-    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192" end
+    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192 BATCHVERIFY" end
     if line == "ROMCRC" then return hex(emu:checksum()) end
     local cmd, rest = line:match("^(%S+)%s+(.*)$")
-    if cmd == "BATCHCRC" then
+    if cmd == "BATCHCRC" or cmd == "BATCHVERIFYCRC" then
         local expected, patches=rest:match("^(%x+)%s+(.+)$")
         if not expected or #expected ~= 8 then return "ERR format" end
         if hex(emu:checksum()) ~= expected:lower() then return "ERR rom" end
-        return batch(patches)
+        return batch(patches, cmd == "BATCHVERIFYCRC")
     end
     if cmd == "READ" then
         local addr, count = rest:match("^(%x+)%s+(%x+)$")

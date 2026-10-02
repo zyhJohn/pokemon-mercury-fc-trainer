@@ -3,11 +3,17 @@
 import json
 import os
 import struct
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 from box_data import BoxPokemon
+from clock_data import (
+    decode_daily_event,
+    decode_game_clock,
+    decode_playtime,
+    encode_daily_event,
+)
 from move_sources import describe_move_sources
 from name_codec import decode_name, encode_name
 from held_forms import held_form_family, held_form_species, resolve_held_form
@@ -133,6 +139,90 @@ class Trainer:
             "name": decode_name(raw[:8]),
             "gender": raw[8],
         }
+
+    def snapshot_time(self):
+        self.verify()
+        layout = self.profile["time"]
+        for signature in layout["signatures"]:
+            expected = bytes.fromhex(signature["hex"])
+            if self.g.read(signature["address"], len(expected)) != expected:
+                raise ValueError("时间相关 ROM 函数不匹配")
+        pointer = self.profile["trainer"]["pointer_address"]
+        for _ in range(3):
+            address = self.g.r32(pointer)
+            if address % 4 or not 0x02000000 <= address <= 0x02040000 - 19:
+                raise ValueError("累计时长结构指针无效")
+            raw = self.g.read(
+                address + layout["playtime_offset"], layout["playtime_size"]
+            )
+            clock_raw = self.g.read(layout["clock_address"], layout["clock_size"])
+            invert = self.g.r8(layout["invert_ampm_address"])
+            error = self.g.read(layout["rtc_error_address"], 2)
+            if (
+                self.g.r32(pointer) != address
+                or self.g.read(address + 14, 4) != raw[:4]
+                or self.g.read(layout["clock_address"], 9) != clock_raw
+            ):
+                continue
+            clock, mismatch = decode_game_clock(clock_raw)
+            daily_raw = self.g.read(layout["daily_event"]["address"], 4)
+            if self.g.read(layout["daily_event"]["address"], 4) != daily_raw:
+                continue
+            try:
+                daily_date = decode_daily_event(daily_raw)
+                daily_error = ""
+            except ValueError as exc:
+                daily_date, daily_error = None, str(exc)
+            return {
+                "address": address,
+                "raw": raw,
+                "playtime": decode_playtime(raw),
+                "clock": clock,
+                "weekday_mismatch": mismatch,
+                "invert_ampm": bool(invert),
+                "rtc_error": int.from_bytes(error, "little"),
+                "clock_raw": clock_raw,
+                "daily_raw": daily_raw,
+                "daily_date": daily_date,
+                "daily_error": daily_error,
+            }
+        raise ValueError("读取期间时间已变化，请在游戏菜单中重新读取，保持 mGBA 运行")
+
+    def commit_playtime(self, time_snap, hours, minutes, seconds):
+        after = struct.pack(
+            "<HBB",
+            integer(hours, 0, 999, "累计小时"),
+            integer(minutes, 0, 59, "累计分钟"),
+            integer(seconds, 0, 59, "累计秒"),
+        )
+        decode_playtime(time_snap["raw"])
+        snap = self.snapshot()
+        snap["time"] = time_snap
+        snap["time_apply_absolute"] = True
+        return self.commit(
+            snap,
+            [(time_snap["address"] + 14, time_snap["raw"][:4], after)],
+            "累计游玩时长",
+        )
+
+    def daily_repair_preview(self, time_snap):
+        if time_snap["rtc_error"] or time_snap["weekday_mismatch"]:
+            raise ValueError("请先校准 RTC 并重新读取游戏时间，再修复每日刷新日期")
+        before = decode_daily_event(time_snap["daily_raw"])
+        if before is None or before.date() <= time_snap["clock"].date():
+            raise ValueError("每日刷新记录没有处于未来；无需执行此修复")
+        return before, time_snap["clock"] - timedelta(days=1)
+
+    def commit_daily_repair(self, time_snap):
+        _, target = self.daily_repair_preview(time_snap)
+        snap = self.snapshot()
+        snap["daily_time"] = time_snap
+        address = self.profile["time"]["daily_event"]["address"]
+        return self.commit(
+            snap,
+            [(address, time_snap["daily_raw"], encode_daily_event(target))],
+            "修复未来的每日刷新日期",
+        )
 
     def edit_trainer_ids(self, trainer_snap, tid, sid):
         after = struct.pack(
@@ -470,6 +560,18 @@ class Trainer:
         self.verify()
         if not {"BATCH", "ROMCRC", "CRCBATCH"} <= self.g.capabilities:
             raise ValueError("请重新加载新版 mercury_bridge.lua 后再写入")
+        if (
+            "time" in snap or "daily_time" in snap
+        ) and "BATCHVERIFY" not in self.g.capabilities:
+            raise ValueError("时间相关写入需要重新加载 0.2.10 的 mercury_bridge.lua")
+        if snap.get("time_apply_absolute"):
+            # The user's inputs are absolute H:M:S. Capture the latest expected
+            # value after slow ROM checks, then compare inside the callback.
+            # Do not edit the frame counter, which changes on every frame.
+            address = snap["time"]["address"] + 14
+            before = self.g.read(address, 4)
+            decode_playtime(before + b"\0")
+            patches = [(address, before, patches[0][2])]
         changes = [p for p in patches if p[1] != p[2]]
         if not changes:
             return {"changed": False, "backup": None}
@@ -482,6 +584,29 @@ class Trainer:
             ),
             (PARTY_COUNT, bytes([len(snap["party"])]), bytes([len(snap["party"])])),
         ]
+        if "daily_time" in snap:
+            # Guard the calendar date, not ticking seconds. The target was
+            # previewed as yesterday; a day change requires a fresh preview.
+            clock = snap["daily_time"]["clock_raw"][:6]
+            guards.append((self.profile["time"]["clock_address"], clock, clock))
+            error = struct.pack("<H", snap["daily_time"]["rtc_error"])
+            guards.append((self.profile["time"]["rtc_error_address"], error, error))
+            guards += [
+                (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
+                for s in self.profile["time"]["signatures"]
+            ]
+        if "time" in snap:
+            guards.append(
+                (
+                    self.profile["trainer"]["pointer_address"],
+                    struct.pack("<I", snap["time"]["address"]),
+                    struct.pack("<I", snap["time"]["address"]),
+                )
+            )
+            guards += [
+                (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
+                for s in self.profile["time"]["signatures"]
+            ]
         if "trainer" in snap:
             guards.append(
                 (
@@ -523,6 +648,8 @@ class Trainer:
             ]
         if (
             "trainer" in snap
+            or "time" in snap
+            or "daily_time" in snap
             or value_edit
             or bag_sort
             or box_edit
@@ -555,7 +682,7 @@ class Trainer:
             sum(len(before) for _, before, _ in guards + changes) > 4096
             and "BATCH8192" not in self.g.capabilities
         ):
-            raise ValueError("按编号排序需要重新加载本次发布的 mercury_bridge.lua")
+            raise ValueError("本次事务需要重新加载本次发布的 mercury_bridge.lua")
         self.backup_dir.mkdir(parents=True, exist_ok=True)
         path = self.backup_dir / (
             datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid4().hex[:8] + ".json"
@@ -587,12 +714,17 @@ class Trainer:
 
         save_record()  # Fail closed when a backup cannot be written.
         try:
-            self.g.batch(guards + changes)
-            for address, _, after in changes:
-                if self.g.read(address, len(after)) != after:
-                    raise IOError(
-                        "写后读回不一致；可能游戏正在更新数据，请先核对备份与游戏当前状态"
-                    )
+            if "time" in snap or "daily_time" in snap:
+                # Time may tick between network requests; read back in the same
+                # emulator callback, while no game frame can advance.
+                self.g.batch(guards + changes, verify=True)
+            else:
+                self.g.batch(guards + changes)
+                for address, _, after in changes:
+                    if self.g.read(address, len(after)) != after:
+                        raise IOError(
+                            "写后读回不一致；可能游戏正在更新数据，请先核对备份与游戏当前状态"
+                        )
             record["status"] = "verified"
         except Exception as exc:
             record["status"] = "failed-or-unconfirmed"
@@ -658,6 +790,16 @@ class Trainer:
                     len(before) == 8 and address == trainer_snap["address"]
                 ):
                     snap["trainer"] = trainer_snap
+                    valid = True
+            if not valid and len(before) == 4 and self.profile.get("time"):
+                time_snap = self.snapshot_time()
+                if address == time_snap["address"] + 14:
+                    decode_playtime(after + b"\0")
+                    snap["time"] = time_snap
+                    valid = True
+                elif address == self.profile["time"]["daily_event"]["address"]:
+                    decode_daily_event(after)
+                    snap["daily_time"] = time_snap
                     valid = True
             if not valid:
                 raise ValueError("备份中包含不支持恢复的地址或字段")

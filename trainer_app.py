@@ -7,11 +7,20 @@ import sys
 import threading
 import tkinter as tk
 import webbrowser
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from box_data import BoxPokemon
+from clock_data import (
+    WEEKDAYS,
+    calendar_text,
+    local_epoch,
+    parse_calendar,
+    read_save,
+    restore_calendar,
+    write_calendar,
+)
 from held_forms import held_form_family
 from memory_client import MemClient
 from pokemon_data import (
@@ -58,6 +67,10 @@ class App:
         self.current_slot = None
         self.box_snapshot = None
         self.trainer_snapshot = None
+        self.time_snapshot = None
+        self.rtc_snapshot = None
+        self.rtc_calibrate = False
+        self.daily_repair_ready = None
         self.icon_images = {}
         self.spinda_assets = None
         self.spinda_photos = []
@@ -127,6 +140,7 @@ class App:
             self.tab_values,
             text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家姓名与 ID 在“训练师”页编辑；支持中文姓名；主角性别联动待核验。",
         ).pack(anchor="w")
+        self._build_time()
         self.tab_party = ttk.Frame(self.nb, padding=8)
         self.nb.add(self.tab_party, text="宝可梦编辑")
         self.party_tree = PokemonSelector(
@@ -608,6 +622,364 @@ class App:
             f"携带道具：{self.item_name(original.held)} → {self.item_name(updated.held)}；"
             f"特性：{ability(original)} → {ability(updated)}。"
         )
+
+    def _build_time(self):
+        tab = ttk.Frame(self.nb, padding=12)
+        self.nb.add(tab, text="时间 / 星期")
+        self.time_form = ScrollingForm(tab, padding=0)
+        self.time_form.pack(fill="both", expand=True)
+        live = ttk.LabelFrame(self.time_form.body, text="正在运行的游戏", padding=8)
+        live.pack(fill="x", pady=4)
+        self.time_detail = tk.StringVar(
+            value="连接后读取：RTC 日历、星期、累计游玩时长。"
+        )
+        ttk.Label(live, textvariable=self.time_detail, wraplength=850).pack(anchor="w")
+        row = ttk.Frame(live)
+        row.pack(anchor="w", pady=6)
+        self.play_hours = tk.StringVar()
+        self.play_minutes = tk.StringVar()
+        self.play_seconds = tk.StringVar()
+        for label, var in [
+            ("累计小时", self.play_hours),
+            ("分", self.play_minutes),
+            ("秒", self.play_seconds),
+        ]:
+            ttk.Label(row, text=label).pack(side="left", padx=3)
+            ttk.Entry(row, textvariable=var, width=7).pack(side="left")
+        self.button(row, "读取游戏时间", self.read_time, side="left", padx=8)
+        self.button(row, "写入累计时长", self.write_playtime, side="left")
+        ttk.Label(
+            live,
+            text="累计时长：0～999 小时、0～59 分/秒；按填写的绝对时长应用。保持 mGBA 运行，写入后在游戏内保存。",
+            wraplength=850,
+        ).pack(anchor="w")
+        self.daily_detail = tk.StringVar(value="引擎每日刷新记录：尚未读取。")
+        ttk.Label(live, textvariable=self.daily_detail, wraplength=850).pack(
+            anchor="w", pady=4
+        )
+        row = ttk.Frame(live)
+        row.pack(anchor="w", pady=3)
+        self.button(
+            row, "预览每日日期修复", self.preview_daily_repair, side="left", padx=3
+        )
+        self.button(
+            row, "写入每日日期修复", self.write_daily_repair, side="left", padx=3
+        )
+        saved = ttk.LabelFrame(
+            self.time_form.body, text=".sav 中的持久 RTC（先关闭该游戏）", padding=8
+        )
+        saved.pack(fill="x", pady=8)
+        self.rtc_rom_path = tk.StringVar()
+        self.rtc_save_path = tk.StringVar()
+        for label, var, callback in [
+            ("本地 ROM", self.rtc_rom_path, self.choose_time_rom),
+            ("游戏存档", self.rtc_save_path, self.choose_time_save),
+        ]:
+            row = ttk.Frame(saved)
+            row.pack(fill="x", pady=3)
+            ttk.Label(row, text=label, width=10).pack(side="left")
+            ttk.Entry(row, textvariable=var, state="readonly").pack(
+                side="left", fill="x", expand=True
+            )
+            self.button(row, "选择", callback, side="left", padx=5)
+        self.rtc_detail = tk.StringVar(
+            value="选择匹配本版的 ROM 与 .sav，再读取。无需连接桥接。"
+        )
+        ttk.Label(saved, textvariable=self.rtc_detail, wraplength=850).pack(
+            anchor="w", pady=6
+        )
+        row = ttk.Frame(saved)
+        row.pack(anchor="w", pady=4)
+        ttk.Label(row, text="目标本地时间").pack(side="left", padx=3)
+        self.rtc_target = tk.StringVar()
+        ttk.Entry(row, textvariable=self.rtc_target, width=25).pack(side="left")
+        self.button(
+            row, "校准到电脑时间（填入预览）", self.fill_time_now, side="left", padx=8
+        )
+        row = ttk.Frame(saved)
+        row.pack(anchor="w", pady=3)
+        ttk.Label(row, text="切换至同一周的").pack(side="left", padx=3)
+        self.rtc_weekday = tk.StringVar()
+        weekday = ttk.Combobox(
+            row,
+            textvariable=self.rtc_weekday,
+            values=WEEKDAYS,
+            width=8,
+            state="readonly",
+        )
+        weekday.pack(side="left")
+        weekday.bind("<<ComboboxSelected>>", self.choose_time_weekday)
+        self.rtc_preview = tk.StringVar(
+            value="格式：YYYY-MM-DD HH:MM:SS；星期由日期自动计算。"
+        )
+        ttk.Label(saved, textvariable=self.rtc_preview, wraplength=850).pack(
+            anchor="w", pady=4
+        )
+        self.rtc_target.trace_add("write", self.update_time_preview)
+        row = ttk.Frame(saved)
+        row.pack(anchor="w", pady=4)
+        self.button(row, "读取 .sav 时间", self.read_saved_time, side="left", padx=3)
+        self.button(row, "写入 RTC 修改", self.write_saved_time, side="left", padx=3)
+        self.button(row, "恢复 RTC 备份", self.restore_saved_time, side="left", padx=3)
+        ttk.Label(
+            saved,
+            text="仅支持 mGBA 0.10.5 带 RTC 尾部的 .sav；年份 2000～2099。写入前保留完整存档备份。\n"
+            "写入后重新打开 ROM，从游戏内存档继续；旧即时存档可能覆盖时钟状态。关闭 mGBA 的自定义 RTC 覆盖，\n"
+            "使用相同的电脑时区。时间回拨可能使每日事件等待原日期；本功能保留每日事件历史记录。",
+            wraplength=850,
+        ).pack(anchor="w", pady=5)
+        self.time_form.enable_navigation()
+
+    def apply_time_snapshot(self, snap):
+        self.time_snapshot = snap
+        self.daily_repair_ready = None
+        daily = snap["daily_date"]
+        daily_text = "引擎每日刷新记录（Var5009/500A）："
+        if snap["daily_error"]:
+            daily_text += snap["daily_error"]
+        elif daily is None:
+            daily_text += "尚未设置"
+        else:
+            daily_text += calendar_text(daily)
+            if daily.date() > snap["clock"].date():
+                daily_text += "；处于未来，可能阻止当天刷新。可先预览修复。"
+            else:
+                daily_text += "；没有未来日期异常。"
+        self.daily_detail.set(daily_text)
+        for var, value in zip(
+            (self.play_hours, self.play_minutes, self.play_seconds),
+            snap["playtime"][:3],
+        ):
+            var.set(str(value))
+        note = "（游戏已开启上午/下午对调）" if snap["invert_ampm"] else ""
+        if snap["weekday_mismatch"]:
+            note += "；游戏星期缓存与日期不一致"
+        if snap["rtc_error"]:
+            note += f"；RTC 错误标志 0x{snap['rtc_error']:04X}"
+        self.time_detail.set(
+            "游戏日历："
+            + calendar_text(snap["clock"])
+            + note
+            + "\n"
+            + "读取时间："
+            + datetime.now().strftime("%H:%M:%S")
+            + "；日历缓存只读，持久修改在下方操作。"
+        )
+
+    def read_time(self):
+        if self.trainer is None or self.busy:
+            return
+        trainer = self.trainer
+        self.run(
+            "读取游戏 RTC 与累计时长…", trainer.snapshot_time, self.apply_time_snapshot
+        )
+
+    def preview_daily_repair(self):
+        if self.busy or self.time_snapshot is None or self.trainer is None:
+            return
+        try:
+            before, target = self.trainer.daily_repair_preview(self.time_snapshot)
+        except ValueError as exc:
+            self.daily_repair_ready = None
+            messagebox.showinfo("每日日期修复", str(exc))
+            return
+        self.daily_repair_ready = self.time_snapshot
+        self.daily_detail.set(
+            "修复预览："
+            + calendar_text(before)
+            + " → "
+            + calendar_text(target.replace(second=0))
+            + "\n仅校准引擎每日刷新记录到昨天，让游戏重新执行当天刷新；其他领取标志保持原样。"
+        )
+
+    def write_daily_repair(self):
+        if self.busy or self.trainer is None:
+            return
+        if self.daily_repair_ready is None:
+            messagebox.showinfo("先预览", "请先读取游戏时间并预览每日日期修复。")
+            return
+        trainer, snapshot = self.trainer, self.daily_repair_ready
+        self.daily_repair_ready = None
+
+        def job():
+            result = trainer.commit_daily_repair(snapshot)
+            return result, trainer.snapshot_time()
+
+        def done(result):
+            self.apply_time_snapshot(result[1])
+            self.status.set(
+                "每日刷新日期已核对；请在游戏内保存后重新进入地图或重开游戏。备份："
+                + str(result[0]["backup"])
+            )
+
+        self.run("检查日期、备份并校准每日刷新记录…", job, done)
+
+    def write_playtime(self):
+        if self.time_snapshot is None or self.trainer is None or self.busy:
+            return
+        trainer, snap = self.trainer, self.time_snapshot
+        values = (
+            self.play_hours.get(),
+            self.play_minutes.get(),
+            self.play_seconds.get(),
+        )
+
+        def job():
+            result = trainer.commit_playtime(snap, *values)
+            return result, trainer.snapshot_time()
+
+        def done(result):
+            self.apply_time_snapshot(result[1])
+            self.status.set(
+                "累计时长已读回核对；请在游戏内保存。备份：" + str(result[0]["backup"])
+            )
+
+        self.run("检查并写入累计游玩时长…", job, done)
+
+    def choose_time_rom(self):
+        if self.busy:
+            return
+        path = filedialog.askopenfilename(
+            title="选择已验证的水银 FC ROM", filetypes=[("GBA ROM", "*.gba")]
+        )
+        if path:
+            self.rtc_rom_path.set(path)
+            self.rtc_snapshot = None
+            self.rtc_detail.set("ROM 已改变，请重新读取 .sav。")
+
+    def choose_time_save(self):
+        if self.busy:
+            return
+        path = filedialog.askopenfilename(
+            title="选择游戏内保存的 .sav（不选择 .ss1）",
+            filetypes=[("游戏存档", "*.sav")],
+        )
+        if path:
+            self.rtc_save_path.set(path)
+            self.rtc_snapshot = None
+            self.rtc_detail.set("存档已改变，请重新读取。")
+
+    def time_backup_dir(self):
+        base = (
+            Path(sys.executable).parent
+            if getattr(sys, "frozen", False)
+            else Path(__file__).resolve().parent
+        )
+        return base / "backups"
+
+    def apply_saved_time(self, snap):
+        self.rtc_snapshot = snap
+        hours, minutes, seconds, _ = snap["playtime"]
+        text = (
+            "RTC 保存记录："
+            + calendar_text(snap["saved"])
+            + "\n"
+            + "按当前电脑时区推算："
+            + calendar_text(snap["current"])
+            + f"；时钟偏移（电脑减游戏）{snap['offset']:+d} 秒\n"
+            + f"存档累计时长：{hours:03d}:{minutes:02d}:{seconds:02d}；存档次数 {snap['counter']}"
+        )
+        if snap["weekday_mismatch"]:
+            text += "；RTC 星期字节异常，写入时会按日期校正"
+        self.rtc_detail.set(text)
+        self.rtc_target.set(snap["current"].strftime("%Y-%m-%d %H:%M:%S"))
+
+    def read_saved_time(self):
+        if self.busy:
+            return
+        path, rom = self.rtc_save_path.get(), self.rtc_rom_path.get()
+        if not path or not rom:
+            messagebox.showinfo("选择文件", "请先选择本地 ROM 和 .sav。")
+            return
+        self.rtc_snapshot = None
+        self.run(
+            "核对 ROM 并读取存档 RTC…",
+            lambda: read_save(path, rom, self.profile),
+            self.apply_saved_time,
+        )
+
+    def update_time_preview(self, *_):
+        self.rtc_calibrate = False
+        try:
+            target = parse_calendar(self.rtc_target.get())
+            self.rtc_weekday.set(WEEKDAYS[target.weekday()])
+            offset = int(datetime.now().timestamp()) - local_epoch(target)
+            self.rtc_preview.set(
+                "指定时间预览："
+                + calendar_text(target)
+                + f"；预计偏移 {offset:+d} 秒。星期随日期同步。"
+            )
+        except ValueError as exc:
+            self.rtc_weekday.set("")
+            self.rtc_preview.set(str(exc))
+
+    def choose_time_weekday(self, event=None):
+        if self.busy:
+            return
+        try:
+            target = parse_calendar(self.rtc_target.get())
+            selected = WEEKDAYS.index(self.rtc_weekday.get())
+            target += timedelta(days=selected - target.weekday())
+            self.rtc_target.set(target.strftime("%Y-%m-%d %H:%M:%S"))
+        except ValueError as exc:
+            messagebox.showerror("未修改", str(exc))
+
+    def fill_time_now(self):
+        if self.busy:
+            return
+        value = datetime.now().replace(microsecond=0)
+        self.rtc_target.set(value.strftime("%Y-%m-%d %H:%M:%S"))
+        self.rtc_calibrate = True
+        self.rtc_preview.set(
+            "校准预览：" + calendar_text(value) + "；写入时采用电脑当前时间，偏移为 0。"
+        )
+
+    def write_saved_time(self):
+        if self.busy or self.rtc_snapshot is None:
+            return
+        snapshot, rom = self.rtc_snapshot, self.rtc_rom_path.get()
+        target, calibrate = self.rtc_target.get(), self.rtc_calibrate
+        folder = self.time_backup_dir()
+
+        def job():
+            result = write_calendar(
+                snapshot, target, rom, self.profile, folder, calibrate
+            )
+            return result, read_save(snapshot["path"], rom, self.profile)
+
+        def done(result):
+            self.apply_saved_time(result[1])
+            self.status.set(
+                "RTC 修改已读回核对；请重新打开游戏并从游戏内存档继续。备份："
+                + str(result[0]["backup"])
+            )
+
+        self.run("独占检查、备份并写入 RTC 尾部…", job, done)
+
+    def restore_saved_time(self):
+        if self.busy or self.rtc_snapshot is None:
+            return
+        folder = self.time_backup_dir()
+        path = filedialog.askopenfilename(
+            title="选择已完成的 RTC 备份记录",
+            initialdir=str(folder),
+            filetypes=[("RTC 备份记录", "*-rtc-*.json")],
+        )
+        if not path:
+            return
+        snapshot, rom = self.rtc_snapshot, self.rtc_rom_path.get()
+
+        def job():
+            result = restore_calendar(snapshot, path, rom, self.profile, folder)
+            return result, read_save(snapshot["path"], rom, self.profile)
+
+        def done(result):
+            self.apply_saved_time(result[1])
+            self.status.set(
+                "RTC 原偏移已条件恢复并读回；恢复动作也已备份。请重新打开游戏。"
+            )
+
+        self.run("核对存档与 RTC 备份后恢复…", job, done)
 
     def _build_trainer(self):
         tab = ttk.Frame(self.nb, padding=12)
@@ -1534,6 +1906,10 @@ class App:
         old_mem = self.mem
         self.mem = None
         self.trainer = None
+        self.time_snapshot = None
+        self.time_detail.set("连接已改变，请重新读取游戏时间。")
+        self.daily_repair_ready = None
+        self.daily_detail.set("连接已改变，请重新读取每日刷新日期。")
         self.snapshot = None
         self.snapshot_at = None
         self.current_slot = None
@@ -2169,6 +2545,15 @@ class App:
                 **self.trainer_snapshot,
                 "raw": self.trainer_snapshot["raw"].hex(),
             }
+        if self.time_snapshot is not None:
+            data["time"] = {
+                key: value.hex()
+                if isinstance(value, bytes)
+                else value.isoformat()
+                if isinstance(value, datetime)
+                else value
+                for key, value in self.time_snapshot.items()
+            }
         try:
             Path(path).write_text(
                 json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -2211,6 +2596,7 @@ class App:
             self.box_snapshot["index"] if self.box_snapshot is not None else None
         )
         had_trainer = self.trainer_snapshot is not None
+        had_time = self.time_snapshot is not None
 
         def job():
             result = self.trainer.restore(path)
@@ -2218,7 +2604,8 @@ class App:
                 self.trainer.snapshot_box(box_index) if box_index is not None else None
             )
             trainer_snap = self.trainer.snapshot_trainer() if had_trainer else None
-            return result, self.trainer.snapshot(pocket), box, trainer_snap
+            time_snap = self.trainer.snapshot_time() if had_time else None
+            return result, self.trainer.snapshot(pocket), box, trainer_snap, time_snap
 
         def done(result):
             self.apply_snapshot(result[1])
@@ -2226,6 +2613,8 @@ class App:
                 self.apply_box_snapshot(result[2])
             if result[3] is not None:
                 self.apply_trainer_snapshot(result[3])
+            if result[4] is not None:
+                self.apply_time_snapshot(result[4])
             self.status.set("已恢复并读回核对；恢复动作也已保存备份。")
 
         self.run("检查备份与当前游戏数据…", job, done)

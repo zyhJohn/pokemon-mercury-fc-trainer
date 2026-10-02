@@ -15,6 +15,87 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_daily_date_repair_requires_preview_and_preserves_pokemon_draft(self):
+        from tests.test_time import put_time
+
+        put_time(self.mem, self.app.profile)
+        self.app.run = lambda label, job, done: done(job())
+        self.app.read_time()
+        self.assertIn("2026-10-04", self.app.daily_detail.get())
+        self.assertIn("未来", self.app.daily_detail.get())
+        with patch("trainer_app.messagebox.showinfo") as info:
+            self.app.write_daily_repair()
+            info.assert_called_once()
+        self.assertEqual(self.mem.writes, 0)
+        self.app.iv[0].set("31")
+        self.app.preview_daily_repair()
+        self.assertIn("2026-10-01", self.app.daily_detail.get())
+        self.app.write_daily_repair()
+        self.assertIsNone(self.app.daily_repair_ready)
+        self.assertEqual(self.app.trainer.snapshot_time()["daily_date"].day, 1)
+        self.assertEqual(self.app.iv[0].get(), "31")
+
+    def test_time_page_reads_weekday_and_writes_separate_playtime(self):
+        from tests.test_time import put_time
+
+        put_time(self.mem, self.app.profile)
+        self.app.run = lambda label, job, done: done(job())
+        self.app.read_time()
+        self.assertIn("周五", self.app.time_detail.get())
+        self.assertEqual(self.app.play_hours.get(), "26")
+        self.app.play_hours.set("12")
+        self.app.play_minutes.set("34")
+        self.app.play_seconds.set("56")
+        self.app.iv[0].set("31")
+        self.app.write_playtime()
+        self.assertEqual(self.app.trainer.snapshot_time()["playtime"], (12, 34, 56, 255))
+        self.assertEqual(self.app.iv[0].get(), "31")
+        self.assertEqual(self.mem.read(PARTY, 100), sample().raw)
+
+    def test_rtc_draft_preview_and_calibration_never_write(self):
+        self.app.rtc_target.set("2026-10-04 00:00:00")
+        self.assertIn("周日", self.app.rtc_preview.get())
+        self.app.fill_time_now()
+        self.assertTrue(self.app.rtc_calibrate)
+        self.assertIn("偏移为 0", self.app.rtc_preview.get())
+        self.app.rtc_target.set("2026-10-05 00:00:00")
+        self.assertFalse(self.app.rtc_calibrate)
+        self.assertIn("周一", self.app.rtc_preview.get())
+        self.app.rtc_weekday.set("周日")
+        self.app.choose_time_weekday()
+        self.assertEqual(self.app.rtc_target.get(), "2026-10-11 00:00:00")
+        self.assertIn("周日", self.app.rtc_preview.get())
+        self.app.rtc_target.set("2026-02-29 00:00:00")
+        self.assertIn("日期必须有效", self.app.rtc_preview.get())
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_saved_rtc_read_write_restore_without_bridge_connection(self):
+        from tests.test_time import make_save
+        from clock_data import digest
+
+        with tempfile.TemporaryDirectory(prefix="中文 时间 ") as folder:
+            root = Path(folder)
+            rom, save = root / "测试.gba", root / "游戏.sav"
+            rom.write_bytes(b"test ROM")
+            before = make_save()
+            save.write_bytes(before)
+            self.app.profile = {"rom_sha256": digest(rom.read_bytes())}
+            self.app.trainer = None
+            self.app.rtc_rom_path.set(str(rom))
+            self.app.rtc_save_path.set(str(save))
+            self.app.time_backup_dir = lambda: root / "backups"
+            self.app.run = lambda label, job, done: done(job())
+            self.app.read_saved_time()
+            self.assertIn("周五", self.app.rtc_detail.get())
+            self.app.rtc_target.set("2026-10-04 00:00:00")
+            self.app.write_saved_time()
+            self.assertIn("周日", self.app.rtc_detail.get())
+            record = next((root / "backups").glob("*.json"))
+            with patch("trainer_app.filedialog.askopenfilename", return_value=str(record)):
+                self.app.restore_saved_time()
+            self.assertEqual(save.read_bytes(), before)
+            self.assertEqual(self.mem.writes, 0)
+
     def test_values_page_edits_verified_points_and_extended_coins(self):
         for key, value in [
             ("coins", 735),

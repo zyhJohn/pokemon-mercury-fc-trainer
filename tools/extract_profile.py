@@ -331,6 +331,43 @@ def extract(rom, catalog):
                 "category": b[10],
                 "name": row["name"],
             }
+    profile["time"] = {
+        "clock_address": 0x03005EA0,
+        "clock_size": 9,
+        "rtc_cache_address": 0x03005E88,
+        "rtc_error_address": 0x0203E05A,
+        "invert_ampm_address": 0x0203E050,
+        "playtime_offset": 14,
+        "playtime_size": 5,
+        "daily_event": {
+            "variable": 0x5009,
+            "address": 0x0203B386,
+            "size": 4,
+            "checker": 0x09D59410,
+            "updater": 0x09D59548,
+            "future_checker": 0x09D59350,
+            "section_id": 4,
+            "section_offset": 0xEDE,
+        },
+        "weekday_getter": 0x09D59704,
+        "clock_update": 0x09D56A28,
+        "playtime_update": 0x09D56AF4,
+        "playtime_maximum": 0x080548D4,
+        "weekday_order": "Sunday=0 through Saturday=6; date-derived in mGBA",
+        "persistent_rtc": "mGBA 0.10.5: 128 KiB flash + 7 BCD bytes, control byte, little-endian signed 64-bit lastLatch",
+        "signatures": [
+            {"address": a, "hex": read(a, n).hex()}
+            for a, n in [
+                (0x09D56A28, 172),
+                (0x09D56AF4, 164),
+                (0x09D59704, 12),
+                (0x080548D4, 44),
+                (0x0805486C, 8),
+                (0x09D59350, 652),
+                (0x09D64C04, 84),
+            ]
+        ],
+    }
     return profile
 
 

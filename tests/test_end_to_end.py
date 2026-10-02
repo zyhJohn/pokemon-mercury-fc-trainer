@@ -40,6 +40,8 @@ class EndToEndTests(unittest.TestCase):
 
         def reply(line):
             result = self.handle(line) + b"\n"
+            if getattr(self, "after_command", None):
+                self.after_command(line)
             return [result[:3], result[3:]]
 
         self.server = Server(reply)
@@ -62,6 +64,46 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual(updated.ivs, (31,) * 6)
         self.assertEqual(updated.ability_flag, sample().ability_flag)
         self.trainer.restore(record["backup"])
+        self.assertEqual(self.client.read(PARTY, 100), sample().raw)
+
+    def test_playtime_write_and_restore_over_actual_lua_tcp(self):
+        from tests.test_time import put_time
+
+        put_time(self.memory, self.profile)
+        snap = self.trainer.snapshot_time()
+        result = self.trainer.commit_playtime(snap, 1, 2, 3)
+        self.assertEqual(self.trainer.snapshot_time()["playtime"], (1, 2, 3, 255))
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.trainer.snapshot_time()["playtime"], (26, 4, 18, 255))
+        self.assertEqual(self.client.read(PARTY, 100), sample().raw)
+
+    def test_playtime_readback_is_confirmed_before_next_frame_advances(self):
+        from tests.test_time import put_time
+
+        put_time(self.memory, self.profile)
+        snapshot = self.trainer.snapshot_time()
+
+        def advance(line):
+            if line.startswith(b"BATCHVERIFYCRC"):
+                self.memory.put(snapshot["address"] + 17, b"\x04")
+
+        self.after_command = advance
+        result = self.trainer.commit_playtime(snapshot, 1, 2, 3)
+        record = json.loads(Path(result["backup"]).read_text(encoding="utf-8"))
+        self.assertEqual(record["status"], "verified")
+        self.assertEqual(self.trainer.snapshot_time()["playtime"][:3], (1, 2, 4))
+        with self.assertRaisesRegex(OSError, "游戏数据已变化"):
+            self.trainer.restore(result["backup"])
+
+    def test_daily_repair_readback_and_restore_over_actual_lua_tcp(self):
+        from tests.test_time import put_time
+
+        put_time(self.memory, self.profile)
+        snapshot = self.trainer.snapshot_time()
+        result = self.trainer.commit_daily_repair(snapshot)
+        self.assertEqual(self.trainer.snapshot_time()["daily_date"].day, 1)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.trainer.snapshot_time()["daily_date"].day, 4)
         self.assertEqual(self.client.read(PARTY, 100), sample().raw)
 
     def test_all_values_write_restore_with_full_guards_over_actual_lua_tcp(self):
