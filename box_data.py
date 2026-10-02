@@ -13,6 +13,7 @@ from pokemon_data import (
     MINIOR_CORES,
     MINIOR_SPECIES,
     TOXTRICITY_SPECIES,
+    change_ability_pid,
     change_minior_color_pid,
     change_nature_pid,
     change_shiny_pid,
@@ -202,12 +203,15 @@ class BoxPokemon:
         minior_color=None,
         nickname=None,
         held=None,
+        ability_slot=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
             raise ValueError("空槽不能创建宝可梦")
         if minior_color is not None and self.species not in MINIOR_SPECIES:
             raise ValueError("核心颜色编辑仅适用于小陨星")
+        if ability_slot is not None:
+            ability_slot = integer(ability_slot, 0, 2, "特性槽位")
         data = bytearray(self.raw)
         if held is not None:
             held = integer(held, 0, 749, "携带道具")
@@ -291,8 +295,14 @@ class BoxPokemon:
                 pid % 25 if nature is None else nature,
                 self.shiny if shiny is None else shiny,
                 metadata["gender_ratio"],
-                self.pid & 1
-                if metadata["abilities"][1] and not self.ability_flag
+                ability_slot
+                if ability_slot is not None
+                and ability_slot < 2
+                and metadata["abilities"][1]
+                else self.pid & 1
+                if ability_slot is None
+                and metadata["abilities"][1]
+                and not self.ability_flag
                 else None,
             )
         if otid != self.otid:
@@ -338,6 +348,19 @@ class BoxPokemon:
             word = struct.unpack_from("<I", data, 54)[0]
             word = (word | 0x40000000) if egg else (word & ~0x40000000)
             struct.pack_into("<I", data, 54, word)
+        if ability_slot is not None:
+            slot = integer(ability_slot, 0, 2, "特性槽位")
+            species = struct.unpack_from("<H", data, 28)[0]
+            metadata = profile["species"].get(str(species))
+            if metadata is None or not metadata["abilities"][slot]:
+                raise ValueError("该目标形态没有所选特性槽位")
+            word = struct.unpack_from("<I", data, 54)[0]
+            word = word | 0x80000000 if slot == 2 else word & 0x7FFFFFFF
+            struct.pack_into("<I", data, 54, word)
+            if slot < 2 and metadata["abilities"][1]:
+                pid = change_ability_pid(
+                    pid, otid, slot, species, metadata["gender_ratio"]
+                )
         if minior_color is not None:
             color = integer(minior_color, 0, 6, "小陨星核心颜色")
             pid = change_minior_color_pid(pid, otid, color)

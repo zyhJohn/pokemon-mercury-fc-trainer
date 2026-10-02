@@ -955,6 +955,29 @@ class App:
                 f"{i} - {self.names['pers'].get(str(i), str(i))}" for i in range(25)
             ],
         ).pack(anchor="w")
+        metadata = self.profile["species"].get(str(mon.species), {})
+        slots = metadata.get("abilities", [0, 0, 0])
+        current_ability = (
+            2 if mon.ability_flag and slots[2] else mon.pid & 1 if slots[1] else 0
+        )
+        ability = tk.StringVar(
+            value=f"{current_ability} - {self.names['specs'].get(str(slots[current_ability]), str(slots[current_ability]))}"
+        )
+        original_ability = ability.get()
+        ttk.Label(basic, text="特性槽位（按目标形态检查）").pack(
+            anchor="w", pady=(6, 0)
+        )
+        ttk.Combobox(
+            basic,
+            textvariable=ability,
+            state="readonly",
+            values=[
+                f"{slot} - {self.names['specs'].get(str(ident), str(ident))}"
+                for slot, ident in enumerate(slots)
+                if ident
+            ],
+            width=28,
+        ).pack(anchor="w")
         grid = ttk.Frame(basic)
         grid.pack(anchor="w", pady=10)
         iv = [tk.StringVar(value=str(n)) for n in mon.ivs]
@@ -1049,6 +1072,7 @@ class App:
                 ot_name,
                 nickname,
                 *source_values.values(),
+                ability,
                 *iv,
                 *ev,
             ]
@@ -1085,6 +1109,8 @@ class App:
                 details["egg"] = egg.get()
             if core_color.get() != "保持当前":
                 details["minior_color"] = core_color.get().split(" - ", 1)[0]
+            if ability.get() != original_ability:
+                details["ability_slot"] = ability.get().split(" - ", 1)[0]
             return trainer.edit_box(
                 snapshot,
                 slot,
@@ -1105,7 +1131,7 @@ class App:
                 patches, report = prepare()
                 updated = BoxPokemon(patches[0][2])
                 detail.set(
-                    f"检查通过；闪光：{'是' if report['shiny'] else '否'}，EV 总和：{sum(report['evs'])}。\n蛋：{'是' if updated.egg else '否'}；等级：{report['level']}；亲密度/周期：{updated.friendship}。\n性别与特性标志保留；取出时由游戏计算能力值。来源合法性未完整验证。"
+                    f"检查通过；闪光：{'是' if report['shiny'] else '否'}，EV 总和：{sum(report['evs'])}。\n蛋：{'是' if updated.egg else '否'}；等级：{report['level']}；亲密度/周期：{updated.friendship}。\n特性：{self.names['specs'].get(str(report['ability']), report['ability'])}；隐藏标志：{mon.ability_flag} → {updated.ability_flag}；PID：{mon.pid:08X} → {updated.pid:08X}。\n取出时由游戏计算能力值。来源合法性未完整验证。"
                 )
                 if mon.species in MINIOR_SPECIES:
                     detail.set(

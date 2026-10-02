@@ -15,6 +15,54 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_pc_ability_preview_tracks_draft_without_writing(self):
+        from tests.test_box import packed_box
+        from box_data import BoxPokemon
+
+        raw = bytearray(packed_box())
+        struct.pack_into("<H", raw, 28, 133)
+        raw[39:44] = (757).to_bytes(5, "little")
+        raw[57] &= 127
+        content = bytes(raw) + b"\0" * 58 * 29
+        self.app.apply_box_snapshot(
+            {
+                "index": 0,
+                "address": self.app.profile["storage"]["box_addresses"][0],
+                "raw": content,
+                "pokemon": tuple(
+                    BoxPokemon(content[i : i + 58]) for i in range(0, len(content), 58)
+                ),
+            }
+        )
+        self.app.box_tree.selection_set("0")
+        self.root.update()
+        self.app.box_editor_values[16].set("2 - 隐藏特性")
+        self.assertNotEqual(
+            tuple(v.get() for v in self.app.box_editor_values),
+            self.app.box_editor_original,
+        )
+
+        def children(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from children(child)
+
+        widgets = list(children(self.app.box_editor))
+        next(
+            w
+            for w in widgets
+            if w.winfo_class() == "TButton" and w.cget("text") == "检查与预览"
+        ).invoke()
+        texts = [
+            self.root.getvar(w.cget("textvariable"))
+            for w in widgets
+            if w.winfo_class() == "TLabel" and w.cget("textvariable")
+        ]
+        self.assertTrue(
+            any("隐藏标志：0 → 1" in value and "PID：" in value for value in texts)
+        )
+        self.assertEqual(self.mem.writes, 0)
+
     def test_held_form_party_and_pc_preview_explain_species_changes(self):
         from tests.test_box import packed_box
         from box_data import BoxPokemon

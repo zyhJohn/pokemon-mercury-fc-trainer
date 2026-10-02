@@ -2,6 +2,8 @@
 
 更新：2026-10-02。仓库：https://github.com/zyhJohn/pokemon-mercury-fc-trainer ，当前分支 `main`。
 
+本轮交接版本0.2.8，回归基线138项；新增六家族持物形态同步、PC携带道具及普通/隐藏特性编辑。额度显示99%时已收敛。推送使用本次命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑根据自己的代理环境设置，无需沿用本机端口。正式便携包的build-info.json记录源码提交与是否有未提交修改。
+
 ## 读取顺序
 
 1. 根目录 `AGENTS.md`、`README.md`。
@@ -27,6 +29,8 @@ py -3.11 -m venv .venv
 安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`、`verify_minior.py`、`verify_chinese_names.py`、`verify_locations.py`、`verify_toxtricity.py`、`verify_nicknames.py`和`audit_player_avatar.py`、`audit_held_forms.py`、`verify_held_forms.py`使用与其他ROM工具相同的路径和报告参数。
 
 实际游戏函数研究另安装：
+
+新增`tools/verify_pc_abilities.py`同样接收ROM、即时存档和`--report`；覆盖1432物种3350可用特性槽位及5组队伍单一普通特性PID保留。大型函数矩阵关闭每次调用的墙钟计时器，但仍保留每次100万条指令上限及返回地址检查。
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-research.txt

@@ -667,7 +667,7 @@ class Pokemon:
             word = struct.unpack_from("<I", data, 72)[0]
             word = (word | 0x80000000) if slot == 2 else (word & 0x7FFFFFFF)
             struct.pack_into("<I", data, 72, word)
-            if slot != 2:
+            if slot != 2 and abilities[1]:
                 if gender_ratio is None:
                     raise ValueError("缺少性别比例数据")
                 pid = struct.unpack_from("<I", data, 0)[0]

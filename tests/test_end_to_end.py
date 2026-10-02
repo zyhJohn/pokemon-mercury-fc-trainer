@@ -64,6 +64,37 @@ class EndToEndTests(unittest.TestCase):
         self.trainer.restore(record["backup"])
         self.assertEqual(self.client.read(PARTY, 100), sample().raw)
 
+    def test_pc_ability_write_restore_over_actual_lua_tcp(self):
+        from tests.test_box import packed_box
+        from box_data import BoxPokemon
+
+        for signature in self.profile["storage"]["signatures"]:
+            self.memory.put(signature["address"], bytes.fromhex(signature["hex"]))
+        raw = bytearray(packed_box())
+        struct.pack_into("<H", raw, 28, 133)
+        raw[39:44] = (757).to_bytes(5, "little")
+        raw[57] &= 127
+        address = self.profile["storage"]["box_addresses"][24]
+        self.memory.put(address, raw)
+        source = BoxPokemon(bytes(raw))
+        for slot in [1, 2, 0]:
+            snapshot = self.trainer.snapshot_box(24)
+            patches, _ = self.trainer.edit_box(snapshot, 0, ability_slot=slot)
+            result = self.trainer.commit_box(patches, "PC ability integration")
+            updated = BoxPokemon(self.client.read(address, 58))
+            self.assertEqual(updated.ability_flag, int(slot == 2))
+            self.assertEqual(updated.pid % 25, source.pid % 25)
+            self.assertEqual(updated.shiny, source.shiny)
+            self.assertEqual(updated.ivs, source.ivs)
+            self.assertEqual(updated.egg, source.egg)
+            if slot < 2:
+                self.assertEqual(updated.pid & 1, slot)
+            if result["changed"]:
+                self.trainer.restore(result["backup"])
+            else:
+                self.assertIsNone(result["backup"])
+            self.assertEqual(self.client.read(address, 58), bytes(raw))
+
     def test_change_after_snapshot_refuses_all_writes(self):
         snap = self.trainer.snapshot()
         patches, _ = self.trainer.edit_pokemon(snap, 0, shiny=True)
