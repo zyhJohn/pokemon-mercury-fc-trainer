@@ -119,6 +119,7 @@ def extract(rom, catalog):
     profile["name_encoding"] = {
         "chinese_characters": 6763,
         "maximum_bytes": 7,
+        "pokemon_nickname_maximum_bytes": 10,
         "renderer": 0x820F658,
         "small_font": 0x8840000,
         "normal_font": 0x87D0000,

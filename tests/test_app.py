@@ -15,6 +15,19 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_nickname_preview_display_and_pending_edit_guard(self):
+        self.app.nickname.set("大力鳄小智")
+        patches, _ = self.app.prepare_mon()
+        updated = Pokemon(patches[0][2])
+        self.assertEqual(updated.nickname, "大力鳄小智")
+        self.assertNotEqual(self.app.party_form_values(), self.app.party_form_original)
+        self.app.preview()
+        self.assertIn("大力鳄小智", self.app.detail_preview.get())
+        self.mem.put(PARTY, updated.raw)
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.assertIn("大力鳄小智", self.app.party_tree.item("0", "values")[0])
+        self.assertEqual(self.mem.writes, 0)
+
     def test_toxtricity_nature_form_preview_explains_ability_change(self):
         patches, _ = self.app.trainer.edit_pokemon(
             self.app.snapshot, 0, species=1141, nature=0, ability_slot=1

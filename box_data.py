@@ -57,6 +57,10 @@ class BoxPokemon:
         return decode_name(self.raw[20:27])
 
     @property
+    def nickname(self):
+        return decode_name(self.raw[8:18])
+
+    @property
     def friendship(self):
         return self.raw[37]
 
@@ -195,6 +199,7 @@ class BoxPokemon:
         spinda_seed=None,
         egg=None,
         minior_color=None,
+        nickname=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
@@ -202,6 +207,8 @@ class BoxPokemon:
         if minior_color is not None and self.species not in MINIOR_SPECIES:
             raise ValueError("核心颜色编辑仅适用于小陨星")
         data = bytearray(self.raw)
+        if nickname is not None:
+            data[8:18] = encode_name(nickname, 10, maximum=10)
         if egg is not None:
             if not isinstance(egg, bool):
                 raise ValueError("蛋状态必须为是/否")

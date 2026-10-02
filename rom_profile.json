@@ -223118,6 +223118,7 @@
   "name_encoding": {
     "chinese_characters": 6763,
     "maximum_bytes": 7,
+    "pokemon_nickname_maximum_bytes": 10,
     "renderer": 136377944,
     "small_font": 142868480,
     "normal_font": 142409728

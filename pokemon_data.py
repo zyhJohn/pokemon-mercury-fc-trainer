@@ -356,6 +356,10 @@ class Pokemon:
         return decode_name(self.raw[20:27])
 
     @property
+    def nickname(self):
+        return decode_name(self.raw[8:18])
+
+    @property
     def species(self):
         return self.u16(32)
 
@@ -478,8 +482,11 @@ class Pokemon:
         default_friendship=None,
         spinda_seed=None,
         minior_color=None,
+        nickname=None,
     ):
         data = bytearray(self.raw)
+        if nickname is not None:
+            data[8:18] = encode_name(nickname, 10, maximum=10)
         if ot_name is not None:
             data[20:27] = encode_name(ot_name, 7)
         species = (

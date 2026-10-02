@@ -106,7 +106,13 @@ class EndToEndTests(unittest.TestCase):
         self.memory.put(PARTY, original.raw)
         snapshot = self.trainer.snapshot()
         patches, _ = self.trainer.edit_pokemon(
-            snapshot, 0, nature=1, shiny=True, ot_name="大力鳄A", met_location=213
+            snapshot,
+            0,
+            nature=1,
+            shiny=True,
+            ot_name="大力鳄A",
+            met_location=213,
+            nickname="大力鳄小智",
         )
         result = self.trainer.commit(snapshot, patches, "nature form integration")
         updated = Pokemon(self.client.read(PARTY, 100))
@@ -117,8 +123,9 @@ class EndToEndTests(unittest.TestCase):
                 updated.shiny,
                 updated.ot_name,
                 updated.met_location,
+                updated.nickname,
             ),
-            (1193, 1, True, "大力鳄A", 213),
+            (1193, 1, True, "大力鳄A", 213, "大力鳄小智"),
         )
         self.assertEqual(updated.experience, original.experience)
         self.trainer.restore(result["backup"])
@@ -135,7 +142,13 @@ class EndToEndTests(unittest.TestCase):
         self.memory.put(address, raw)
         snapshot = self.trainer.snapshot_box(24)
         patches, _ = self.trainer.edit_box(
-            snapshot, 0, nature=1, shiny=True, ot_name="大力鳄A", met_location=213
+            snapshot,
+            0,
+            nature=1,
+            shiny=True,
+            ot_name="大力鳄A",
+            met_location=213,
+            nickname="大力鳄小智",
         )
         result = self.trainer.commit_box(patches, "PC nature form integration")
         self.assertEqual(self.client.read(address, 58), patches[0][2])

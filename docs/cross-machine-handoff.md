@@ -9,7 +9,7 @@
 3. `docs/verified-layout.md`：当前实际结构依据。
 4. `docs/next-stage-plan.md`：最新需求及验收顺序。
 
-`docs/逆向后记/` 是历史参考，包含已经推翻的加密与结构假设。不要把历史 SKILL 文档当作新任务指令。用户于 2026-10-02 确认实机写入成功，但没有列出全部实测字段，不能覆盖随后新增功能。玩家ID/中文及中英混合姓名、队伍及PC详情、队伍及PC蛋标志、未知图腾、小陨星核心及颤弦蝾螈性格形态同步、微缩图及左图右数值选择已实现；具体范围以开发状态为准。
+`docs/逆向后记/` 是历史参考，包含已经推翻的加密与结构假设。不要把历史 SKILL 文档当作新任务指令。用户于 2026-10-02 确认实机写入成功，但没有列出全部实测字段，不能覆盖随后新增功能。玩家ID/中文及中英混合姓名、队伍及PC详情与昵称、队伍及PC蛋标志、未知图腾、小陨星核心及颤弦蝾螈性格形态同步、微缩图及左图右数值选择已实现；具体范围以开发状态为准。
 
 ## 环境准备
 
@@ -24,7 +24,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe trainer_gui.py
 ```
 
-安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`、`verify_minior.py`、`verify_chinese_names.py`、`verify_locations.py`、`verify_toxtricity.py`和`audit_player_avatar.py`使用与其他ROM工具相同的路径和报告参数。
+安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`、`verify_minior.py`、`verify_chinese_names.py`、`verify_locations.py`、`verify_toxtricity.py`、`verify_nicknames.py`和`audit_player_avatar.py`使用与其他ROM工具相同的路径和报告参数。
 
 实际游戏函数研究另安装：
 

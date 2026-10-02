@@ -435,6 +435,14 @@ class App:
         self.ot_name = tk.StringVar()
         self.original_ot_name = ""
         ttk.Entry(row, textvariable=self.ot_name, width=18).pack(side="left")
+        row = ttk.Frame(tab)
+        row.pack(anchor="w", pady=4)
+        ttk.Label(row, text="宝可梦昵称（最多5汉字或10字节）", width=38).pack(
+            side="left"
+        )
+        self.nickname = tk.StringVar()
+        self.original_nickname = ""
+        ttk.Entry(row, textvariable=self.nickname, width=20).pack(side="left")
         self.spinda_seed = tk.StringVar()
         self.button(
             tab,
@@ -762,6 +770,8 @@ class App:
                 if mon.species
                 else "（空槽）"
             )
+            if mon.species and mon.nickname and mon.nickname.strip():
+                name = mon.nickname
             count += bool(mon.species)
             self.box_tree.insert(
                 "",
@@ -913,6 +923,14 @@ class App:
             anchor="w", pady=3
         )
         ttk.Entry(sources, textvariable=ot_name, width=24).pack(anchor="w")
+        original_nickname = (
+            mon.nickname if mon.nickname is not None else "（未知编码，原样保留）"
+        )
+        nickname = tk.StringVar(value=original_nickname)
+        ttk.Label(sources, text="宝可梦昵称（最多5汉字或10字节）").pack(
+            anchor="w", pady=3
+        )
+        ttk.Entry(sources, textvariable=nickname, width=24).pack(anchor="w")
         ttk.Checkbutton(sources, text="蛋（转换后先检查预览）", variable=egg).pack(
             anchor="w", pady=6
         )
@@ -932,6 +950,7 @@ class App:
                 core_color,
                 pattern_seed,
                 ot_name,
+                nickname,
                 *source_values.values(),
                 *iv,
                 *ev,
@@ -961,6 +980,8 @@ class App:
             }
             if ot_name.get() != original_name:
                 details["ot_name"] = ot_name.get()
+            if nickname.get() != original_nickname:
+                details["nickname"] = nickname.get()
             if pattern_seed.get():
                 details["spinda_seed"] = pattern_seed.get()
             if egg.get() != mon.egg:
@@ -1467,7 +1488,11 @@ class App:
         self.coins.set(str(snap["coins"]))
         self.party_tree.delete(*self.party_tree.get_children())
         for i, mon in enumerate(snap["party"]):
-            name = self.names["breeds"].get(str(mon.species), f"未收录#{mon.species}")
+            name = (
+                mon.nickname
+                if mon.nickname and mon.nickname.strip()
+                else self.names["breeds"].get(str(mon.species), f"未收录#{mon.species}")
+            )
             self.party_tree.insert(
                 "",
                 "end",
@@ -1496,6 +1521,7 @@ class App:
                 *self.ev,
                 *self.detail_vars.values(),
                 self.ot_name,
+                self.nickname,
                 self.unown_letter,
                 self.minior_color,
                 self.spinda_seed,
@@ -1572,6 +1598,7 @@ class App:
                 self.shiny,
                 self.egg,
                 self.ot_name,
+                self.nickname,
                 self.unown_letter,
                 self.minior_color,
                 self.spinda_seed,
@@ -1633,6 +1660,10 @@ class App:
             mon.ot_name if mon.ot_name is not None else "（未知编码，原样保留）"
         )
         self.ot_name.set(self.original_ot_name)
+        self.original_nickname = (
+            mon.nickname if mon.nickname is not None else "（未知编码，原样保留）"
+        )
+        self.nickname.set(self.original_nickname)
         self.unown_letter.set(
             f"{unown_form(mon.pid)} - 当前字形" if mon.species == 201 else "不适用"
         )
@@ -1715,6 +1746,8 @@ class App:
             changes["egg"] = self.egg.get()
         if self.ot_name.get() != self.original_ot_name:
             changes["ot_name"] = self.ot_name.get()
+        if self.nickname.get() != self.original_nickname:
+            changes["nickname"] = self.nickname.get()
         if self.spinda_seed.get():
             changes["spinda_seed"] = self.spinda_seed.get()
         if changes["species"] == "201" and self.unown_letter.get() not in (
@@ -1839,6 +1872,7 @@ class App:
                 f"亲密度/周期：{original.friendship} → {updated.friendship}；地点：{original.met_location} → {updated.met_location}；相遇等级：{original.met_level} → {updated.met_level}\n"
                 f"捕获球：{original.ball} → {updated.ball}；原训练师性别：{original.ot_gender} → {updated.ot_gender}。来源合法性未完整验证。"
                 f"\n原训练师姓名：{original.ot_name or '未知编码'} → {updated.ot_name or '未知编码'}"
+                f"\n昵称：{original.nickname or '未知编码'} → {updated.nickname or '未知编码'}"
                 f"\n蛋：{original.egg} → {updated.egg}；等级：{original.level} → {updated.level}。"
                 + self.nature_form_summary(original, updated)
             )
