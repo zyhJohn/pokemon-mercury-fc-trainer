@@ -187,11 +187,34 @@ class BoxPokemon:
         ot_gender=None,
         ot_name=None,
         spinda_seed=None,
+        egg=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
             raise ValueError("空槽不能创建宝可梦")
         data = bytearray(self.raw)
+        if egg is not None:
+            if not isinstance(egg, bool):
+                raise ValueError("蛋状态必须为是/否")
+            metadata = profile["species"].get(str(self.species))
+            if metadata is None:
+                raise ValueError("缺少已核对物种信息")
+            if egg != self.egg:
+                if egg:
+                    struct.pack_into(
+                        "<I",
+                        data,
+                        32,
+                        experience_for_level(
+                            1, metadata["growth"], profile.get("experience_tables")
+                        ),
+                    )
+                    if friendship is None:
+                        friendship = metadata["egg_cycles"]
+                    if met_level is None:
+                        met_level = 0
+                elif friendship is None:
+                    friendship = metadata["friendship"]
         for value, offset, label in [
             (friendship, 37, "亲密度/孵化周期"),
             (ball, 38, "捕获球编号"),
@@ -270,6 +293,11 @@ class BoxPokemon:
                 metadata["gender_ratio"],
                 bool(metadata["abilities"][1]) and not self.ability_flag,
             )
+        if egg is not None:
+            data[19] = (data[19] | 4) if egg else (data[19] & ~4)
+            word = struct.unpack_from("<I", data, 54)[0]
+            word = (word | 0x40000000) if egg else (word & ~0x40000000)
+            struct.pack_into("<I", data, 54, word)
         struct.pack_into("<I", data, 0, pid)
         result = BoxPokemon(bytes(data))
         report = result.describe(profile)

@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from version import APP_VERSION
 
 
 def main():
@@ -66,6 +68,7 @@ def main():
             shutil.copy2(source, target)
             files.append("docs/" + name)
     manifest = {
+        "app_version": APP_VERSION,
         "built_at": datetime.now().astimezone().isoformat(),
         "bridge_protocol": 3,
         "tests": "unittest suite passed with Lua runtime installed",
@@ -75,6 +78,18 @@ def main():
             for name in files
         },
     }
+    revision = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True
+    )
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True
+    )
+    manifest["source_revision"] = (
+        revision.stdout.strip() if revision.returncode == 0 else None
+    )
+    manifest["source_dirty"] = (
+        bool(status.stdout.strip()) if status.returncode == 0 else None
+    )
     (ROOT / "dist" / "build-info.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )

@@ -40,7 +40,9 @@ def verify(rom, state, profile):
                     f"Spinda pattern {pid:08X} differs from actual renderer"
                 )
             cases += 1
-    engine = RomCPU(rom, state)  # Restore state after the deliberately isolated image buffers.
+    engine = RomCPU(
+        rom, state
+    )  # Restore state after the deliberately isolated image buffers.
     for species, front in [(307, 1), (308, 0)]:
         engine.write(0x2020000, assets["tiles"])
         engine.call(0x8043458, species, 0x12345678, 0x2020000, front)
@@ -78,7 +80,11 @@ def verify(rom, state, profile):
             if bool(engine.call(0x8044470, 0x2001000)) != shiny:
                 raise ValueError("Spinda shiny edit differs from game")
             abilities = profile["species"]["308"]["abilities"]
-            slot = 2 if updated.ability_flag and abilities[2] else (updated.pid & 1 if abilities[1] else 0)
+            slot = (
+                2
+                if updated.ability_flag and abilities[2]
+                else (updated.pid & 1 if abilities[1] else 0)
+            )
             if engine.call(0x8040D38, 0x2001000) != abilities[slot]:
                 raise ValueError("Spinda ability differs from game")
             engine.call(0x803E47C, 0x2001000)

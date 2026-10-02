@@ -18,6 +18,8 @@ from sprite_images import icon_species, read_icons
 from pokemon_selector import PokemonSelector
 from scrolling_form import ScrollingForm
 from spinda_images import read_spinda_assets, spinda_png
+from box_data import BoxPokemon
+from version import APP_VERSION
 
 
 def resource_path(name):
@@ -27,7 +29,7 @@ def resource_path(name):
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("水银 FC 修改器 · 闪光与能力编辑")
+        root.title(f"水银 FC 修改器 · {APP_VERSION}")
         self.names = json.loads(resource_path("names.json").read_text(encoding="utf-8"))
         self.profile = json.loads(
             resource_path("rom_profile.json").read_text(encoding="utf-8")
@@ -742,6 +744,7 @@ class App:
                 width=20,
             ).pack(anchor="w")
         shiny = tk.BooleanVar(value=mon.shiny)
+        egg = tk.BooleanVar(value=mon.egg)
         nature = tk.StringVar(
             value=f"{mon.pid % 25} - {self.names['pers'].get(str(mon.pid % 25), str(mon.pid % 25))}"
         )
@@ -791,14 +794,20 @@ class App:
             anchor="w", pady=3
         )
         ttk.Entry(sources, textvariable=ot_name, width=24).pack(anchor="w")
+        ttk.Checkbutton(sources, text="蛋（转换后先检查预览）", variable=egg).pack(
+            anchor="w", pady=6
+        )
         ttk.Label(
-            sources, text=f"当前蛋标志：{'是' if mon.egg else '否'}（PC 仅查看）"
-        ).pack(anchor="w", pady=6)
+            sources,
+            text="转为蛋同步两处标志、1级及默认周期；取消标志不等于自然孵化。",
+            wraplength=350,
+        ).pack(anchor="w")
         if parent is not None:
             self.box_editor = frame
             self.box_editor_slot = slot
             self.box_editor_values = [
                 shiny,
+                egg,
                 nature,
                 letter,
                 pattern_seed,
@@ -832,6 +841,8 @@ class App:
                 details["ot_name"] = ot_name.get()
             if pattern_seed.get():
                 details["spinda_seed"] = pattern_seed.get()
+            if egg.get() != mon.egg:
+                details["egg"] = egg.get()
             return trainer.edit_box(
                 snapshot,
                 slot,
@@ -850,13 +861,11 @@ class App:
         def preview():
             try:
                 patches, report = prepare()
+                updated = BoxPokemon(patches[0][2])
                 detail.set(
-                    f"检查通过；闪光：{'是' if report['shiny'] else '否'}，EV 总和：{sum(report['evs'])}。\n性别与特性标志保留；取出时由游戏计算能力值。来源合法性未完整验证。"
+                    f"检查通过；闪光：{'是' if report['shiny'] else '否'}，EV 总和：{sum(report['evs'])}。\n蛋：{'是' if updated.egg else '否'}；等级：{report['level']}；亲密度/周期：{updated.friendship}。\n性别与特性标志保留；取出时由游戏计算能力值。来源合法性未完整验证。"
                 )
                 if mon.species == 308 and self.spinda_assets is not None:
-                    from box_data import BoxPokemon
-
-                    updated = BoxPokemon(patches[0][2])
                     pattern_photos.clear()
                     for displayed, label in zip([mon, updated], pattern_labels):
                         photo = tk.PhotoImage(

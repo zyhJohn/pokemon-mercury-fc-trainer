@@ -27,6 +27,33 @@ def packed_box():
 
 
 class BoxTests(unittest.TestCase):
+    def test_pc_egg_transition_synchronizes_flags_and_preserves_metadata(self):
+        raw = bytearray(packed_box())
+        raw[39:44] = (757).to_bytes(5, "little")
+        raw[19] |= 0xF8
+        raw[52] = 128 | 50
+        mon = BoxPokemon(bytes(raw))
+        egg, report = mon.edit(self.profile, egg=True, ivs=[31] * 6)
+        self.assertTrue(egg.egg)
+        self.assertEqual(egg.raw[19], mon.raw[19] | 4)
+        self.assertEqual(egg.ability_flag, mon.ability_flag)
+        self.assertEqual(egg.met_level, 0)
+        self.assertEqual(egg.raw[52] & 128, 128)
+        self.assertEqual(report["level"], 1)
+        metadata = self.profile["species"][str(mon.species)]
+        self.assertEqual(egg.friendship, metadata["egg_cycles"])
+        restored, _ = egg.edit(self.profile, egg=False)
+        self.assertFalse(restored.egg)
+        self.assertEqual(restored.raw[19], mon.raw[19])
+        self.assertEqual(restored.friendship, metadata["friendship"])
+        allowed = {19, 37, 52} | set(range(32, 36)) | set(range(54, 58))
+        self.assertTrue(
+            all(mon.raw[i] == egg.raw[i] for i in range(58) if i not in allowed)
+        )
+        explicit, _ = mon.edit(self.profile, egg=True, friendship=7, met_level=25)
+        self.assertEqual((explicit.friendship, explicit.met_level), (7, 25))
+        self.assertEqual(explicit.edit(self.profile, egg=True)[0].raw, explicit.raw)
+
     def test_detail_edits_preserve_neighbor_bits_and_transaction_restore(self):
         raw = bytearray(packed_box())
         raw[39:44] = (757).to_bytes(5, "little")
