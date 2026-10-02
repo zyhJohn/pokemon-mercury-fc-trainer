@@ -16,9 +16,11 @@ from memory_client import MemClient
 from pokemon_data import (
     MINIOR_COLORS,
     MINIOR_SPECIES,
+    TOXTRICITY_SPECIES,
     STAT_NAMES,
     Pokemon,
     gender,
+    toxtricity_species,
     unown_form,
 )
 from pokemon_selector import PokemonSelector
@@ -370,7 +372,7 @@ class App:
         )
         ttk.Label(
             tab,
-            text="先选择队伍成员。地点可按中文名搜索选择，原有未知编号保持不变；捕获球按本改版编号填写。\n修改原训练师 ID 时保留当前选择的闪光状态；字段有效不代表遭遇来源已认证。\n转为蛋时同步两处标志、设为1级及默认周期；取消蛋标记不等于执行自然孵化。",
+            text="先选择队伍成员。地点可按中文名搜索选择，原有未知编号保持不变；捕获球按本改版编号填写。\n修改原训练师 ID 时保留当前选择的闪光状态；字段有效不代表遭遇来源已认证。\n转为蛋时同步两处标志、设为1级及默认周期；取消蛋标记不等于执行自然孵化。\n颤弦蝾螈修改性格时同步高调/低调形态，预览会显示相应特性变化。",
             wraplength=900,
         ).pack(anchor="w", pady=6)
         self.detail_vars = {}
@@ -463,6 +465,37 @@ class App:
 
     def location_label(self, ident):
         return f"{ident} - {self.profile.get('met_locations', {}).get(str(ident), '未核实地点，保留原值')}"
+
+    def nature_form_summary(self, original, updated):
+        if updated.species not in TOXTRICITY_SPECIES:
+            return ""
+
+        def form(mon):
+            return (
+                "高调"
+                if mon.species == 1141
+                else "低调"
+                if mon.species == 1193
+                else str(mon.species)
+            )
+
+        def ability(mon):
+            slots = self.profile["species"][str(mon.species)]["abilities"]
+            slot = (
+                2 if mon.ability_flag and slots[2] else mon.pid & 1 if slots[1] else 0
+            )
+            ident = slots[slot]
+            return self.names["specs"].get(str(ident), str(ident))
+
+        decision = (
+            "由所选性格决定"
+            if updated.species == toxtricity_species(updated.pid % 25)
+            else "原有形态与性格不匹配，保持原值"
+        )
+        return (
+            f"\n颤弦蝾螈形态：{form(original)} → {form(updated)}（{decision}）；"
+            f"特性：{ability(original)} → {ability(updated)}。"
+        )
 
     def location_entry(self, parent, var, width):
         choices = [
@@ -795,6 +828,12 @@ class App:
         pattern_seed = tk.StringVar()
         pattern_photos = []
         pattern_labels = []
+        if mon.species in TOXTRICITY_SPECIES:
+            ttk.Label(
+                basic,
+                text="颤弦蝾螈的高调/低调形态由所选性格决定；预览会显示形态与特性变化。",
+                wraplength=520,
+            ).pack(anchor="w", pady=(8, 0))
         if mon.species == 201:
             ttk.Label(basic, text="未知图腾字形").pack(anchor="w", pady=(8, 0))
             ttk.Combobox(
@@ -955,6 +994,7 @@ class App:
                         detail.get()
                         + f"\n核心：{MINIOR_COLORS[updated.pid % 7]}；形态编号 {mon.species} → {updated.species}。闪光颜色以游戏实际显示为准。"
                     )
+                detail.set(detail.get() + self.nature_form_summary(mon, updated))
                 if mon.species == 308 and self.spinda_assets is not None:
                     pattern_photos.clear()
                     for displayed, label in zip([mon, updated], pattern_labels):
@@ -1800,6 +1840,7 @@ class App:
                 f"捕获球：{original.ball} → {updated.ball}；原训练师性别：{original.ot_gender} → {updated.ot_gender}。来源合法性未完整验证。"
                 f"\n原训练师姓名：{original.ot_name or '未知编码'} → {updated.ot_name or '未知编码'}"
                 f"\n蛋：{original.egg} → {updated.egg}；等级：{original.level} → {updated.level}。"
+                + self.nature_form_summary(original, updated)
             )
             self.detail_image.configure(image=self.mon_image(updated))
             self.show_spinda_patterns(updated)

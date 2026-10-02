@@ -11,6 +11,7 @@ from name_codec import decode_name, encode_name
 from pokemon_data import (
     MINIOR_CORES,
     MINIOR_SPECIES,
+    TOXTRICITY_SPECIES,
     change_minior_color_pid,
     change_nature_pid,
     change_shiny_pid,
@@ -21,6 +22,7 @@ from pokemon_data import (
     regenerate_spinda_pid,
     shiny_value,
     six,
+    toxtricity_species,
 )
 
 
@@ -283,6 +285,8 @@ class BoxPokemon:
             data[44:50] = bytes(values)
         if nature is not None:
             pid = change_nature_pid(pid, otid, nature, self.species)
+            if self.species in TOXTRICITY_SPECIES and pid % 25 != self.pid % 25:
+                struct.pack_into("<H", data, 28, toxtricity_species(pid % 25))
         if shiny is not None:
             if not isinstance(shiny, bool):
                 raise ValueError("闪光状态必须为是/否")

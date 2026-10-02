@@ -13,6 +13,25 @@ STAT_NAMES = ("HP", "攻击", "防御", "速度", "特攻", "特防")
 MINIOR_CORES = tuple(range(1065, 1072))
 MINIOR_SPECIES = (991, *MINIOR_CORES)
 MINIOR_COLORS = ("红色", "蓝色", "橙色", "黄色", "靛色", "绿色", "紫色")
+TOXTRICITY_SPECIES = (1141, 1193)
+TOXTRICITY_HIGH_NATURES = (0, 2, 3, 4, 6, 8, 9, 11, 13, 14, 19, 22, 24)
+
+
+def toxtricity_species(nature):
+    nature = integer(nature, 0, 24, "性格")
+    return 1141 if nature in TOXTRICITY_HIGH_NATURES else 1193
+
+
+def resolve_toxtricity_form(original_species, original_pid, species, nature):
+    if species not in TOXTRICITY_SPECIES:
+        return species
+    selected = original_pid % 25 if nature is None else integer(nature, 0, 24, "性格")
+    expected = toxtricity_species(selected)
+    if species != original_species and species != expected:
+        raise ValueError("颤弦蝾螈形态由性格决定，请选择对应形态的性格后再修改物种")
+    if nature is not None and selected != original_pid % 25:
+        return expected
+    return species
 
 
 def integer(value, low, high, label):
@@ -466,6 +485,7 @@ class Pokemon:
         species = (
             self.species if species is None else integer(species, 1, 65535, "物种")
         )
+        species = resolve_toxtricity_form(self.species, self.pid, species, nature)
         if minior_color is not None:
             if self.species not in MINIOR_SPECIES or species not in MINIOR_SPECIES:
                 raise ValueError("核心颜色编辑仅适用于小陨星")
@@ -553,7 +573,13 @@ class Pokemon:
                 raise ValueError("缺少经验成长曲线")
             struct.pack_into("<H", data, 32, species)
             if (
-                minior_color is None
+                (
+                    minior_color is None
+                    and not (
+                        self.species in TOXTRICITY_SPECIES
+                        and species in TOXTRICITY_SPECIES
+                    )
+                )
                 or level != self.level
                 or (egg is True and not self.egg)
             ):

@@ -60,6 +60,8 @@ SIGNATURES = [
     (0x9DD5E68, 16),
     (0x80C4D40, 56),
     (0x80C4D78, 128),
+    (0x9D260F4, 40),
+    (0x9D310F4, 100),
 ]
 
 
@@ -128,6 +130,14 @@ def extract(rom, catalog):
         "pid_selector": 0x9D30C04,
         "form_reversion": 0x9D30C5C,
         "backup_species_offset": 28,
+    }
+    high_nature_mask = struct.unpack("<I", read(0x9D26118, 4))[0]
+    profile["toxtricity"] = {
+        "high_species": struct.unpack("<I", read(0x9D31148, 4))[0],
+        "low_species": struct.unpack("<I", read(0x9D3114C, 4))[0],
+        "high_natures": [n for n in range(25) if high_nature_mask & (1 << n)],
+        "nature_selector": 0x9D260F4,
+        "form_setter": 0x9D310F4,
     }
     location_table = struct.unpack("<I", read(0x80C4DB8, 4))[0]
     profile["met_location_table"] = location_table

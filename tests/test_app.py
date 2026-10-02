@@ -15,6 +15,21 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_toxtricity_nature_form_preview_explains_ability_change(self):
+        patches, _ = self.app.trainer.edit_pokemon(
+            self.app.snapshot, 0, species=1141, nature=0, ability_slot=1
+        )
+        self.mem.put(PARTY, patches[0][2])
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.app.nature.set("1")
+        patches, _ = self.app.prepare_mon()
+        self.assertEqual(Pokemon(patches[0][2]).species, 1193)
+        self.app.preview()
+        detail = self.app.detail_preview.get()
+        self.assertIn("高调 → 低调", detail)
+        self.assertIn("特性：", detail)
+        self.assertEqual(self.mem.writes, 0)
+
     def test_location_name_selection_keeps_unknown_value_until_changed(self):
         raw = bytearray(sample().raw)
         raw[69] = 222

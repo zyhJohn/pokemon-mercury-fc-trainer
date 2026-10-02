@@ -14,9 +14,12 @@ from pokemon_data import (
     MINIOR_COLORS,
     MINIOR_CORES,
     MINIOR_SPECIES,
+    TOXTRICITY_SPECIES,
     Pokemon,
     experience_for_level,
     integer,
+    resolve_toxtricity_form,
+    toxtricity_species,
 )
 
 PARTY = 0x02024284
@@ -182,6 +185,11 @@ class Trainer:
         slot = integer(slot, 0, len(snap["party"]) - 1, "队伍位置")
         mon = snap["party"][slot]
         species = integer(changes.get("species", mon.species), 1, 65535, "物种")
+        species = resolve_toxtricity_form(
+            mon.species, mon.pid, species, changes.get("nature")
+        )
+        if species != mon.species:
+            changes["species"] = species
         if changes.get("minior_color") is not None:
             if mon.species not in MINIOR_SPECIES or species not in MINIOR_SPECIES:
                 raise ValueError("核心颜色编辑仅适用于小陨星")
@@ -247,6 +255,15 @@ class Trainer:
                     "当前形态编号与核心颜色不同，游戏还原流程会切换到PID对应的核心。"
                 )
         errors = report["errors"]
+        if mon.species in TOXTRICITY_SPECIES:
+            form = "高调" if mon.species == 1141 else "低调"
+            report["notes"].append(
+                f"颤弦蝾螈：{form}形态；修改性格时同步形态，保留特性槽位，第二普通特性的种类可能改变。"
+            )
+            if mon.species != toxtricity_species(mon.pid % 25):
+                report["notes"].append(
+                    "当前形态与性格不匹配，保持原值；游戏形态检查会按性格归一化。"
+                )
         if not metadata:
             errors.append("物种不在已验证的本地 ROM 名单中")
         else:

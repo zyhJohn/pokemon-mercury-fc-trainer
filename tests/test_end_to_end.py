@@ -76,6 +76,72 @@ class EndToEndTests(unittest.TestCase):
         )
         self.assertEqual(record["status"], "failed-or-unconfirmed")
 
+    def test_chinese_player_name_and_ids_write_restore_over_actual_lua_tcp(self):
+        pointer = self.profile["trainer"]["pointer_address"]
+        address = 0x2024588
+        original = (
+            b"\x06\x02" + b"\xff" * 6 + b"\x01\xa5" + struct.pack("<HH", 12345, 54321)
+        )
+        self.memory.put(pointer, struct.pack("<I", address))
+        self.memory.put(address, original)
+        snapshot = self.trainer.snapshot_trainer()
+        result = self.trainer.commit_trainer_profile(snapshot, 65535, 0, "大力鳄A")
+        current = self.trainer.snapshot_trainer()
+        self.assertEqual(
+            (current["name"], current["tid"], current["sid"]), ("大力鳄A", 65535, 0)
+        )
+        self.assertEqual(self.client.read(address + 8, 2), original[8:10])
+        self.assertEqual(self.client.read(PARTY, 100), sample().raw)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(address, 14), original)
+
+    def test_nature_form_and_details_write_restore_over_actual_lua_tcp(self):
+        from tests.test_box import packed_box
+
+        initial = self.trainer.snapshot()
+        patches, _ = self.trainer.edit_pokemon(
+            initial, 0, species=1141, nature=0, ability_slot=1
+        )
+        original = Pokemon(patches[0][2])
+        self.memory.put(PARTY, original.raw)
+        snapshot = self.trainer.snapshot()
+        patches, _ = self.trainer.edit_pokemon(
+            snapshot, 0, nature=1, shiny=True, ot_name="大力鳄A", met_location=213
+        )
+        result = self.trainer.commit(snapshot, patches, "nature form integration")
+        updated = Pokemon(self.client.read(PARTY, 100))
+        self.assertEqual(
+            (
+                updated.species,
+                updated.pid % 25,
+                updated.shiny,
+                updated.ot_name,
+                updated.met_location,
+            ),
+            (1193, 1, True, "大力鳄A", 213),
+        )
+        self.assertEqual(updated.experience, original.experience)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(PARTY, 100), original.raw)
+
+        for signature in self.profile["storage"]["signatures"]:
+            self.memory.put(signature["address"], bytes.fromhex(signature["hex"]))
+        raw = bytearray(packed_box())
+        struct.pack_into("<I", raw, 0, original.pid)
+        struct.pack_into("<H", raw, 28, 1141)
+        raw[39:44] = (757).to_bytes(5, "little")
+        raw[57] &= 127
+        address = self.profile["storage"]["box_addresses"][24]
+        self.memory.put(address, raw)
+        snapshot = self.trainer.snapshot_box(24)
+        patches, _ = self.trainer.edit_box(
+            snapshot, 0, nature=1, shiny=True, ot_name="大力鳄A", met_location=213
+        )
+        result = self.trainer.commit_box(patches, "PC nature form integration")
+        self.assertEqual(self.client.read(address, 58), patches[0][2])
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(address, 58), bytes(raw))
+
     def test_pc_edit_and_restore_over_crc_guarded_tcp(self):
         from tests.test_box import packed_box
 
