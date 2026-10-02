@@ -27,6 +27,46 @@ def packed_box():
 
 
 class BoxTests(unittest.TestCase):
+    def test_detail_edits_preserve_neighbor_bits_and_transaction_restore(self):
+        raw = bytearray(packed_box())
+        raw[39:44] = (757).to_bytes(5, "little")
+        raw[52:54] = b"\xd2\x65"
+        self.memory.put(SAVE_POINTER, struct.pack("<I", 0x202552C))
+        self.memory.put(PARTY_COUNT, b"\0")
+        address = self.profile["storage"]["box_addresses"][24] + 29 * 58
+        self.memory.put(address, raw)
+        snapshot = self.trainer.snapshot_box(24)
+        original = snapshot["pokemon"][29]
+        patches, _ = self.trainer.edit_box(
+            snapshot,
+            29,
+            ot_tid=12345,
+            ot_sid=54321,
+            ot_name="RED",
+            met_location=222,
+            met_level=100,
+            ball=4,
+            friendship=255,
+            ot_gender=1,
+        )
+        updated = BoxPokemon(patches[0][2])
+        self.assertEqual(updated.shiny, original.shiny)
+        self.assertEqual(updated.pid % 25, original.pid % 25)
+        self.assertEqual(updated.pid & 255, original.pid & 255)
+        self.assertEqual(updated.raw[52], 228)
+        self.assertEqual(updated.raw[53], 229)
+        self.assertEqual(updated.ot_name, "RED")
+        allowed = set(range(8)) | set(range(20, 27)) | {37, 38, 51, 52, 53}
+        self.assertTrue(
+            all(raw[i] == updated.raw[i] for i in range(58) if i not in allowed)
+        )
+        record = self.trainer.commit_box(patches, "PC details")
+        self.assertEqual(self.memory.read(address, 58), updated.raw)
+        self.trainer.restore(record["backup"])
+        self.assertEqual(self.memory.read(address, 58), bytes(raw))
+        with self.assertRaisesRegex(ValueError, "精灵球口袋"):
+            self.trainer.edit_box(snapshot, 29, ball=13)
+
     def setUp(self):
         self.profile = json.loads(Path("rom_profile.json").read_text(encoding="utf-8"))
         self.memory = Memory()

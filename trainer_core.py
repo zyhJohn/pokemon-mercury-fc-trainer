@@ -152,6 +152,7 @@ class Trainer:
         if snap["address"] != address:
             raise ValueError("盒子快照地址不一致")
         mon = snap["pokemon"][slot]
+        self.check_capture_ball(mon, changes)
         updated, report = mon.edit(self.profile, **changes)
         return [(address + slot * 58, mon.raw, updated.raw)], report
 
@@ -180,11 +181,7 @@ class Trainer:
             item = self.profile["items"].get(str(held))
             if held and (not item or item["pocket"] in (2, 4)):
                 raise ValueError("重要道具与学习器不能作为携带道具")
-        if "ball" in changes:
-            ball = integer(changes["ball"], 0, 255, "捕获球编号")
-            item = self.profile["items"].get(str(ball))
-            if ball != mon.ball and (not item or item["pocket"] != 3):
-                raise ValueError("新捕获球编号须属于本改版的精灵球口袋")
+        self.check_capture_ball(mon, changes)
         updated, report = mon.edit(
             base=metadata["base"],
             growth=metadata["growth"],
@@ -200,6 +197,13 @@ class Trainer:
         if report["errors"]:
             raise ValueError("；".join(report["errors"]))
         return [(PARTY + 100 * slot, mon.raw, updated.raw)], report
+
+    def check_capture_ball(self, mon, changes):
+        if "ball" in changes:
+            ball = integer(changes["ball"], 0, 255, "捕获球编号")
+            item = self.profile["items"].get(str(ball))
+            if ball != mon.ball and (not item or item["pocket"] != 3):
+                raise ValueError("新捕获球编号须属于本改版的精灵球口袋")
 
     def validate_pokemon(self, mon):
         metadata = self.profile["species"].get(str(mon.species))

@@ -15,6 +15,61 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_card_selection_retains_dirty_member_until_discard(self):
+        self.mem.put(PARTY_COUNT, b"\2")
+        self.mem.put(PARTY + 100, sample().raw)
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.root.update()
+        self.app.level.set("75")
+        with patch("trainer_app.messagebox.askyesno", return_value=False) as prompt:
+            self.app.party_tree.selection_set("1")
+            self.root.update()
+            self.assertEqual(self.app.current_slot, 0)
+            self.assertEqual(self.app.party_tree.selection(), ("0",))
+            self.assertEqual(self.app.level.get(), "75")
+            prompt.assert_called_once()
+        with patch("trainer_app.messagebox.askyesno", return_value=True):
+            self.app.party_tree.selection_set("1")
+            self.root.update()
+        self.assertEqual(self.app.current_slot, 1)
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_pc_cards_and_inline_form_bind_box_slot(self):
+        from tests.test_box import packed_box
+        from box_data import BoxPokemon
+
+        raw = packed_box() * 2 + b"\0" * 58 * 28
+        self.app.apply_box_snapshot(
+            {
+                "index": 24,
+                "address": self.app.profile["storage"]["box_addresses"][24],
+                "raw": raw,
+                "pokemon": tuple(
+                    BoxPokemon(raw[i : i + 58]) for i in range(0, len(raw), 58)
+                ),
+            }
+        )
+        self.assertEqual(len(self.app.box_tree.cards), 30)
+        self.app.box_tree.selection_set("0")
+        self.root.update()
+        self.assertEqual(self.app.box_editor_slot, 0)
+        self.app.box_editor_values[-1].set("9")
+        with patch("trainer_app.messagebox.askyesno", return_value=False):
+            self.app.box_tree.selection_set("1")
+            self.root.update()
+        self.assertEqual(self.app.box_editor_slot, 0)
+        self.assertEqual(self.app.box_tree.selection(), ("0",))
+        self.assertEqual(self.app.box_editor_values[-1].get(), "9")
+        with patch("trainer_app.messagebox.askyesno", return_value=True):
+            self.app.box_tree.selection_set("1")
+            self.root.update()
+        self.assertEqual(self.app.box_editor_slot, 1)
+        self.app.box_tree.selection_set("29")
+        self.root.update()
+        self.assertIsNone(self.app.box_editor)
+        self.assertEqual(self.app.box_detail.get(), "空槽")
+        self.assertEqual(self.mem.writes, 0)
+
     def test_details_form_name_ids_and_egg_preview_do_not_write(self):
         self.app.detail_vars["ot_sid"].set("12345")
         self.app.detail_vars["met_location"].set("222")

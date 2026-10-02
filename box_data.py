@@ -1,7 +1,7 @@
 """Mercury FC compressed PC records, verified against ROM unpack code.
 
 58 bytes per slot, 30 slots per box, 25 non-contiguous boxes. Do not turn this
-into an 80-byte write path: edit only PID/IV/EV while retaining packed metadata.
+into an 80-byte write path: retain all packed fields outside explicit edits.
 """
 
 from dataclasses import dataclass
@@ -14,7 +14,9 @@ from pokemon_data import (
     change_shiny_pid,
     change_nature_pid,
     change_unown_letter_pid,
+    integer,
 )
+from name_codec import decode_name, encode_name
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,30 @@ class BoxPokemon:
     @property
     def otid(self):
         return self.u32(4)
+
+    @property
+    def ot_name(self):
+        return decode_name(self.raw[20:27])
+
+    @property
+    def friendship(self):
+        return self.raw[37]
+
+    @property
+    def ball(self):
+        return self.raw[38]
+
+    @property
+    def met_location(self):
+        return self.raw[51]
+
+    @property
+    def met_level(self):
+        return self.raw[52] & 127
+
+    @property
+    def ot_gender(self):
+        return self.raw[53] >> 7
 
     @property
     def held(self):
@@ -143,12 +169,60 @@ class BoxPokemon:
         return result
 
     def edit(
-        self, profile, *, ivs=None, evs=None, shiny=None, nature=None, unown_letter=None
+        self,
+        profile,
+        *,
+        ivs=None,
+        evs=None,
+        shiny=None,
+        nature=None,
+        unown_letter=None,
+        friendship=None,
+        ball=None,
+        met_location=None,
+        met_level=None,
+        ot_tid=None,
+        ot_sid=None,
+        ot_gender=None,
+        ot_name=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
             raise ValueError("空槽不能创建宝可梦")
         data = bytearray(self.raw)
+        for value, offset, label in [
+            (friendship, 37, "亲密度/孵化周期"),
+            (ball, 38, "捕获球编号"),
+            (met_location, 51, "相遇地点编号"),
+        ]:
+            if value is not None:
+                data[offset] = integer(value, 0, 255, label)
+        if met_level is not None:
+            data[52] = (data[52] & 128) | integer(met_level, 0, 127, "相遇等级")
+        if ot_gender is not None:
+            data[53] = (data[53] & 127) | (
+                integer(ot_gender, 0, 1, "原训练师性别") << 7
+            )
+        if ot_name is not None:
+            data[20:27] = encode_name(ot_name, 7)
+        tid = (
+            self.otid & 65535
+            if ot_tid is None
+            else integer(ot_tid, 0, 65535, "原训练师 TID")
+        )
+        sid = (
+            self.otid >> 16
+            if ot_sid is None
+            else integer(ot_sid, 0, 65535, "原训练师 SID")
+        )
+        otid = tid | sid << 16
+        pid = self.pid
+        if otid != self.otid:
+            target_shiny = self.shiny if shiny is None else shiny
+            if not isinstance(target_shiny, bool):
+                raise ValueError("闪光状态必须为是/否")
+            pid = change_shiny_pid(pid, otid, target_shiny, self.species)
+            struct.pack_into("<I", data, 4, otid)
         if ivs is not None:
             values = six(ivs, 31, "个体值")
             word = (self.u32(54) & 0xC0000000) | sum(
@@ -160,13 +234,12 @@ class BoxPokemon:
             if sum(values) > 510:
                 raise ValueError("努力值总和不能超过 510")
             data[44:50] = bytes(values)
-        pid = self.pid
         if nature is not None:
-            pid = change_nature_pid(pid, self.otid, nature, self.species)
+            pid = change_nature_pid(pid, otid, nature, self.species)
         if shiny is not None:
             if not isinstance(shiny, bool):
                 raise ValueError("闪光状态必须为是/否")
-            pid = change_shiny_pid(pid, self.otid, shiny, self.species)
+            pid = change_shiny_pid(pid, otid, shiny, self.species)
         if unown_letter is not None:
             if self.species != 201:
                 raise ValueError("字形编辑仅适用于未知图腾")
@@ -175,7 +248,7 @@ class BoxPokemon:
                 raise ValueError("缺少已核对物种信息")
             pid = change_unown_letter_pid(
                 pid,
-                self.otid,
+                otid,
                 unown_letter,
                 metadata["gender_ratio"],
                 bool(metadata["abilities"][1]) and not self.ability_flag,

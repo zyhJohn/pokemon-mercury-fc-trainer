@@ -14,6 +14,8 @@ import struct
 from datetime import datetime
 import base64
 from sprite_images import icon_species, read_icons
+from pokemon_selector import PokemonSelector
+from scrolling_form import ScrollingForm
 
 
 def resource_path(name):
@@ -42,6 +44,11 @@ class App:
         self.box_snapshot = None
         self.trainer_snapshot = None
         self.icon_images = {}
+        self.party_form_original = None
+        self.box_editor = None
+        self.box_editor_values = []
+        self.box_editor_original = ()
+        self.box_editor_slot = None
         self.current_bag_slot = None
         self.status = tk.StringVar(
             value="未连接。请在 mGBA 加载本项目新版 mercury_bridge.lua"
@@ -89,29 +96,25 @@ class App:
         )
         ttk.Label(
             self.tab_values,
-            text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家 ID 在“训练师”页编辑；姓名与主角性别等待完整核验。",
+            text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家姓名与 ID 在“训练师”页编辑；中文编码与主角性别联动待核验。",
         ).pack(anchor="w")
         self.tab_party = ttk.Frame(self.nb, padding=8)
         self.nb.add(self.tab_party, text="宝可梦编辑")
-        self.party_tree = ttk.Treeview(
+        self.party_tree = PokemonSelector(
             self.tab_party,
-            columns=("name", "level"),
-            show="tree headings",
-            style="MercuryParty.Treeview",
-            height=6,
-            selectmode="browse",
+            6,
+            2,
+            lambda values: f"{values[0]}\n等级 {values[1]}",
         )
-        ttk.Style(self.root).configure("MercuryParty.Treeview", rowheight=66)
-        self.party_tree.heading("#0", text="形象")
-        self.party_tree.column("#0", width=72, stretch=False)
-        self.party_tree.heading("name", text="队伍")
-        self.party_tree.heading("level", text="等级")
-        self.party_tree.column("name", width=170)
-        self.party_tree.column("level", width=45)
         self.party_tree.pack(side="left", fill="y", padx=(0, 10))
         self.party_tree.bind("<<TreeviewSelect>>", self.select_mon)
-        form = ttk.Frame(self.tab_party)
-        form.pack(side="left", fill="both", expand=True)
+        self.party_pages = ttk.Notebook(self.tab_party)
+        self.party_pages.pack(side="left", fill="both", expand=True)
+        form = ttk.Frame(self.party_pages, padding=6)
+        self.tab_party_basic = form
+        self.party_pages.add(form, text="基本 / 能力")
+        self.detail_image = ttk.Label(form)
+        self.detail_image.pack(anchor="w")
         self.species = tk.StringVar()
         self.level = tk.StringVar()
         self.hp = tk.StringVar()
@@ -227,8 +230,8 @@ class App:
         self.report.configure(yscrollcommand=report_scroll.set)
         report_scroll.pack(side="right", fill="y")
         self.report.pack(fill="both", expand=True)
-        self.tab_moves = ttk.Frame(self.nb, padding=12)
-        self.nb.add(self.tab_moves, text="招式 / PP")
+        self.tab_moves = ttk.Frame(self.party_pages, padding=12)
+        self.party_pages.add(self.tab_moves, text="招式 / PP")
         ttk.Label(self.tab_moves, textvariable=self.identity, wraplength=900).pack(
             anchor="w", pady=6
         )
@@ -345,8 +348,9 @@ class App:
         self._build_trainer()
 
     def _build_details(self):
-        tab = ttk.Frame(self.nb, padding=12)
-        self.nb.add(tab, text="来源 / 原训练师")
+        scroller = ScrollingForm(self.party_pages)
+        self.party_pages.add(scroller, text="来源 / 原训练师")
+        tab = scroller.body
         ttk.Label(tab, textvariable=self.identity, wraplength=900).pack(
             anchor="w", pady=6
         )
@@ -390,7 +394,6 @@ class App:
             ],
             width=18,
         ).pack(side="left")
-        self.button(tab, "检查与预览", self.preview, anchor="w", pady=8)
         row = ttk.Frame(tab)
         row.pack(anchor="w", pady=4)
         ttk.Label(row, text="原训练师姓名（英文/数字，最多7字）", width=38).pack(
@@ -399,11 +402,13 @@ class App:
         self.ot_name = tk.StringVar()
         self.original_ot_name = ""
         ttk.Entry(row, textvariable=self.ot_name, width=18).pack(side="left")
+        self.button(tab, "检查与预览", self.preview, anchor="w", pady=8)
         self.button(tab, "写入当前宝可梦", self.write_mon, anchor="w", pady=8)
         self.detail_preview = tk.StringVar()
         ttk.Label(tab, textvariable=self.detail_preview, wraplength=900).pack(
             anchor="w", pady=8
         )
+        scroller.enable_navigation()
 
     def _build_trainer(self):
         tab = ttk.Frame(self.nb, padding=12)
@@ -430,11 +435,9 @@ class App:
             ttk.Entry(row, textvariable=var, width=18).pack(side="left")
         ttk.Label(
             tab,
-            text="仅修改玩家 ID，不自动改变队伍或 PC 的原训练师资料。\n现有宝可梦可能因此被视为外来宝可梦；修改前后请核对训练师卡。",
+            text="修改玩家姓名 / ID，不自动改变队伍或 PC 的原训练师资料。\n现有宝可梦可能因此被视为外来宝可梦；修改前后请核对训练师卡。",
             wraplength=900,
         ).pack(anchor="w", pady=8)
-        self.detail_image = ttk.Label(tab)
-        self.detail_image.pack(anchor="w")
         self.button(tab, "读取训练师资料", self.read_trainer, anchor="w", pady=6)
         self.button(tab, "写入训练师资料", self.write_trainer_ids, anchor="w", pady=6)
 
@@ -538,36 +541,24 @@ class App:
             width=6,
         ).pack(side="left")
         self.button(row, "读取盒子", self.read_box, side="left", padx=8)
-        self.button(row, "编辑选中宝可梦", self.edit_box_dialog, side="left", padx=8)
         ttk.Label(
             tab,
-            text="支持闪光、性格与 IV/EV 编辑；其他字段仅查看。盒内不存储能力值，取出时由游戏计算。",
+            text="选择左侧格子，在右侧编辑能力、形态和来源资料。盒内能力值由游戏在取出时计算。",
         ).pack(anchor="w", pady=8)
         box = ttk.Frame(tab)
         box.pack(fill="both", expand=True)
-        self.box_tree = ttk.Treeview(
+        self.box_tree = PokemonSelector(
             box,
-            columns=("slot", "species", "level", "shiny"),
-            show="tree headings",
-            style="MercuryBox.Treeview",
-            selectmode="browse",
-            height=10,
+            30,
+            6,
+            lambda values: (
+                f"{values[0]}. {values[1]}{' ★' if values[3] == '是' else ''}\n等级 {values[2]}"
+            ),
+            width=10,
         )
-        ttk.Style(self.root).configure("MercuryBox.Treeview", rowheight=38)
-        self.box_tree.heading("#0", text="形象")
-        self.box_tree.column("#0", width=46, stretch=False)
-        for key, label, width in [
-            ("slot", "位置", 50),
-            ("species", "宝可梦", 300),
-            ("level", "等级（由经验推算）", 150),
-            ("shiny", "闪光", 70),
-        ]:
-            self.box_tree.heading(key, text=label)
-            self.box_tree.column(key, width=width)
-        sb = ttk.Scrollbar(box, orient="vertical", command=self.box_tree.yview)
-        self.box_tree.configure(yscrollcommand=sb.set)
-        sb.pack(side="right", fill="y")
-        self.box_tree.pack(fill="both", expand=True)
+        self.box_tree.pack(side="left", fill="both", expand=True)
+        self.box_editor_host = ttk.Frame(box, padding=(12, 0, 0, 0))
+        self.box_editor_host.pack(side="left", fill="both", expand=True)
         self.box_tree.bind("<<TreeviewSelect>>", self.select_box_mon)
         self.box_detail = tk.StringVar(value="连接后选择盒子并点击读取。")
         ttk.Label(tab, textvariable=self.box_detail, wraplength=900).pack(
@@ -577,6 +568,9 @@ class App:
     def read_box(self):
         if self.trainer is None:
             return
+        if not self.discard_box_changes():
+            self.box_number.set(str(self.box_snapshot["index"] + 1))
+            return
         index = int(self.box_number.get()) - 1
         self.run(
             "读取 PC 盒子…",
@@ -585,6 +579,7 @@ class App:
         )
 
     def apply_box_snapshot(self, snapshot):
+        self.clear_box_editor()
         self.box_snapshot = snapshot
         self.box_number.set(str(snapshot["index"] + 1))
         self.box_tree.delete(*self.box_tree.get_children())
@@ -604,7 +599,7 @@ class App:
                 image=self.mon_image(mon),
                 values=(
                     i + 1,
-                    name,
+                    name + ("（蛋）" if mon.egg else ""),
                     info["level"] or "—",
                     ("是" if mon.shiny else "否") if mon.species else "—",
                 ),
@@ -614,7 +609,23 @@ class App:
         )
         self.status.set(f"已读取第 {snapshot['index'] + 1} 盒，尚未写入。")
 
-    def edit_box_dialog(self):
+    def clear_box_editor(self):
+        if self.box_editor is not None and self.box_editor.winfo_exists():
+            self.box_editor.destroy()
+        self.box_editor = None
+        self.box_editor_values = []
+        self.box_editor_original = ()
+        self.box_editor_slot = None
+
+    def discard_box_changes(self):
+        values = tuple(var.get() for var in self.box_editor_values)
+        return values == self.box_editor_original or messagebox.askyesno(
+            "尚未写入",
+            "当前盒内宝可梦的修改尚未写入。放弃修改并继续？",
+            parent=self.root,
+        )
+
+    def edit_box_dialog(self, parent=None):
         selected = self.box_tree.selection()
         if not selected or self.box_snapshot is None or self.trainer is None:
             return
@@ -624,19 +635,27 @@ class App:
         if not mon.species:
             return
         trainer = self.trainer
-        window = tk.Toplevel(self.root)
-        window.title(f"第 {snapshot['index'] + 1} 盒 · 第 {slot + 1} 格")
-        window.geometry("650x430")
-        frame = ttk.Frame(window, padding=12)
+        window = None
+        if parent is None:
+            window = tk.Toplevel(self.root)
+            window.title(f"第 {snapshot['index'] + 1} 盒 · 第 {slot + 1} 格")
+            window.geometry("650x580")
+        frame = ttk.Frame(parent if parent is not None else window, padding=12)
         frame.pack(fill="both", expand=True)
         ttk.Label(
             frame, text=self.names["breeds"].get(str(mon.species), str(mon.species))
         ).pack(anchor="w")
+        editor_tabs = ttk.Notebook(frame)
+        editor_tabs.pack(fill="both", expand=True, pady=6)
+        basic = ttk.Frame(editor_tabs, padding=6)
+        sources = ttk.Frame(editor_tabs, padding=6)
+        editor_tabs.add(basic, text="能力 / 形态")
+        editor_tabs.add(sources, text="来源 / 原训练师")
         letter = tk.StringVar(value=str(unown_form(mon.pid)))
         if mon.species == 201:
-            ttk.Label(frame, text="未知图腾字形").pack(anchor="w", pady=(8, 0))
+            ttk.Label(basic, text="未知图腾字形").pack(anchor="w", pady=(8, 0))
             ttk.Combobox(
-                frame,
+                basic,
                 textvariable=letter,
                 state="readonly",
                 values=[
@@ -649,35 +668,90 @@ class App:
         nature = tk.StringVar(
             value=f"{mon.pid % 25} - {self.names['pers'].get(str(mon.pid % 25), str(mon.pid % 25))}"
         )
-        ttk.Checkbutton(frame, text="闪光", variable=shiny).pack(anchor="w", pady=5)
+        ttk.Checkbutton(basic, text="闪光", variable=shiny).pack(anchor="w", pady=5)
         ttk.Combobox(
-            frame,
+            basic,
             textvariable=nature,
             state="readonly",
             values=[
                 f"{i} - {self.names['pers'].get(str(i), str(i))}" for i in range(25)
             ],
         ).pack(anchor="w")
-        grid = ttk.Frame(frame)
+        grid = ttk.Frame(basic)
         grid.pack(anchor="w", pady=10)
         iv = [tk.StringVar(value=str(n)) for n in mon.ivs]
         ev = [tk.StringVar(value=str(n)) for n in mon.evs]
         for i, name in enumerate(STAT_NAMES):
-            ttk.Label(grid, text=name, width=7).grid(row=0, column=i + 1)
+            ttk.Label(grid, text=name, width=5).grid(row=0, column=i + 1)
         for row, label, variables in [(1, "IV", iv), (2, "EV", ev)]:
             ttk.Label(grid, text=label).grid(row=row, column=0)
             for i, var in enumerate(variables):
-                ttk.Entry(grid, textvariable=var, width=6).grid(
+                ttk.Entry(grid, textvariable=var, width=4).grid(
                     row=row, column=i + 1, padx=2, pady=5
                 )
+        source_values = {}
+        for key, label, value in [
+            ("friendship", "亲密度 / 孵化周期", mon.friendship),
+            ("ball", "捕获球编号", mon.ball),
+            ("met_location", "相遇地点编号", mon.met_location),
+            ("met_level", "相遇等级", mon.met_level),
+            ("ot_tid", "原训练师 TID", mon.otid & 65535),
+            ("ot_sid", "原训练师 SID", mon.otid >> 16),
+            ("ot_gender", "原训练师性别（0男/1女）", mon.ot_gender),
+        ]:
+            row = ttk.Frame(sources)
+            row.pack(anchor="w", pady=3)
+            ttk.Label(row, text=label, width=25).pack(side="left")
+            var = tk.StringVar(value=str(value))
+            source_values[key] = var
+            ttk.Entry(row, textvariable=var, width=12).pack(side="left")
+        original_sources = {key: var.get() for key, var in source_values.items()}
+        original_name = (
+            mon.ot_name if mon.ot_name is not None else "（未知编码，原样保留）"
+        )
+        ot_name = tk.StringVar(value=original_name)
+        ttk.Label(sources, text="原训练师姓名（英文/数字，最多7字）").pack(
+            anchor="w", pady=3
+        )
+        ttk.Entry(sources, textvariable=ot_name, width=24).pack(anchor="w")
+        ttk.Label(
+            sources, text=f"当前蛋标志：{'是' if mon.egg else '否'}（PC 仅查看）"
+        ).pack(anchor="w", pady=6)
+        if parent is not None:
+            self.box_editor = frame
+            self.box_editor_slot = slot
+            self.box_editor_values = [
+                shiny,
+                nature,
+                letter,
+                ot_name,
+                *source_values.values(),
+                *iv,
+                *ev,
+            ]
+            self.box_editor_original = tuple(
+                var.get() for var in self.box_editor_values
+            )
         detail = tk.StringVar(
             value="IV 0～31；EV 单项 0～252、总和 ≤510。结构检查不等于完整来源合法化。"
         )
-        ttk.Label(frame, textvariable=detail, wraplength=600).pack(anchor="w", pady=6)
+        detail_label = ttk.Label(frame, textvariable=detail, wraplength=400)
+        detail_label.pack(anchor="w", pady=6, fill="x")
+        frame.bind(
+            "<Configure>",
+            lambda event: detail_label.configure(wraplength=max(160, event.width - 24)),
+        )
 
         def prepare():
             if self.trainer is not trainer:
                 raise ValueError("连接已经改变，请重新打开此编辑窗口")
+            details = {
+                key: var.get()
+                for key, var in source_values.items()
+                if var.get() != original_sources[key]
+            }
+            if ot_name.get() != original_name:
+                details["ot_name"] = ot_name.get()
             return trainer.edit_box(
                 snapshot,
                 slot,
@@ -685,6 +759,7 @@ class App:
                 evs=[v.get() for v in ev],
                 nature=nature.get().split(" - ", 1)[0],
                 shiny=shiny.get(),
+                **details,
                 **(
                     {"unown_letter": letter.get().split(" - ", 1)[0]}
                     if mon.species == 201
@@ -723,7 +798,7 @@ class App:
                     if result[0]["changed"]
                     else "没有变化，无需写入。"
                 )
-                if window.winfo_exists():
+                if window is not None and window.winfo_exists():
                     window.destroy()
 
             self.run("校验并写入盒内宝可梦…", job, done)
@@ -742,11 +817,19 @@ class App:
         selected = self.box_tree.selection()
         if self.busy or not selected or self.box_snapshot is None:
             return
+        slot = int(selected[0])
+        if self.box_editor_slot == slot:
+            return
+        if not self.discard_box_changes():
+            self.box_tree.selection_set(str(self.box_editor_slot))
+            return
+        self.clear_box_editor()
         mon = self.box_snapshot["pokemon"][int(selected[0])]
         info = mon.describe(self.profile)
         if not mon.species:
             self.box_detail.set("空槽")
             return
+        self.edit_box_dialog(self.box_editor_host)
         nature = self.names.get("pers", {}).get(str(mon.pid % 25), str(mon.pid % 25))
         moves = " / ".join(
             self.names["skills"].get(str(m), str(m)) for m in mon.moves if m
@@ -863,6 +946,7 @@ class App:
         if self.category.get() == "pokemon" and self.current_slot is not None:
             self.species.set(f"{row['id']} - {row['name']}")
             self.nb.select(self.tab_party)
+            self.party_pages.select(self.tab_party_basic)
         elif self.category.get() == "items":
             if self.snapshot is None:
                 messagebox.showinfo("提示", "请先连接游戏并刷新背包。")
@@ -915,7 +999,8 @@ class App:
             slot = self.move_target.get()
             self.move_vars[slot].set(f"{row['id']} - {row['name']}")
             self.pp_vars[slot].set(str(metadata["pp"]))
-            self.nb.select(self.tab_moves)
+            self.nb.select(self.tab_party)
+            self.party_pages.select(self.tab_moves)
         elif self.category.get() == "abilities" and self.current_slot is not None:
             try:
                 species = int(self.species.get().split(" - ", 1)[0])
@@ -935,6 +1020,7 @@ class App:
                 next(v for v in self.ability_cb["values"] if v.startswith(f"{slot} - "))
             )
             self.nb.select(self.tab_party)
+            self.party_pages.select(self.tab_party_basic)
         else:
             messagebox.showinfo("提示", "请先连接游戏并选择队伍成员。")
 
@@ -1020,12 +1106,16 @@ class App:
     def connect(self):
         if self.busy:
             return
+        if not self.discard_party_changes() or not self.discard_box_changes():
+            return
         old_mem = self.mem
         self.mem = None
         self.trainer = None
         self.snapshot = None
         self.snapshot_at = None
         self.current_slot = None
+        self.party_form_original = None
+        self.clear_box_editor()
         self.trainer_snapshot = None
         self.player_tid.set("")
         self.player_sid.set("")
@@ -1073,6 +1163,8 @@ class App:
         if after is None and self.nb.select() == str(self.tab_trainer):
             self.read_trainer()
             return
+        if after is None and not self.discard_party_changes():
+            return
         pocket = self.pocket_id()
 
         def done(snap):
@@ -1103,9 +1195,10 @@ class App:
         if snap["party"]:
             index = min(self.current_slot or 0, len(snap["party"]) - 1)
             self.party_tree.selection_set(str(index))
-            self.select_mon()
+            self.select_mon(force=True)
         else:
             self.current_slot = None
+            self.party_form_original = None
             for var in [
                 self.species,
                 self.level,
@@ -1115,9 +1208,15 @@ class App:
                 *self.iv,
                 *self.ev,
                 *self.detail_vars.values(),
+                self.ot_name,
+                self.unown_letter,
             ]:
                 var.set("")
             self.identity.set("队伍为空")
+            self.egg.set(False)
+            self.shiny.set(False)
+            self.detail_image.configure(image="")
+            self.detail_preview.set("")
             self.set_report("")
             self.ability.set("")
             for var in [*self.move_vars, *self.pp_vars]:
@@ -1167,13 +1266,51 @@ class App:
             )
         return self.names["items"].get(str(item), f"未收录#{item}")
 
-    def select_mon(self, event=None):
+    def party_form_values(self):
+        return tuple(
+            var.get()
+            for var in [
+                self.species,
+                self.level,
+                self.hp,
+                self.held,
+                self.nature,
+                self.ability,
+                self.shiny,
+                self.egg,
+                self.ot_name,
+                self.unown_letter,
+                *self.iv,
+                *self.ev,
+                *self.move_vars,
+                *self.pp_vars,
+                *self.detail_vars.values(),
+            ]
+        )
+
+    def discard_party_changes(self):
+        return (
+            self.party_form_original is None
+            or self.party_form_values() == self.party_form_original
+            or messagebox.askyesno(
+                "尚未写入",
+                "当前队伍成员的修改尚未写入。放弃修改并继续？",
+                parent=self.root,
+            )
+        )
+
+    def select_mon(self, event=None, force=False):
         if self.busy:
             return
         selection = self.party_tree.selection()
         if not selection or self.snapshot is None:
             return
         i = int(selection[0])
+        if not force and i == self.current_slot:
+            return
+        if not force and not self.discard_party_changes():
+            self.party_tree.selection_set(str(self.current_slot))
+            return
         self.current_slot = i
         mon = self.snapshot["party"][i]
         self.species.set(
@@ -1244,6 +1381,7 @@ class App:
         )
         report = self.trainer.validate_pokemon(mon)
         self.set_report("\n".join(report["errors"] + report["notes"]))
+        self.party_form_original = self.party_form_values()
 
     def set_report(self, text):
         self.report.configure(state="normal")
@@ -1397,6 +1535,7 @@ class App:
                 f"检查通过；OT ID：{original.otid:08X} → {updated.otid:08X}；闪光：{'是' if updated.shiny else '否'}\n"
                 f"亲密度/周期：{original.friendship} → {updated.friendship}；地点：{original.met_location} → {updated.met_location}；相遇等级：{original.met_level} → {updated.met_level}\n"
                 f"捕获球：{original.ball} → {updated.ball}；原训练师性别：{original.ot_gender} → {updated.ot_gender}。来源合法性未完整验证。"
+                f"\n原训练师姓名：{original.ot_name or '未知编码'} → {updated.ot_name or '未知编码'}"
                 f"\n蛋：{original.egg} → {updated.egg}；等级：{original.level} → {updated.level}。"
             )
             self.detail_image.configure(image=self.mon_image(updated))
