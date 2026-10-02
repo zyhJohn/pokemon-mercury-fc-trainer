@@ -47,13 +47,15 @@ function feed(c,s) c.chunks[#c.chunks+1]=s;c.received() end
         self.g.feed(c, b"PI")
         self.assertEqual(c[b"sent"], b"")
         self.g.feed(c, b"NG\nCAPS\n")
-        self.assertEqual(c[b"sent"], b"PONG\nMERCURY/3 BATCH ROMCRC CRCBATCH\n")
+        self.assertEqual(
+            c[b"sent"], b"PONG\nMERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192\n"
+        )
         c[b"blocked"] = True
         self.g.feed(c, b"PING\n")
         self.assertFalse(c[b"closed"])
         c[b"blocked"] = False
         self.g.events[b"frame"]()
-        self.assertTrue(c[b"sent"].endswith(b"BATCH\nPONG\n"))
+        self.assertTrue(c[b"sent"].endswith(b"BATCH8192\nPONG\n"))
 
     def test_disconnect_resets_partial_input_and_refuses_second_client(self):
         first = self.g.connect()
@@ -74,7 +76,7 @@ function feed(c,s) c.chunks[#c.chunks+1]=s;c.received() end
 
     def test_oversized_input_disconnects_without_processing(self):
         c = self.g.connect()
-        self.g.feed(c, b"X" * 24001)
+        self.g.feed(c, b"X" * 40001)
         self.assertTrue(c[b"closed"])
         self.assertEqual(c[b"sent"], b"")
 

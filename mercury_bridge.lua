@@ -1,6 +1,6 @@
 -- Mercury bridge v3. Load via mGBA Tools > Scripting > File > Load Script.
 -- BATCH compares all expected bytes before writing in one Lua callback.
-local PORT, MAX_LINE = 8888, 24000
+local PORT, MAX_LINE = 8888, 40000
 local server, client = nil, nil
 local input, output = "", ""
 local function hex(bytes)
@@ -34,7 +34,7 @@ local function batch(rest)
         end
         patches[#patches+1] = {addr=addr,before=before,after=after}
         total = total + #before
-        if #patches > 64 or total > 4096 then return "ERR limit" end
+        if #patches > 64 or total > 8192 then return "ERR limit" end
     end
     for _,p in ipairs(patches) do
         if emu:readRange(p.addr,#p.before) ~= p.before then return "ERR stale" end
@@ -49,7 +49,7 @@ end
 local function handle(line)
     if #line > MAX_LINE then return "ERR limit" end
     if line == "PING" then return "PONG" end
-    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH" end
+    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192" end
     if line == "ROMCRC" then return hex(emu:checksum()) end
     local cmd, rest = line:match("^(%S+)%s+(.*)$")
     if cmd == "BATCHCRC" then

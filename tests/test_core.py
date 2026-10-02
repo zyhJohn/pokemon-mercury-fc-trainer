@@ -8,7 +8,7 @@ from tests.test_pokemon_data import sample
 
 
 class Memory:
-    capabilities = {"BATCH", "ROMCRC", "CRCBATCH"}
+    capabilities = {"BATCH", "ROMCRC", "CRCBATCH", "BATCH8192"}
 
     def __init__(self):
         self.data = {}
@@ -16,6 +16,10 @@ class Memory:
         self.rom_crc32 = json.loads(
             Path("rom_profile.json").read_text(encoding="utf-8")
         )["rom_crc32"]
+        profile = json.loads(Path("rom_profile.json").read_text(encoding="utf-8"))
+        self.put(profile["trainer"]["pointer_address"], struct.pack("<I", 0x2024588))
+        for sig in profile["economy"]["signatures"]:
+            self.put(sig["address"], bytes.fromhex(sig["hex"]))
 
     def command(self, cmd):
         if cmd == "ROMCRC":

@@ -119,6 +119,49 @@ def extract(rom, catalog):
         "id_offset": 10,
         "header_size": 14,
     }
+    profile["economy"] = {
+        "money_offset": 0x290,
+        "money_maximum": struct.unpack("<I", read(0x9D3E290, 4))[0],
+        "security_key_offset": 0xF20,
+        "expanded_save": {
+            "ram_address": struct.unpack("<I", read(0x9D56C9C, 4))[0],
+            "section_id": 13,
+            "section_offset": 0x450,
+            "size": 0xBA0,
+            "serializer": 0x9D56C48,
+            "buffer_pointer": struct.unpack("<I", read(0x9D56C88, 4))[0],
+        },
+        "coins": {
+            "address": struct.unpack("<I", read(0x9D59F2C, 4))[0],
+            "size": 4,
+            "maximum": struct.unpack("<I", read(0x9D59F64, 4))[0],
+            "getter": 0x9D59F24,
+            "setter": 0x9D59F30,
+        },
+        "beauty_points": {
+            "address": 0x203B6F4,
+            "variable": 0x51C0,
+            "size": 2,
+            "maximum": 65535,
+        },
+        "bracer_points": {
+            "address": 0x203B5DE,
+            "variable": 0x5135,
+            "size": 2,
+            "maximum": 65535,
+        },
+        "signatures": [
+            {"address": a, "hex": read(a, n).hex()}
+            for a, n in [
+                (0x9D59F24, 92),
+                (0x806E454, 8),
+                (0x9CCD0AC, 40),
+                (0x9D573B8, 60),
+                (0x806E568, 60),
+                (0x809FD58, 48),
+            ]
+        ],
+    }
     profile["name_encoding"] = {
         "chinese_characters": 6763,
         "maximum_bytes": 7,

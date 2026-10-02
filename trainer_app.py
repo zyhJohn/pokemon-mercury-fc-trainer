@@ -103,14 +103,26 @@ class App:
         self.nb.add(self.tab_values, text="数值")
         self.money = tk.StringVar()
         self.coins = tk.StringVar()
-        for label, var in [("金钱", self.money), ("代币", self.coins)]:
+        self.beauty_points = tk.StringVar()
+        self.bracer_points = tk.StringVar()
+        for label, var in [
+            ("金钱", self.money),
+            ("代币", self.coins),
+            ("BeautyPoints", self.beauty_points),
+            ("BracerPoints", self.bracer_points),
+        ]:
             row = ttk.Frame(self.tab_values)
             row.pack(anchor="w", pady=6)
-            ttk.Label(row, text=label, width=12).pack(side="left")
+            ttk.Label(row, text=label, width=16).pack(side="left")
             ttk.Entry(row, textvariable=var, width=18).pack(side="left")
         self.button(
             self.tab_values, "写入数值修改", self.write_values, anchor="w", pady=12
         )
+        ttk.Label(
+            self.tab_values,
+            text="金钱：0～9,999,999；代币：0～999,999,999。\n两类点数：0～65,535（存储范围）；写入后请在游戏内保存。",
+            wraplength=650,
+        ).pack(anchor="w", pady=6)
         ttk.Label(
             self.tab_values,
             text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家姓名与 ID 在“训练师”页编辑；支持中文姓名；主角性别联动待核验。",
@@ -312,6 +324,7 @@ class App:
         )
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda _: self.refresh())
+        self.button(bar, "按编号排序", self.sort_items, side="left", padx=8)
         ttk.Label(bar, text="重要道具保留内部数量，界面不显示数量。").pack(
             side="left", padx=10
         )
@@ -1610,6 +1623,8 @@ class App:
         self.snapshot_at = datetime.now().astimezone().isoformat()
         self.money.set(str(snap["money"]))
         self.coins.set(str(snap["coins"]))
+        self.beauty_points.set(str(snap["beauty_points"]))
+        self.bracer_points.set(str(snap["bracer_points"]))
         self.party_tree.delete(*self.party_tree.get_children())
         for i, mon in enumerate(snap["party"]):
             name = (
@@ -2052,10 +2067,14 @@ class App:
             return
         try:
             self.commit(
-                self.trainer.edit_money(
-                    self.snapshot, self.money.get(), self.coins.get()
+                self.trainer.edit_values(
+                    self.snapshot,
+                    self.money.get(),
+                    self.coins.get(),
+                    self.beauty_points.get(),
+                    self.bracer_points.get(),
                 ),
-                "金钱与代币",
+                "金钱、代币与点数",
             )
         except Exception as exc:
             messagebox.showerror("未写入", str(exc))
@@ -2072,6 +2091,17 @@ class App:
         values = self.bag_tree.item(selected[0], "values")
         self.item_id.set(f"{values[1]} - {values[2]}")
         self.item_qty.set(values[3] if values[3] != "—" else "")
+
+    def sort_items(self):
+        if self.snapshot is None or self.busy:
+            return
+        try:
+            if self.snapshot["pocket"]["id"] != self.pocket_id():
+                raise ValueError("口袋尚未刷新，请稍后重试")
+            patches = self.trainer.sort_bag(self.snapshot)
+            self.commit(patches, self.snapshot["pocket"]["name"] + "按编号排序")
+        except Exception as exc:
+            messagebox.showerror("未写入", str(exc))
 
     def write_item(self, delete=False):
         selected = self.bag_tree.selection()

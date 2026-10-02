@@ -103,6 +103,9 @@ class MemClient:
             )
         if not patches:
             return
+        limit = 8192 if "BATCH8192" in self.capabilities else 4096
+        if len(patches) > 64 or sum(len(before) for _, before, _ in patches) > limit:
+            raise ValueError("事务超过桥接容量，请重新加载本次发布的 mercury_bridge.lua")
         parts = []
         for address, before, after in patches:
             if len(before) != len(after) or not before:

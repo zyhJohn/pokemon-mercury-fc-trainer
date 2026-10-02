@@ -63,15 +63,43 @@ class Trainer:
             raise ValueError("队伍数量异常")
         party = tuple(Pokemon(self.g.read(PARTY + i * 100, 100)) for i in range(count))
         money = self.g.read(sb + 0x290, 6)
+        economy = self.profile["economy"]
+        for signature in economy["signatures"]:
+            expected = bytes.fromhex(signature["hex"])
+            if self.g.read(signature["address"], len(expected)) != expected:
+                raise ValueError("当前 ROM 的代币/点数布局不匹配")
+        save2 = self.g.r32(self.profile["trainer"]["pointer_address"])
+        key_offset = economy["security_key_offset"]
+        if save2 % 4 or not 0x02000000 <= save2 <= 0x02040000 - key_offset - 4:
+            raise ValueError("金钱密钥所在训练师结构指针无效")
+        key_raw = self.g.read(save2 + key_offset, 4)
+        values_raw = {
+            key: self.g.read(economy[key]["address"], economy[key]["size"])
+            for key in ("coins", "beauty_points", "bracer_points")
+        }
         pocket = self.profile["pockets"][integer(pocket_id, 1, 5, "口袋") - 1]
         bag = self.g.read(pocket["address"], pocket["capacity"] * 4)
         if self.locate() != sb or self.g.r8(PARTY_COUNT) != count:
             raise ValueError("读取时游戏数据发生变化，请刷新")
+        if (
+            self.g.r32(self.profile["trainer"]["pointer_address"]) != save2
+            or self.g.read(save2 + key_offset, 4) != key_raw
+            or self.g.read(sb + 0x290, 6) != money
+            or any(
+                self.g.read(economy[key]["address"], len(raw)) != raw
+                for key, raw in values_raw.items()
+            )
+        ):
+            raise ValueError("读取时代币或点数已变化，请刷新")
         return {
             "saveblock": sb,
             "money_raw": money,
-            "money": struct.unpack_from("<I", money)[0],
-            "coins": struct.unpack_from("<H", money, 4)[0],
+            "money": struct.unpack_from("<I", money)[0]
+            ^ struct.unpack("<I", key_raw)[0],
+            "money_save2": save2,
+            "money_key_raw": key_raw,
+            "values_raw": values_raw,
+            **{key: int.from_bytes(raw, "little") for key, raw in values_raw.items()},
             "party": party,
             "pocket": pocket,
             "bag": bag,
@@ -365,15 +393,59 @@ class Trainer:
         return report
 
     def edit_money(self, snap, money, coins):
-        money = integer(money, 0, 999999, "金钱")
-        coins = integer(coins, 0, 9999, "代币")
+        economy = self.profile["economy"]
+        money = integer(money, 0, economy["money_maximum"], "金钱")
+        coins = integer(coins, 0, economy["coins"]["maximum"], "代币")
         return [
             (
                 snap["saveblock"] + 0x290,
-                snap["money_raw"],
-                struct.pack("<IH", money, coins),
-            )
+                snap["money_raw"][:4],
+                struct.pack(
+                    "<I", money ^ int.from_bytes(snap["money_key_raw"], "little")
+                ),
+            ),
+            (
+                economy["coins"]["address"],
+                snap["values_raw"]["coins"],
+                struct.pack("<I", coins),
+            ),
         ]
+
+    def edit_values(self, snap, money, coins, beauty_points, bracer_points):
+        patches = self.edit_money(snap, money, coins)
+        for key, value, label in [
+            ("beauty_points", beauty_points, "BeautyPoints"),
+            ("bracer_points", bracer_points, "BracerPoints"),
+        ]:
+            field = self.profile["economy"][key]
+            value = integer(value, 0, field["maximum"], label)
+            patches.append(
+                (
+                    field["address"],
+                    snap["values_raw"][key],
+                    value.to_bytes(field["size"], "little"),
+                )
+            )
+        return patches
+
+    def sort_bag(self, snap):
+        pocket = snap["pocket"]
+        if (
+            pocket not in self.profile["pockets"]
+            or len(snap["bag"]) != pocket["capacity"] * 4
+        ):
+            raise ValueError("背包快照范围不一致")
+        records = [snap["bag"][i : i + 4] for i in range(0, len(snap["bag"]), 4)]
+        updated = b"".join(
+            sorted(
+                records,
+                key=lambda raw: (
+                    int.from_bytes(raw[:2], "little") == 0,
+                    int.from_bytes(raw[:2], "little"),
+                ),
+            )
+        )
+        return [(pocket["address"], snap["bag"], updated)]
 
     def edit_bag(self, snap, slot, item, quantity, delete=False):
         pocket = snap["pocket"]
@@ -419,8 +491,40 @@ class Trainer:
                 )
             )
         box_edit = any(self.is_box_patch(a, len(before)) for a, before, _ in changes)
+        economy = self.profile["economy"]
+        money_edit = any(a == snap["saveblock"] + 0x290 for a, _, _ in changes)
+        value_edit = money_edit or any(
+            a == economy[key]["address"]
+            for a, _, _ in changes
+            for key in ("coins", "beauty_points", "bracer_points")
+        )
+        bag_sort = any(
+            a == p["address"] and len(before) == p["capacity"] * 4
+            for a, before, _ in changes
+            for p in self.profile["pockets"]
+        )
+        if money_edit:
+            guards += [
+                (
+                    self.profile["trainer"]["pointer_address"],
+                    struct.pack("<I", snap["money_save2"]),
+                    struct.pack("<I", snap["money_save2"]),
+                ),
+                (
+                    snap["money_save2"] + economy["security_key_offset"],
+                    snap["money_key_raw"],
+                    snap["money_key_raw"],
+                ),
+            ]
+        if value_edit:
+            guards += [
+                (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
+                for s in economy["signatures"]
+            ]
         if (
             "trainer" in snap
+            or value_edit
+            or bag_sort
             or box_edit
             or any(
                 a < PARTY + 600 and a + len(before) > PARTY for a, before, _ in changes
@@ -428,7 +532,7 @@ class Trainer:
         ):
             if snap["in_battle"]:
                 raise ValueError(
-                    "战斗中仅可查看宝可梦/训练师；请结束战斗并刷新后再写入"
+                    "战斗中不能写入数值、排序或宝可梦/训练师修改；请结束战斗并刷新后再写入"
                 )
             guards.append(
                 (
@@ -447,6 +551,11 @@ class Trainer:
             (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
             for s in self.profile["signatures"]
         ]
+        if (
+            sum(len(before) for _, before, _ in guards + changes) > 4096
+            and "BATCH8192" not in self.g.capabilities
+        ):
+            raise ValueError("按编号排序需要重新加载本次发布的 mercury_bridge.lua")
         self.backup_dir.mkdir(parents=True, exist_ok=True)
         path = self.backup_dir / (
             datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid4().hex[:8] + ".json"
@@ -462,6 +571,11 @@ class Trainer:
             ],
             "party_before": [mon.raw.hex() for mon in snap["party"]],
         }
+        if money_edit:
+            record["money_context"] = {
+                "save2": snap["money_save2"],
+                "key": snap["money_key_raw"].hex(),
+            }
 
         def save_record():
             temp = path.with_suffix(".tmp")
@@ -511,11 +625,31 @@ class Trainer:
                 and (address - PARTY) % 100 == 0
             )
             valid = valid or (len(before) == 6 and address == snap["saveblock"] + 0x290)
+            if len(before) in (4, 6) and address == snap["saveblock"] + 0x290:
+                context = record.get("money_context")
+                if context is None:
+                    if snap["money_key_raw"] != b"\0" * 4:
+                        raise ValueError("旧金钱备份没有密钥信息，无法在当前密钥下恢复")
+                elif context != {
+                    "save2": snap["money_save2"],
+                    "key": snap["money_key_raw"].hex(),
+                }:
+                    raise ValueError("金钱编码密钥或训练师结构已变化，不能恢复此备份")
+                valid = True
+            valid = valid or any(
+                address == self.profile["economy"][key]["address"]
+                and len(before) == self.profile["economy"][key]["size"]
+                for key in ("coins", "beauty_points", "bracer_points")
+            )
             valid = valid or self.is_box_patch(address, len(before))
             valid = valid or any(
                 len(before) == 4
                 and p["address"] <= address < p["address"] + p["capacity"] * 4
                 and (address - p["address"]) % 4 == 0
+                for p in self.profile["pockets"]
+            )
+            valid = valid or any(
+                address == p["address"] and len(before) == p["capacity"] * 4
                 for p in self.profile["pockets"]
             )
             if not valid and len(before) in (4, 8) and self.profile.get("trainer"):

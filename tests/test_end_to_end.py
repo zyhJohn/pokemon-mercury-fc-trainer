@@ -64,6 +64,53 @@ class EndToEndTests(unittest.TestCase):
         self.trainer.restore(record["backup"])
         self.assertEqual(self.client.read(PARTY, 100), sample().raw)
 
+    def test_all_values_write_restore_with_full_guards_over_actual_lua_tcp(self):
+        economy = self.profile["economy"]
+        for key, value in [
+            ("coins", 735),
+            ("beauty_points", 5),
+            ("bracer_points", 220),
+        ]:
+            field = economy[key]
+            self.memory.put(field["address"], value.to_bytes(field["size"], "little"))
+        snapshot = self.trainer.snapshot()
+        patches = self.trainer.edit_values(snapshot, 9999999, 999999999, 65535, 65535)
+        result = self.trainer.commit(snapshot, patches, "all four values")
+        after = self.trainer.snapshot()
+        self.assertEqual(
+            tuple(
+                after[k] for k in ("money", "coins", "beauty_points", "bracer_points")
+            ),
+            (9999999, 999999999, 65535, 65535),
+        )
+        self.assertEqual(
+            self.client.read(snapshot["saveblock"] + 0x294, 2),
+            snapshot["money_raw"][4:6],
+        )
+        self.trainer.restore(result["backup"])
+        for address, before, _ in patches:
+            self.assertEqual(self.client.read(address, len(before)), before)
+
+    def test_full_bag_sort_is_atomic_and_restores_over_actual_lua_tcp(self):
+        p = self.profile["pockets"][0]
+        raw = b"".join(
+            struct.pack("<HH", 13 + (i % 9), i % 1000)
+            for i in range(p["capacity"] - 1, -1, -1)
+        )
+        self.memory.put(p["address"], raw)
+        snapshot = self.trainer.snapshot()
+        patches = self.trainer.sort_bag(snapshot)
+        self.memory.put(p["address"] + len(raw) - 1, bytes([raw[-1] ^ 1]))
+        with self.assertRaisesRegex(IOError, "游戏数据已变化"):
+            self.trainer.commit(snapshot, patches, "stale tail")
+        self.assertEqual(self.memory.writes, 0)
+        self.memory.put(p["address"], raw)
+        result = self.trainer.commit(snapshot, patches, "full sort")
+        self.assertEqual(self.client.read(p["address"], len(raw)), patches[0][2])
+        self.assertEqual(self.client.read(PARTY, 100), sample().raw)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(p["address"], len(raw)), raw)
+
     def test_pc_ability_write_restore_over_actual_lua_tcp(self):
         from tests.test_box import packed_box
         from box_data import BoxPokemon

@@ -224625,6 +224625,64 @@
     "id_offset": 10,
     "header_size": 14
   },
+  "economy": {
+    "money_offset": 656,
+    "money_maximum": 9999999,
+    "security_key_offset": 3872,
+    "expanded_save": {
+      "ram_address": 33797272,
+      "section_id": 13,
+      "section_offset": 1104,
+      "size": 2976,
+      "serializer": 164981832,
+      "buffer_pointer": 50353044
+    },
+    "coins": {
+      "address": 33798164,
+      "size": 4,
+      "maximum": 999999999,
+      "getter": 164994852,
+      "setter": 164994864
+    },
+    "beauty_points": {
+      "address": 33797876,
+      "variable": 20928,
+      "size": 2,
+      "maximum": 65535
+    },
+    "bracer_points": {
+      "address": 33797598,
+      "variable": 20789,
+      "size": 2,
+      "maximum": 65535
+    },
+    "signatures": [
+      {
+        "address": 164994852,
+        "hex": "014b18687047c04614b80302014b18607047c04614b80302074910b50b68074c0022a34206d81818054b984200d9180001220860100010bd14b80302fec99a3bffc99a3b04490b680022834202d31b1a0b6001321000704714b80302"
+      },
+      {
+        "address": 134669396,
+        "hex": "00490847add0cc09"
+      },
+      {
+        "address": 164417708,
+        "hex": "70b50004040c261c201c8af07ff9012804d0002801d10248004770bd014800475de4060863e40608"
+      },
+      {
+        "address": 164983736,
+        "hex": "094b0a4ac3181b041b0c934203d8084b4000c0187047074bc01803040020064a1b0c9a424041f5e700b0ffffff0100007413030200bfffffff3e0000"
+      },
+      {
+        "address": 134669672,
+        "hex": "10b50004040c201cfff770ff002801d0008800e0201c10bc02bc084710b50004000c09040c0cfff761ff002802d00480012000e0002010bc02bc0847"
+      },
+      {
+        "address": 134872408,
+        "hex": "04490968f22212018918006809684840704700000c500003044a1268f2231b01d21812684a400260704700000c500003"
+      }
+    ]
+  },
   "name_encoding": {
     "chinese_characters": 6763,
     "maximum_bytes": 7,

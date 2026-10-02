@@ -71,6 +71,17 @@ class LuaTests(unittest.TestCase):
         self.assertEqual(self.handle(b"BATCH " + b";".join(parts)), b"ERR limit")
         self.assertEqual(self.mem.writes, 34)
 
+    def test_large_atomic_batch_and_byte_limit(self):
+        parts = [
+            b"2001000:" + b"00" * 4096 + b":" + b"01" * 4096,
+            b"2003000:" + b"00" * 4096 + b":" + b"02" * 4096,
+        ]
+        command = b"BATCH " + b";".join(parts)
+        self.assertEqual(self.handle(command + b";2005000:00:03"), b"ERR limit")
+        self.assertEqual(self.mem.writes, 0)
+        self.assertEqual(self.handle(command), b"OK")
+        self.assertEqual(self.mem.writes, 8192)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,6 +15,58 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_values_page_edits_verified_points_and_extended_coins(self):
+        for key, value in [
+            ("coins", 735),
+            ("beauty_points", 5),
+            ("bracer_points", 220),
+        ]:
+            field = self.app.profile["economy"][key]
+            self.mem.put(field["address"], value.to_bytes(field["size"], "little"))
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.assertEqual(
+            (
+                self.app.coins.get(),
+                self.app.beauty_points.get(),
+                self.app.bracer_points.get(),
+            ),
+            ("735", "5", "220"),
+        )
+        self.app.coins.set("100000")
+        self.app.beauty_points.set("6")
+        self.app.bracer_points.set("221")
+        self.app.run = lambda label, job, done: done(job())
+        self.app.write_values()
+        self.assertEqual(
+            (
+                self.app.coins.get(),
+                self.app.beauty_points.get(),
+                self.app.bracer_points.get(),
+            ),
+            ("100000", "6", "221"),
+        )
+        self.assertEqual(self.mem.read(PARTY, 100), sample().raw)
+
+    def test_sort_button_writes_current_pocket_preserves_party_draft(self):
+        p = self.app.profile["pockets"][0]
+        self.mem.put(p["address"], struct.pack("<HHHH", 15, 3, 13, 4))
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.app.iv[0].set("31")
+        self.app.run = lambda label, job, done: done(job())
+        button = next(b for b in self.app.buttons if b.cget("text") == "按编号排序")
+        button.invoke()
+        self.assertEqual(
+            self.mem.read(p["address"], 8), struct.pack("<HHHH", 13, 4, 15, 3)
+        )
+        self.assertEqual(self.app.iv[0].get(), "31")
+        self.assertEqual(self.mem.read(PARTY, 100), sample().raw)
+        self.app.pocket.set("精灵球")
+        writes = self.mem.writes
+        with patch("trainer_app.messagebox.showerror") as error:
+            button.invoke()
+            error.assert_called_once()
+        self.assertEqual(self.mem.writes, writes)
+
     def test_pc_ability_preview_tracks_draft_without_writing(self):
         from tests.test_box import packed_box
         from box_data import BoxPokemon

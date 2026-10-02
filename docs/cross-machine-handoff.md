@@ -1,12 +1,14 @@
 # 跨电脑接手
 
-更新：2026-10-02。仓库：https://github.com/zyhJohn/pokemon-mercury-fc-trainer ，当前分支 `main`。
+更新：2026-10-03。仓库：https://github.com/zyhJohn/pokemon-mercury-fc-trainer ，当前分支 `main`。
 
-本轮交接版本0.2.8，回归基线138项；新增六家族持物形态同步、PC携带道具及普通/隐藏特性编辑。额度显示99%时已收敛。推送使用本次命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑根据自己的代理环境设置，无需沿用本机端口。正式便携包的build-info.json记录源码提交与是否有未提交修改。
+本轮交接版本0.2.9，回归基线151项；新增扩展代币、BeautyPoints、BracerPoints及五口袋编号排序。此优先范围完成后按用户要求停止。推送使用命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑根据自己的代理环境设置，无需沿用本机端口。正式便携包的build-info.json记录源码提交与是否有未提交修改。
 
 ## 读取顺序
 
-2026-10-02用户追加15项后续需求，已列入`docs/next-stage-plan.md`顶部清单。本次只更新计划，不代表功能已实现。新电脑先按清单制作供审阅的界面原型，整体界面改版等待用户审阅确认；新字段可同时只读核实。定位参考为用户最新存档中代币735、BeautyPoints=5、BracerPoints=220；旧研究副本不保证包含这些值，最新`.sav`及`.ss1`需另行携带并核对。
+2026-10-02用户追加15项后续需求；2026-10-03优先实现其中第1、2项，见`docs/next-stage-plan.md`完成状态。其余需求尚未实施，整体界面改版仍等待原型审阅。最新配对存档代币735、BeautyPoints=5、BracerPoints=220已核实；旧研究副本可能包含不同值，复现时按实际样本判断，不要求所有存档等于735/5/220。
+
+重新加载0.2.9附带的`mercury_bridge.lua`后再连接，排序需要`BATCH8192`能力。仍为v3协议，单次最多64项、合计8192字节、请求行40000字符；单项读取/比较仍限4096字节。旧v3小事务继续可用，大口袋排序会在写前提示升级脚本。新工具`tools/verify_economy.py ROM STATE --save SAVE --report diagnostics/economy.json`只读用户文件，在隔离CPU核对读写与实际存档序列化。新写入后的游戏内保存重载仍需独立副本验收。
 
 1. 根目录 `AGENTS.md`、`README.md`。
 2. `docs/development-status.md`：现有功能、验证范围。
