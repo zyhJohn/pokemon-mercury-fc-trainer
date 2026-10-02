@@ -15,6 +15,43 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_spinda_pattern_generation_is_explicit_preview_only(self):
+        from pokemon_data import experience_for_level, calculate_stats
+
+        raw = bytearray(sample().raw)
+        metadata = self.app.profile["species"]["308"]
+        struct.pack_into("<H", raw, 32, 308)
+        struct.pack_into(
+            "<I",
+            raw,
+            36,
+            experience_for_level(
+                raw[84], metadata["growth"], self.app.profile["experience_tables"]
+            ),
+        )
+        mon = Pokemon(bytes(raw))
+        struct.pack_into(
+            "<6H",
+            raw,
+            88,
+            *calculate_stats(
+                metadata["base"], mon.ivs, mon.evs, mon.level, mon.pid % 25
+            ),
+        )
+        struct.pack_into("<H", raw, 86, struct.unpack_from("<H", raw, 88)[0])
+        self.mem.put(PARTY, raw)
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.app.shiny.set(not mon.shiny)
+        with self.assertRaisesRegex(ValueError, "PID 花纹"):
+            self.app.prepare_mon()
+        with patch("trainer_app.secrets.randbits", return_value=0x87654321):
+            self.app.new_spinda_pattern()
+        updated = Pokemon(self.app.prepare_mon()[0][0][2])
+        self.assertNotEqual(updated.pid, mon.pid)
+        self.assertEqual(updated.shiny, not mon.shiny)
+        self.assertEqual(updated.pid % 25, mon.pid % 25)
+        self.assertEqual(self.mem.writes, 0)
+
     def test_card_selection_retains_dirty_member_until_discard(self):
         self.mem.put(PARTY_COUNT, b"\2")
         self.mem.put(PARTY + 100, sample().raw)

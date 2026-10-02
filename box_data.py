@@ -15,6 +15,7 @@ from pokemon_data import (
     change_nature_pid,
     change_unown_letter_pid,
     integer,
+    regenerate_spinda_pid,
 )
 from name_codec import decode_name, encode_name
 
@@ -185,6 +186,7 @@ class BoxPokemon:
         ot_sid=None,
         ot_gender=None,
         ot_name=None,
+        spinda_seed=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
@@ -217,6 +219,21 @@ class BoxPokemon:
         )
         otid = tid | sid << 16
         pid = self.pid
+        if spinda_seed is not None:
+            metadata = profile["species"].get(str(self.species))
+            if self.species != 308 or metadata is None:
+                raise ValueError("花纹重新生成仅适用于已核对的晃晃斑")
+            pid = regenerate_spinda_pid(
+                pid,
+                otid,
+                spinda_seed,
+                pid % 25 if nature is None else nature,
+                self.shiny if shiny is None else shiny,
+                metadata["gender_ratio"],
+                self.pid & 1
+                if metadata["abilities"][1] and not self.ability_flag
+                else None,
+            )
         if otid != self.otid:
             target_shiny = self.shiny if shiny is None else shiny
             if not isinstance(target_shiny, bool):

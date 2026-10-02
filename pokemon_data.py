@@ -163,6 +163,32 @@ def change_nature_pid(pid, otid, nature, species):
     return min(candidates, key=lambda n: ((n ^ pid).bit_count(), n))
 
 
+def regenerate_spinda_pid(pid, otid, seed, nature, shiny, ratio, parity=None):
+    """Explicitly change spots while retaining chosen nature/shiny/gender/ability."""
+    seed = integer(seed, 0, 0xFFFFFFFF, "花纹种子")
+    nature = integer(nature, 0, 24, "性格")
+    if not isinstance(shiny, bool):
+        raise ValueError("闪光状态必须为是/否")
+    old_gender = gender(pid, ratio)
+    # A low y nibble of zero overflows the engine's first spot row. New
+    # patterns avoid that case; old patterns are retained unless explicitly regenerated.
+    low_bytes = [
+        n
+        for n in range(16, 256)
+        if gender(n, ratio) == old_gender and (parity is None or n & 1 == parity)
+    ]
+    if not low_bytes:
+        raise ValueError("无法保持性别与所选特性重新生成花纹")
+    low = min(low_bytes, key=lambda n: ((n ^ (seed & 255)).bit_count(), n))
+    for attempt in range(32):
+        candidate = ((seed + attempt * 256) & 0xFFFFFF00) | low
+        candidate = change_nature_pid(candidate, otid, nature, 0)
+        candidate = change_shiny_pid(candidate, otid, shiny, 0)
+        if candidate != pid:
+            return candidate
+    raise ValueError("没有生成不同的花纹，请再试一次")
+
+
 def change_ability_pid(pid, otid, parity, species, ratio):
     if pid & 1 == parity:
         return pid
@@ -395,6 +421,7 @@ class Pokemon:
         egg=None,
         egg_cycles=None,
         default_friendship=None,
+        spinda_seed=None,
     ):
         data = bytearray(self.raw)
         if ot_name is not None:
@@ -443,11 +470,34 @@ class Pokemon:
             else integer(ot_sid, 0, 65535, "原训练师 SID")
         )
         otid = tid | sid << 16
+        if spinda_seed is not None:
+            if (
+                self.species != 308
+                or species != 308
+                or gender_ratio is None
+                or not abilities
+            ):
+                raise ValueError("花纹重新生成仅适用于已核对的晃晃斑")
+            parity = self.pid & 1 if abilities[1] and not self.ability_flag else None
+            if ability_slot is not None and integer(ability_slot, 0, 2, "特性槽位") < 2:
+                parity = int(ability_slot) if abilities[1] else None
+            pid = regenerate_spinda_pid(
+                self.pid,
+                otid,
+                spinda_seed,
+                self.pid % 25 if nature is None else nature,
+                self.shiny if shiny is None else shiny,
+                gender_ratio,
+                parity,
+            )
+            struct.pack_into("<II", data, 0, pid, otid)
         if otid != self.otid:
             target_shiny = self.shiny if shiny is None else shiny
             if not isinstance(target_shiny, bool):
                 raise ValueError("闪光状态必须为是/否")
-            pid = change_shiny_pid(self.pid, otid, target_shiny, species)
+            pid = change_shiny_pid(
+                struct.unpack_from("<I", data, 0)[0], otid, target_shiny, species
+            )
             struct.pack_into("<II", data, 0, pid, otid)
         if (
             species != self.species

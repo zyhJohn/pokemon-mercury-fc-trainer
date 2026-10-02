@@ -13,9 +13,11 @@ import webbrowser
 import struct
 from datetime import datetime
 import base64
+import secrets
 from sprite_images import icon_species, read_icons
 from pokemon_selector import PokemonSelector
 from scrolling_form import ScrollingForm
+from spinda_images import read_spinda_assets, spinda_png
 
 
 def resource_path(name):
@@ -44,6 +46,8 @@ class App:
         self.box_snapshot = None
         self.trainer_snapshot = None
         self.icon_images = {}
+        self.spinda_assets = None
+        self.spinda_photos = []
         self.party_form_original = None
         self.box_editor = None
         self.box_editor_values = []
@@ -402,6 +406,26 @@ class App:
         self.ot_name = tk.StringVar()
         self.original_ot_name = ""
         ttk.Entry(row, textvariable=self.ot_name, width=18).pack(side="left")
+        self.spinda_seed = tk.StringVar()
+        self.button(
+            tab,
+            "重新生成晃晃斑花纹（待预览）",
+            self.new_spinda_pattern,
+            anchor="w",
+            pady=4,
+        )
+        self.spinda_caption = tk.StringVar(
+            value="晃晃斑花纹需先加载游戏图像；重新生成后检查预览再写入。"
+        )
+        ttk.Label(tab, textvariable=self.spinda_caption, wraplength=600).pack(
+            anchor="w", pady=4
+        )
+        images = ttk.Frame(tab)
+        images.pack(anchor="w")
+        self.spinda_before = ttk.Label(images)
+        self.spinda_before.pack(side="left", padx=8)
+        self.spinda_after = ttk.Label(images)
+        self.spinda_after.pack(side="left", padx=8)
         self.button(tab, "检查与预览", self.preview, anchor="w", pady=8)
         self.button(tab, "写入当前宝可梦", self.write_mon, anchor="w", pady=8)
         self.detail_preview = tk.StringVar()
@@ -478,11 +502,18 @@ class App:
         def job():
             trainer.verify()
             result = read_icons(trainer.g, self.profile, pokemon)
+            assets = (
+                read_spinda_assets(trainer.g, self.profile)
+                if any(mon.species == 308 for mon in pokemon)
+                else None
+            )
             trainer.verify()
-            return result
+            return result, assets
 
         def done(result):
-            for ident, png in result.items():
+            if result[1] is not None:
+                self.spinda_assets = result[1]
+            for ident, png in result[0].items():
                 self.icon_images[ident] = tk.PhotoImage(
                     master=self.root, data=base64.b64encode(png)
                 )
@@ -493,12 +524,54 @@ class App:
                     self.box_tree.item(str(slot), image=self.mon_image(mon))
             if preview_mon is not None:
                 self.detail_image.configure(image=self.mon_image(preview_mon))
+                self.show_spinda_patterns(preview_mon)
             self.status.set("已从当前 ROM 加载微缩图；图像保存在本次会话，不写入游戏。")
 
         self.run("读取游戏微缩图…", job, done)
 
     def mon_image(self, mon):
         return self.icon_images.get(icon_species(mon, self.profile), "")
+
+    def new_spinda_pattern(self):
+        if self.busy or self.current_slot is None or self.snapshot is None:
+            return
+        if self.snapshot["party"][self.current_slot].species != 308:
+            self.status.set("花纹重新生成仅适用于晃晃斑。")
+            return
+        self.spinda_seed.set(str(secrets.randbits(32)))
+        self.preview()
+
+    def show_spinda_patterns(self, updated):
+        self.spinda_before.configure(image="")
+        self.spinda_after.configure(image="")
+        self.spinda_photos = []
+        if self.snapshot is None or self.current_slot is None:
+            return
+        original = self.snapshot["party"][self.current_slot]
+        if (
+            original.species != 308
+            or updated.species != 308
+            or self.spinda_assets is None
+        ):
+            self.spinda_caption.set(
+                "晃晃斑花纹需先加载游戏图像；重新生成后检查预览再写入。"
+            )
+            return
+        for mon, label in [
+            (original, self.spinda_before),
+            (updated, self.spinda_after),
+        ]:
+            photo = tk.PhotoImage(
+                master=self.root,
+                data=base64.b64encode(
+                    spinda_png(self.spinda_assets, mon.pid, mon.shiny)
+                ),
+            ).zoom(2)
+            self.spinda_photos.append(photo)
+            label.configure(image=photo)
+        self.spinda_caption.set(
+            f"左：当前 {original.pid:08X}；右：预览 {updated.pid:08X}。{'花纹将改变，尚未写入。' if original.pid != updated.pid else '花纹保持。'}"
+        )
 
     def write_trainer_ids(self):
         if self.busy or self.trainer is None or self.trainer_snapshot is None:
@@ -647,11 +720,15 @@ class App:
         ).pack(anchor="w")
         editor_tabs = ttk.Notebook(frame)
         editor_tabs.pack(fill="both", expand=True, pady=6)
-        basic = ttk.Frame(editor_tabs, padding=6)
-        sources = ttk.Frame(editor_tabs, padding=6)
-        editor_tabs.add(basic, text="能力 / 形态")
-        editor_tabs.add(sources, text="来源 / 原训练师")
+        basic_scroll = ScrollingForm(editor_tabs, padding=6)
+        source_scroll = ScrollingForm(editor_tabs, padding=6)
+        basic, sources = basic_scroll.body, source_scroll.body
+        editor_tabs.add(basic_scroll, text="能力 / 形态")
+        editor_tabs.add(source_scroll, text="来源 / 原训练师")
         letter = tk.StringVar(value=str(unown_form(mon.pid)))
+        pattern_seed = tk.StringVar()
+        pattern_photos = []
+        pattern_labels = []
         if mon.species == 201:
             ttk.Label(basic, text="未知图腾字形").pack(anchor="w", pady=(8, 0))
             ttk.Combobox(
@@ -724,6 +801,7 @@ class App:
                 shiny,
                 nature,
                 letter,
+                pattern_seed,
                 ot_name,
                 *source_values.values(),
                 *iv,
@@ -752,6 +830,8 @@ class App:
             }
             if ot_name.get() != original_name:
                 details["ot_name"] = ot_name.get()
+            if pattern_seed.get():
+                details["spinda_seed"] = pattern_seed.get()
             return trainer.edit_box(
                 snapshot,
                 slot,
@@ -769,10 +849,35 @@ class App:
 
         def preview():
             try:
-                _, report = prepare()
+                patches, report = prepare()
                 detail.set(
                     f"检查通过；闪光：{'是' if report['shiny'] else '否'}，EV 总和：{sum(report['evs'])}。\n性别与特性标志保留；取出时由游戏计算能力值。来源合法性未完整验证。"
                 )
+                if mon.species == 308 and self.spinda_assets is not None:
+                    from box_data import BoxPokemon
+
+                    updated = BoxPokemon(patches[0][2])
+                    pattern_photos.clear()
+                    for displayed, label in zip([mon, updated], pattern_labels):
+                        photo = tk.PhotoImage(
+                            master=self.root,
+                            data=base64.b64encode(
+                                spinda_png(
+                                    self.spinda_assets, displayed.pid, displayed.shiny
+                                )
+                            ),
+                        ).zoom(2)
+                        pattern_photos.append(photo)
+                        label.configure(image=photo)
+                    detail.set(
+                        detail.get()
+                        + f"\n花纹 PID：{mon.pid:08X} → {updated.pid:08X}；左当前、右预览。"
+                    )
+                elif mon.species == 308:
+                    detail.set(
+                        detail.get()
+                        + "\n点击顶部加载游戏微缩图，再检查预览可查看花纹图像。"
+                    )
             except Exception as exc:
                 detail.set("未通过：" + str(exc))
 
@@ -811,6 +916,23 @@ class App:
         ttk.Button(actions, text="写入此宝可梦", command=write).pack(
             side="left", padx=4
         )
+        if mon.species == 308:
+
+            def regenerate():
+                pattern_seed.set(str(secrets.randbits(32)))
+                preview()
+
+            ttk.Button(basic, text="重新生成花纹（待预览）", command=regenerate).pack(
+                anchor="w", pady=6
+            )
+            image_row = ttk.Frame(basic)
+            image_row.pack(anchor="w")
+            for _ in range(2):
+                label = ttk.Label(image_row)
+                label.pack(side="left", padx=6)
+                pattern_labels.append(label)
+        basic_scroll.enable_navigation()
+        source_scroll.enable_navigation()
         return window
 
     def select_box_mon(self, event=None):
@@ -1210,6 +1332,7 @@ class App:
                 *self.detail_vars.values(),
                 self.ot_name,
                 self.unown_letter,
+                self.spinda_seed,
             ]:
                 var.set("")
             self.identity.set("队伍为空")
@@ -1217,6 +1340,8 @@ class App:
             self.shiny.set(False)
             self.detail_image.configure(image="")
             self.detail_preview.set("")
+            self.spinda_before.configure(image="")
+            self.spinda_after.configure(image="")
             self.set_report("")
             self.ability.set("")
             for var in [*self.move_vars, *self.pp_vars]:
@@ -1280,6 +1405,7 @@ class App:
                 self.egg,
                 self.ot_name,
                 self.unown_letter,
+                self.spinda_seed,
                 *self.iv,
                 *self.ev,
                 *self.move_vars,
@@ -1332,6 +1458,8 @@ class App:
             var.set(str(value))
         self.detail_preview.set("")
         self.detail_image.configure(image=self.mon_image(mon))
+        self.spinda_seed.set("")
+        self.show_spinda_patterns(mon)
         self.original_ot_name = (
             mon.ot_name if mon.ot_name is not None else "（未知编码，原样保留）"
         )
@@ -1416,6 +1544,8 @@ class App:
             changes["egg"] = self.egg.get()
         if self.ot_name.get() != self.original_ot_name:
             changes["ot_name"] = self.ot_name.get()
+        if self.spinda_seed.get():
+            changes["spinda_seed"] = self.spinda_seed.get()
         if changes["species"] == "201" and self.unown_letter.get() not in (
             "保持当前",
             "不适用",
@@ -1539,6 +1669,7 @@ class App:
                 f"\n蛋：{original.egg} → {updated.egg}；等级：{original.level} → {updated.level}。"
             )
             self.detail_image.configure(image=self.mon_image(updated))
+            self.show_spinda_patterns(updated)
             self.set_report(
                 "结构与数值检查通过（不是官方合法性认证）\n"
                 + f"PID：{original.pid:08X} → {updated.pid:08X}；闪光：{'是' if updated.shiny else '否'}\n"

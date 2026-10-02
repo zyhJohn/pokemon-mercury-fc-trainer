@@ -47,6 +47,7 @@ SIGNATURES = [
     (0x80CC1E4, 32),
     (0x803FBE8, 26),
     (0x804037C, 26),
+    (0x8043458, 284),
 ]
 
 
@@ -100,6 +101,12 @@ def extract(rom, catalog):
         "pointer_address": 0x0300500C,
         "id_offset": 10,
         "header_size": 14,
+    }
+    profile["spinda"] = {
+        "front": struct.unpack("<I", read(0x97BBA40, 4))[0],
+        "palette": struct.unpack("<I", read(0x97D6E60, 4))[0],
+        "shiny_palette": struct.unpack("<I", read(0x97E5368, 4))[0],
+        "spots": struct.unpack("<I", read(0x8043520, 4))[0],
     }
     icon_table = struct.unpack("<I", read(0x8097050, 4))[0]
     palette_records = struct.unpack("<I", read(0x80971F0, 4))[0]

@@ -23,7 +23,16 @@ def icon_species(mon, profile):
 
 
 def icon_png(tiles, palette):
-    if len(tiles) != 512 or len(palette) != 32:
+    return tiled_png(tiles, palette, 32, 32)
+
+
+def tiled_png(tiles, palette, width, height):
+    if (
+        width % 8
+        or height % 8
+        or len(tiles) != width * height // 2
+        or len(palette) != 32
+    ):
         raise ValueError("微缩图数据长度无效")
     colors = []
     for index, (word,) in enumerate(struct.iter_unpack("<H", palette)):
@@ -38,10 +47,10 @@ def icon_png(tiles, palette):
             )
         )
     pixels = bytearray()
-    for y in range(32):
+    for y in range(height):
         pixels.append(0)
-        for x in range(32):
-            offset = ((y // 8) * 4 + x // 8) * 32 + (y % 8) * 4 + x % 8 // 2
+        for x in range(width):
+            offset = ((y // 8) * (width // 8) + x // 8) * 32 + (y % 8) * 4 + x % 8 // 2
             index = (tiles[offset] >> (4 * (x % 2))) & 15
             pixels.extend(colors[index])
 
@@ -55,7 +64,7 @@ def icon_png(tiles, palette):
 
     return (
         b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", struct.pack(">IIBBBBB", 32, 32, 8, 6, 0, 0, 0))
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
         + chunk(b"IDAT", zlib.compress(pixels))
         + chunk(b"IEND", b"")
     )
