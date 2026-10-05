@@ -16,6 +16,46 @@ from pokemon_data import Pokemon
 
 @unittest.skipIf(LuaRuntime is None, "lupa is required")
 class EndToEndTests(unittest.TestCase):
+    def test_all_25_boxes_sort_compare_in_one_large_lua_callback_and_restore(self):
+        from tests.test_box_sort_lock import record
+        from tests.test_rom_versions import install_profile
+
+        install_profile(self.memory, self.profile)
+        addresses = self.profile["storage"]["box_addresses"]
+        originals = []
+        for box, address in enumerate(addresses):
+            raw = b"".join(
+                record(160 if slot % 2 else 1, box * 30 + slot) for slot in range(30)
+            )
+            originals.append(raw)
+            self.memory.put(address, raw)
+        sent = []
+        self.after_command = lambda line: (
+            sent.append(line) if line.startswith(b"BOXBATCHCRC") else None
+        )
+        result = self.trainer.commit_box_sort(self.trainer.prepare_box_sort())
+        self.assertEqual(len(sent), 1)
+        self.assertGreater(len(sent[0]), 40000)
+        self.assertLessEqual(len(sent[0]), 270000)
+        actual = [
+            self.memory.read(a + s * 58, 58) for a in addresses for s in range(30)
+        ]
+        expected = sorted(
+            [raw[s : s + 58] for raw in originals for s in range(0, 1740, 58)],
+            key=lambda raw: int.from_bytes(raw[28:30], "little"),
+        )
+        self.assertEqual(actual, expected)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(len(sent), 2)
+        self.assertEqual([self.memory.read(a, 1740) for a in addresses], originals)
+
+        prepared = self.trainer.prepare_box_sort()
+        self.memory.put(addresses[-1] + 18, b"\xa5")
+        before = dict(self.memory.data)
+        with self.assertRaisesRegex(OSError, "游戏数据已变化"):
+            self.trainer.commit_box_sort(prepared)
+        self.assertEqual(self.memory.data, before)
+
     def test_v12_party_pc_values_and_sort_use_new_guards_over_lua_tcp(self):
         from rom_versions import load_profile
         from tests.test_rom_versions import install_profile

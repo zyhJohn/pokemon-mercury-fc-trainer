@@ -8,7 +8,14 @@ from tests.test_pokemon_data import sample
 
 
 class Memory:
-    capabilities = {"BATCH", "ROMCRC", "CRCBATCH", "BATCH8192", "BATCHVERIFY"}
+    capabilities = {
+        "BATCH",
+        "ROMCRC",
+        "CRCBATCH",
+        "BATCH8192",
+        "BATCHVERIFY",
+        "BOXBATCH",
+    }
 
     def __init__(self):
         self.data = {}
@@ -38,7 +45,7 @@ class Memory:
     def r32(self, a):
         return struct.unpack("<I", self.read(a, 4))[0]
 
-    def batch(self, patches, verify=False):
+    def batch(self, patches, verify=False, large_boxes=False):
         if any(self.read(a, len(b)) != b for a, b, c in patches):
             raise IOError("stale")
         for a, b, c in patches:

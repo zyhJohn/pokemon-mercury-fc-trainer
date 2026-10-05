@@ -1,6 +1,6 @@
 -- Mercury bridge v3. Load via mGBA Tools > Scripting > File > Load Script.
 -- BATCH compares all expected bytes before writing in one Lua callback.
-local PORT, MAX_LINE = 8888, 40000
+local PORT, MAX_LINE = 8888, 270000
 local server, client = nil, nil
 local input, output = "", ""
 local function hex(bytes)
@@ -16,7 +16,7 @@ local function readable(address, size)
         (address >= 0x03000000 and address + size <= 0x03008000) or
         (address >= 0x08000000 and address + size <= 0x0A000000))
 end
-local function batch(rest, verify)
+local function batch(rest, verify, largeBoxes)
     if rest == "" or rest:sub(-1) == ";" or rest:find(";;",1,true) then return "ERR format" end
     local patches, total = {}, 0
     for part in rest:gmatch("[^;]+") do
@@ -25,6 +25,7 @@ local function batch(rest, verify)
         addr, before, after = tonumber(addr,16), unhex(before), unhex(after)
         if not before or not after or #before == 0 or #before ~= #after then return "ERR length" end
         local compareOnly = before == after
+        if largeBoxes and not compareOnly and #before ~= 1740 then return "ERR length" end
         if not readable(addr,#before) or
             (not compareOnly and not (addr >= 0x02000000 and addr + #before <= 0x02040000)) then
             return "ERR range"
@@ -34,7 +35,7 @@ local function batch(rest, verify)
         end
         patches[#patches+1] = {addr=addr,before=before,after=after}
         total = total + #before
-        if #patches > 64 or total > 8192 then return "ERR limit" end
+        if #patches > (largeBoxes and 96 or 64) or total > (largeBoxes and 65536 or 8192) then return "ERR limit" end
     end
     for _,p in ipairs(patches) do
         if emu:readRange(p.addr,#p.before) ~= p.before then return "ERR stale" end
@@ -54,14 +55,15 @@ end
 local function handle(line)
     if #line > MAX_LINE then return "ERR limit" end
     if line == "PING" then return "PONG" end
-    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192 BATCHVERIFY" end
+    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192 BATCHVERIFY BOXBATCH" end
     if line == "ROMCRC" then return hex(emu:checksum()) end
     local cmd, rest = line:match("^(%S+)%s+(.*)$")
-    if cmd == "BATCHCRC" or cmd == "BATCHVERIFYCRC" then
+    if cmd == "BATCHCRC" or cmd == "BATCHVERIFYCRC" or cmd == "BOXBATCHCRC" then
+        if cmd ~= "BOXBATCHCRC" and #line > 40000 then return "ERR limit" end
         local expected, patches=rest:match("^(%x+)%s+(.+)$")
         if not expected or #expected ~= 8 then return "ERR format" end
         if hex(emu:checksum()) ~= expected:lower() then return "ERR rom" end
-        return batch(patches, cmd == "BATCHVERIFYCRC")
+        return batch(patches, cmd ~= "BATCHCRC", cmd == "BOXBATCHCRC")
     end
     if cmd == "READ" then
         local addr, count = rest:match("^(%x+)%s+(%x+)$")
@@ -97,7 +99,7 @@ local function received()
             return
         end
         input=input..data
-        if #input > MAX_LINE then disconnect(); return end
+        if #input > MAX_LINE or (#input > 40000 and input:sub(1,12) ~= "BOXBATCHCRC ") then disconnect(); return end
         while true do
             local nl=input:find("\n",1,true)
             if not nl then break end

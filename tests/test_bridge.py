@@ -10,13 +10,30 @@ from tests.test_core import Memory
 
 @unittest.skipIf(LuaRuntime is None, "install lupa to test the actual Lua bridge")
 class LuaTests(unittest.TestCase):
+    def test_large_box_command_rejects_other_write_sizes_and_reads_back(self):
+        prefix = b"BOXBATCHCRC " + self.mem.rom_crc32.encode() + b" "
+        self.assertEqual(self.handle(prefix + b"2000010:00:01"), b"ERR length")
+        body = b"2001000:" + b"00" * 1740 + b":" + b"01" * 1740
+        self.assertEqual(self.handle(prefix + body + b";2005000:ff:ff"), b"ERR stale")
+        self.assertEqual(self.mem.writes, 0)
+        self.assertEqual(self.handle(prefix + body), b"OK")
+        self.assertEqual(self.mem.read(0x2001000, 1740), b"\1" * 1740)
+
     def test_batch_verify_confirms_readback_and_reports_failed_write(self):
-        self.assertEqual(self.raw_handle(b"BATCHVERIFYCRC " + self.mem.rom_crc32.encode()
-                                         + b" 2000010:00:01"), b"OK")
+        self.assertEqual(
+            self.raw_handle(
+                b"BATCHVERIFYCRC " + self.mem.rom_crc32.encode() + b" 2000010:00:01"
+            ),
+            b"OK",
+        )
         self.assertEqual(self.mem.read(0x2000010, 1), b"\1")
         self.lua.globals()[b"emu"][b"write8"] = lambda *_: None
-        self.assertEqual(self.raw_handle(b"BATCHVERIFYCRC " + self.mem.rom_crc32.encode()
-                                         + b" 2000010:01:02"), b"ERR readback")
+        self.assertEqual(
+            self.raw_handle(
+                b"BATCHVERIFYCRC " + self.mem.rom_crc32.encode() + b" 2000010:01:02"
+            ),
+            b"ERR readback",
+        )
         self.assertEqual(self.mem.read(0x2000010, 1), b"\1")
 
     def setUp(self):

@@ -40,6 +40,7 @@ class Trainer:
         self.profile = profile
         self.backup_dir = Path(backup_dir)
         self.verified = False
+        self.locked_boxes = set()
 
     def verify(self):
         self.verified = False
@@ -297,6 +298,7 @@ class Trainer:
         }
 
     def edit_box(self, snap, slot, **changes):
+        self.check_box_unlocked(snap["index"])
         slot = integer(slot, 0, 29, "盒子位置")
         address = self.profile["storage"]["box_addresses"][snap["index"]]
         if snap["address"] != address:
@@ -308,10 +310,73 @@ class Trainer:
         return [(address + slot * 58, mon.raw, updated.raw)], report
 
     def is_box_patch(self, address, size):
-        return size == 58 and any(
-            a <= address < a + 30 * 58 and (address - a) % 58 == 0
+        return any(
+            (size == 1740 and address == a)
+            or (size == 58 and a <= address < a + 30 * 58 and (address - a) % 58 == 0)
             for a in self.profile.get("storage", {}).get("box_addresses", [])
         )
+
+    def check_box_unlocked(self, index):
+        if index in self.locked_boxes:
+            raise ValueError(f"第 {index + 1} 盒已锁定，请先解锁")
+
+    def check_box_patches_unlocked(self, patches):
+        for address, before, _ in patches:
+            for index, base in enumerate(
+                self.profile.get("storage", {}).get("box_addresses", [])
+            ):
+                if address < base + 1740 and address + len(before) > base:
+                    self.check_box_unlocked(index)
+
+    def prepare_box_sort(self):
+        """Stable global internal-species sort; opaque records stay intact."""
+        indices = tuple(i for i in range(25) if i not in self.locked_boxes)
+        if not indices:
+            raise ValueError("全部盒子已锁定，没有可排序的盒子")
+        boxes = [self.snapshot_box(i) for i in indices]
+        members = []
+        for box in boxes:
+            for mon in box["pokemon"]:
+                if not mon.species:
+                    if mon.raw != b"\0" * 58:
+                        raise ValueError(
+                            f"第 {box['index'] + 1} 盒空槽有未知残留，未生成排序"
+                        )
+                elif str(mon.species) not in self.profile["species"]:
+                    raise ValueError(
+                        f"第 {box['index'] + 1} 盒存在未知物种 {mon.species}，未生成排序"
+                    )
+                else:
+                    members.append(mon)
+        members.sort(key=lambda mon: mon.species)
+        records = [mon.raw for mon in members] + [b"\0" * 58] * (
+            30 * len(boxes) - len(members)
+        )
+        patches = [
+            (box["address"], box["raw"], b"".join(records[n * 30 : (n + 1) * 30]))
+            for n, box in enumerate(boxes)
+        ]
+        return {
+            "indices": indices,
+            "locked": frozenset(self.locked_boxes),
+            "patches": patches,
+            "count": len(members),
+        }
+
+    def commit_box_sort(self, prepared):
+        if frozenset(self.locked_boxes) != prepared["locked"]:
+            raise ValueError("预览后盒锁已变化，请重新预览排序")
+        self.check_box_patches_unlocked(prepared["patches"])
+        snap = self.snapshot()
+        snap["box_sort_guards"] = [p for p in prepared["patches"] if p[1] == p[2]]
+        return self.commit(snap, prepared["patches"], "全部未锁盒按内部编号排序")
+
+    def prepare_box_egg_ready(self, snapshot, slot):
+        slot = integer(slot, 0, 29, "盒子位置")
+        mon = snapshot["pokemon"][slot]
+        if not mon.species or not mon.egg:
+            raise ValueError("快速生蛋仅适用于已有的蛋")
+        return self.edit_box(snapshot, slot, friendship=0)
 
     def commit_box(self, patches, label):
         if not patches or not all(
@@ -324,6 +389,7 @@ class Trainer:
         layout = self.profile["storage"]
         slot = integer(slot, 0, 29, "源槽位")
         for snap in (source, target):
+            self.check_box_unlocked(snap["index"])
             index = integer(
                 snap["index"], 0, len(layout["box_addresses"]) - 1, "盒子位置"
             )
@@ -607,6 +673,7 @@ class Trainer:
         return [(pocket["address"] + 4 * slot, old, updated)]
 
     def commit(self, snap, patches, label):
+        self.check_box_patches_unlocked(patches)
         self.verify()
         if not {"BATCH", "ROMCRC", "CRCBATCH"} <= self.g.capabilities:
             raise ValueError("请重新加载新版 mercury_bridge.lua 后再写入")
@@ -723,11 +790,17 @@ class Trainer:
                 (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
                 for s in self.profile["storage"]["signatures"]
             ]
+        guards += snap.get("box_sort_guards", [])
         # Also reject a ROM swap between Python validation and the callback.
         guards += [
             (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
             for s in self.profile["signatures"]
         ]
+        large_boxes = any(
+            self.is_box_patch(a, len(b)) and len(b) == 1740 for a, b, _ in patches
+        )
+        if large_boxes and "BOXBATCH" not in self.g.capabilities:
+            raise ValueError("全盒排序及恢复需要重新加载 0.2.13 的 mercury_bridge.lua")
         if (
             sum(len(before) for _, before, _ in guards + changes) > 4096
             and "BATCH8192" not in self.g.capabilities
@@ -764,7 +837,10 @@ class Trainer:
 
         save_record()  # Fail closed when a backup cannot be written.
         try:
-            if "time" in snap or "daily_time" in snap:
+            self.check_box_patches_unlocked(patches)
+            if large_boxes:
+                self.g.batch(guards + changes, verify=True, large_boxes=True)
+            elif "time" in snap or "daily_time" in snap:
                 # Time may tick between network requests; read back in the same
                 # emulator callback, while no game frame can advance.
                 self.g.batch(guards + changes, verify=True)
@@ -854,6 +930,14 @@ class Trainer:
             if not valid:
                 raise ValueError("备份中包含不支持恢复的地址或字段")
             patches.append((address, before, after))
-        if not patches or len(patches) > 16:
+        limit = (
+            25
+            if patches
+            and all(
+                self.is_box_patch(a, len(b)) and len(b) == 1740 for a, b, _ in patches
+            )
+            else 16
+        )
+        if not patches or len(patches) > limit:
             raise ValueError("备份修改记录数量异常")
         return self.commit(snap, patches, "恢复备份 " + Path(path).name)

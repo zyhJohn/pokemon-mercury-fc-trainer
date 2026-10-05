@@ -96,17 +96,26 @@ class MemClient:
             raise IOError("内存响应长度不完整")
         return result
 
-    def batch(self, patches, verify=False):
+    def batch(self, patches, verify=False, large_boxes=False):
         if "BATCH" not in self.capabilities:
             raise IOError(
                 "当前为旧桥接脚本，仅支持读取；请重新加载本项目的 mercury_bridge.lua"
             )
         if not patches:
             return
+        if large_boxes and "BOXBATCH" not in self.capabilities:
+            raise ValueError("全盒排序需要重新加载 0.2.13 的 mercury_bridge.lua")
         if verify and "BATCHVERIFY" not in self.capabilities:
             raise ValueError("累计时长写入需要重新加载 0.2.10 的 mercury_bridge.lua")
         limit = 8192 if "BATCH8192" in self.capabilities else 4096
-        if len(patches) > 64 or sum(len(before) for _, before, _ in patches) > limit:
+        if large_boxes:
+            limit = 65536
+            if any(len(b) != 1740 for _, b, c in patches if b != c):
+                raise ValueError("全盒事务只允许完整盒子记录")
+        if (
+            len(patches) > (96 if large_boxes else 64)
+            or sum(len(before) for _, before, _ in patches) > limit
+        ):
             raise ValueError(
                 "事务超过桥接容量，请重新加载本次发布的 mercury_bridge.lua"
             )
@@ -119,7 +128,13 @@ class MemClient:
             if not self.expected_rom_crc32:
                 raise IOError("尚未校验 ROM，不能写入")
             command = (
-                ("BATCHVERIFYCRC " if verify else "BATCHCRC ")
+                (
+                    "BOXBATCHCRC "
+                    if large_boxes
+                    else "BATCHVERIFYCRC "
+                    if verify
+                    else "BATCHCRC "
+                )
                 + self.expected_rom_crc32
                 + " "
             )

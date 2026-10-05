@@ -48,14 +48,14 @@ function feed(c,s) c.chunks[#c.chunks+1]=s;c.received() end
         self.assertEqual(c[b"sent"], b"")
         self.g.feed(c, b"NG\nCAPS\n")
         self.assertEqual(
-            c[b"sent"], b"PONG\nMERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192 BATCHVERIFY\n"
+            c[b"sent"], b"PONG\nMERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192 BATCHVERIFY BOXBATCH\n"
         )
         c[b"blocked"] = True
         self.g.feed(c, b"PING\n")
         self.assertFalse(c[b"closed"])
         c[b"blocked"] = False
         self.g.events[b"frame"]()
-        self.assertTrue(c[b"sent"].endswith(b"BATCHVERIFY\nPONG\n"))
+        self.assertTrue(c[b"sent"].endswith(b"BATCHVERIFY BOXBATCH\nPONG\n"))
 
     def test_disconnect_resets_partial_input_and_refuses_second_client(self):
         first = self.g.connect()

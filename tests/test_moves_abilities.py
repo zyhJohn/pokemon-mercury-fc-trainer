@@ -61,11 +61,32 @@ class MoveAbilityTests(unittest.TestCase):
             ([57, 242, 8, 700], [16, 1, 1, 1]),
             ([0, 0, 0, 0], [0] * 4),
             ([65535, 0, 0, 0], [0] * 4),
-            ([57, 0, 0, 0], [1, 1, 0, 0]),
         ]:
             with self.subTest(moves=moves, pp=pp):
                 with self.assertRaises(ValueError):
                     sample().edit(moves=moves, pp=pp, move_data=self.profile["moves"])
+
+    def test_empty_moves_normalize_pp_and_bonus_and_allow_egg_conversion(self):
+        raw = bytearray(sample().raw)
+        raw[40] = 255
+        edited, _ = Pokemon(bytes(raw)).edit(
+            moves=[57, 0, 0, 0], pp=[1, 99, 99, 99], move_data=self.profile["moves"]
+        )
+        self.assertEqual(edited.pp, (1, 0, 0, 0))
+        self.assertEqual(edited.raw[40], 0)
+        metadata = self.profile["species"][str(sample().species)]
+        edited, _ = sample().edit(
+            egg=True,
+            egg_cycles=20,
+            moves=[0] * 4,
+            pp=[99] * 4,
+            move_data=self.profile["moves"],
+            base=metadata["base"],
+            growth=metadata["growth"],
+            experience_tables=self.profile["experience_tables"],
+        )
+        self.assertTrue(edited.egg)
+        self.assertEqual(edited.pp, (0,) * 4)
 
     def test_combined_shiny_iv_ev_ability_edit(self):
         mon = sample()

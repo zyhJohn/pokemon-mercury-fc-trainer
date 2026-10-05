@@ -15,6 +15,30 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_empty_move_zero_pp_and_egg_control_are_drafts(self):
+        self.app.pp_vars[0].set("50")
+        self.app.move_vars[0].set("0 - 无")
+        self.assertEqual(self.app.pp_vars[0].get(), "0")
+        updated = Pokemon(self.app.prepare_mon()[0][0][2])
+        self.assertEqual(updated.pp[0], 0)
+        self.assertEqual(updated.moves[0], 0)
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_game_value_egg_shortcut_preserves_normal_member_and_creates_backup(self):
+        snapshot = self.app.trainer.snapshot()
+        egg_patches, _ = self.app.trainer.edit_pokemon(snapshot, 0, egg=True)
+        self.mem.put(PARTY, egg_patches[0][2] + sample().raw)
+        self.mem.put(PARTY_COUNT, b"\2")
+        self.app.apply_snapshot(self.app.trainer.snapshot())
+        self.app.run = lambda label, job, done: done(job())
+        with patch("trainer_app.messagebox.askokcancel", return_value=True):
+            self.app.ready_party_eggs()
+        egg = Pokemon(self.mem.read(PARTY, 100))
+        self.assertTrue(egg.egg)
+        self.assertEqual(egg.friendship, 0)
+        self.assertEqual(self.mem.read(PARTY + 100, 100), sample().raw)
+        self.assertTrue(list(Path(self.temp.name).glob("*.json")))
+
     def test_connect_automatically_selects_v12_and_keeps_offline_rtc_profile(self):
         from rom_versions import load_profile
         from tests.test_rom_versions import install_profile
@@ -49,9 +73,10 @@ class AppTests(unittest.TestCase):
         self.assertFalse(self.app.icons_enabled)
         self.assertEqual(self.mem.writes, 0)
 
-    def test_one_click_egg_is_a_preview_and_preserves_iv_draft(self):
+    def test_egg_state_is_a_preview_and_preserves_iv_draft(self):
         self.app.iv[0].set("31")
-        self.app.make_party_egg()
+        self.app.egg.set(True)
+        self.app.preview()
         updated = Pokemon(self.app.prepare_mon()[0][0][2])
         self.assertTrue(updated.egg)
         self.assertEqual(updated.level, 1)
@@ -71,7 +96,7 @@ class AppTests(unittest.TestCase):
         self.assertFalse(self.app.icon_images)
         self.assertEqual(self.mem.writes, 0)
 
-    def test_box_move_selects_destination_and_egg_button_only_previews(self):
+    def test_box_move_selects_destination_and_egg_state_only_previews(self):
         from tests.test_box import packed_box
         from box_data import BoxPokemon
 
@@ -90,12 +115,12 @@ class AppTests(unittest.TestCase):
                 yield child
                 yield from children(child)
 
-        button = next(
+        checkbox = next(
             w
             for w in children(self.app.box_editor)
-            if w.winfo_class() == "TButton" and w.cget("text") == "一键转为蛋（预览）"
+            if w.winfo_class() == "TCheckbutton" and w.cget("text").startswith("蛋状态")
         )
-        button.invoke()
+        checkbox.invoke()
         self.assertTrue(self.app.box_editor_values[1].get())
         self.assertEqual(self.mem.writes, 0)
         self.app.box_editor_values[1].set(False)

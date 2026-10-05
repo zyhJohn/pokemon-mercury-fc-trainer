@@ -42,5 +42,7 @@ backups/
 diagnostics/
 outputs/
 trainer-settings.json
+box-locks.json
+box-locks.tmp
 sprite-cache/
 .ruff_cache/

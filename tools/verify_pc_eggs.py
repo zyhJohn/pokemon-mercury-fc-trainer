@@ -62,7 +62,7 @@ def verify(rom, state, profile):
                 conversions += 1
             if detections < 6:
                 engine = RomCPU(rom, state)
-                ready, _ = egg.edit(profile, friendship=1)
+                ready, _ = egg.edit(profile, friendship=0)
                 engine.write(0x2000800, ready.raw)
                 engine.call(0x9D54868, 0x2001000, 0x2000800)
                 engine.call(0x803E774, 0x2001000, PARTY)
@@ -78,6 +78,7 @@ def verify(rom, state, profile):
         "passed": True,
         "conversion_cases": conversions,
         "hatch_detection_cases": detections,
+        "zero_cycle_cases": detections,
         "existing_eggs_skipped": existing_eggs,
         "rom_sha256": profile["rom_sha256"],
         "scope": "Isolated ROM unpack/withdrawal and hatch detection; not full animation, save/reload or encounter legality.",

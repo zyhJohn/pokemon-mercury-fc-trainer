@@ -616,7 +616,7 @@ class Pokemon:
             )
             if len([m for m in moves if m]) != len(set(m for m in moves if m)):
                 raise ValueError("同一只宝可梦不能重复填写相同招式")
-            if not any(moves) and not self.egg:
+            if not any(moves) and not (self.egg if egg is None else egg):
                 raise ValueError("非蛋宝可梦至少需要一个招式")
             pp_values = []
             for i, move in enumerate(moves):
@@ -631,7 +631,9 @@ class Pokemon:
                         raise ValueError(f"招式 {move} 不在本地 ROM 已验证表中")
                     bonus = (data[40] >> (2 * i)) & 3
                     maximum = metadata["pp"] * (5 + bonus) // 5
-                pp_values.append(integer(pp[i], 0, maximum, f"招式 {i + 1} PP"))
+                pp_values.append(
+                    0 if not move else integer(pp[i], 0, maximum, f"招式 {i + 1} PP")
+                )
             struct.pack_into("<4H4B", data, 44, *moves, *pp_values)
         if ivs is not None:
             ivs = six(ivs, 31, "个体值")

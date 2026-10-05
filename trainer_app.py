@@ -12,6 +12,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from box_data import BoxPokemon
+from box_preferences import BoxPreferences
 from clock_data import (
     WEEKDAYS,
     calendar_text,
@@ -90,6 +91,13 @@ class App:
         self.pocket = tk.StringVar(value="道具")
         self.buttons = []
         self.frozen_widgets = []
+        base = (
+            Path(sys.executable).parent
+            if getattr(sys, "frozen", False)
+            else Path(__file__).resolve().parent
+        )
+        self.box_preferences = BoxPreferences(base / "box-locks.json")
+        self.box_save_path = tk.StringVar()
         self._build()
         self.timer = root.after(50, self._poll)
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -119,7 +127,7 @@ class App:
         self.nb = ttk.Notebook(self.root)
         self.nb.pack(fill="both", expand=True, padx=8, pady=4)
         self.tab_values = ttk.Frame(self.nb, padding=12)
-        self.nb.add(self.tab_values, text="数值")
+        self.nb.add(self.tab_values, text="游戏数值")
         self.money = tk.StringVar()
         self.coins = tk.StringVar()
         self.beauty_points = tk.StringVar()
@@ -146,6 +154,36 @@ class App:
             self.tab_values,
             text="每次写入前保存原始数据备份，并检查游戏数据是否变化。\n玩家姓名与 ID 在“训练师”页编辑；支持中文姓名；主角性别联动待核验。",
         ).pack(anchor="w")
+        shortcuts = ttk.LabelFrame(self.tab_values, text="一键操作 / 金手指", padding=8)
+        shortcuts.pack(fill="x", pady=12)
+        self.button(
+            shortcuts,
+            "队伍已有蛋：亲密度／周期归零",
+            self.ready_party_eggs,
+            anchor="w",
+            pady=4,
+        )
+        self.button(
+            shortcuts,
+            "选中队伍成员：填满 PP（草稿）",
+            self.shortcut_fill_pp,
+            anchor="w",
+            pady=4,
+        )
+        ttk.Button(
+            shortcuts, text="培育屋生成待领取蛋（待核验）", state="disabled"
+        ).pack(anchor="w", pady=4)
+        ttk.Button(shortcuts, text="喷雾剩余步数（待核验）", state="disabled").pack(
+            anchor="w", pady=4
+        )
+        ttk.Button(shortcuts, text="持续金手指（待核验）", state="disabled").pack(
+            anchor="w", pady=4
+        )
+        ttk.Label(
+            shortcuts,
+            text="归零只作用于已有蛋，保留蛋状态；普通精灵亲密度不变。灰色功能尚未开放。",
+            wraplength=650,
+        ).pack(anchor="w", pady=4)
         self._build_time()
         self.tab_party = ttk.Frame(self.nb, padding=8)
         self.nb.add(self.tab_party, text="队伍")
@@ -159,9 +197,21 @@ class App:
         self.party_tree.bind("<<TreeviewSelect>>", self.select_mon)
         self.party_pages = ttk.Notebook(self.tab_party)
         self.party_pages.pack(side="left", fill="both", expand=True)
-        form = ttk.Frame(self.party_pages, padding=6)
-        self.tab_party_basic = form
-        self.party_pages.add(form, text="基本 / 能力")
+        basic_scroll = ScrollingForm(self.party_pages, padding=6)
+        form = basic_scroll.body
+        self.tab_party_basic = basic_scroll
+        self.party_pages.add(basic_scroll, text="基本 / 能力")
+        self.detail_vars = {"friendship": tk.StringVar()}
+        self.egg = tk.BooleanVar()
+        ttk.Checkbutton(
+            form, text="蛋状态（转换后先检查预览）", variable=self.egg
+        ).pack(anchor="w", pady=4)
+        friend_row = ttk.Frame(form)
+        friend_row.pack(anchor="w", pady=4)
+        ttk.Label(friend_row, text="亲密度 / 孵化周期（0～255）").pack(side="left")
+        ttk.Entry(
+            friend_row, textvariable=self.detail_vars["friendship"], width=8
+        ).pack(side="left", padx=6)
         self.detail_image = ttk.Label(form)
         self.detail_image.pack(anchor="w")
         self.species = tk.StringVar()
@@ -279,6 +329,7 @@ class App:
         self.report.configure(yscrollcommand=report_scroll.set)
         report_scroll.pack(side="right", fill="y")
         self.report.pack(fill="both", expand=True)
+        basic_scroll.enable_navigation()
         self.tab_moves = ttk.Frame(self.party_pages, padding=12)
         self.party_pages.add(self.tab_moves, text="招式 / PP")
         ttk.Label(self.tab_moves, textvariable=self.identity, wraplength=900).pack(
@@ -290,6 +341,8 @@ class App:
         ).pack(anchor="w", pady=5)
         self.move_vars = [tk.StringVar() for _ in range(4)]
         self.pp_vars = [tk.StringVar() for _ in range(4)]
+        for i, var in enumerate(self.move_vars):
+            var.trace_add("write", lambda *_, slot=i: self.normalize_empty_move(slot))
         self.move_target = tk.IntVar(value=0)
         move_options = ["0 - 无"] + [
             f"{i} - {self.names['skills'].get(str(i), '未收录')}"
@@ -413,14 +466,7 @@ class App:
             text="先选择队伍成员。地点可按中文名搜索选择，原有未知编号保持不变；捕获球按本改版编号填写。\n修改原训练师 ID 时保留当前选择的闪光状态；字段有效不代表遭遇来源已认证。\n转为蛋时同步两处标志、设为1级及默认周期；取消蛋标记不等于执行自然孵化。\n颤弦蝾螈修改性格时同步高调/低调形态，预览会显示相应特性变化。",
             wraplength=900,
         ).pack(anchor="w", pady=6)
-        self.detail_vars = {}
-        self.egg = tk.BooleanVar()
-        ttk.Checkbutton(tab, text="蛋（转换时请先检查预览）", variable=self.egg).pack(
-            anchor="w", pady=4
-        )
-        self.button(tab, "一键转为蛋（预览）", self.make_party_egg, anchor="w", pady=4)
         for key, label in [
-            ("friendship", "亲密度 / 孵化周期（0～255）"),
             ("met_location", "相遇地点编号（0～255）"),
             ("met_level", "相遇等级原始值（0～127）"),
             ("ball", "捕获球编号"),
@@ -1175,12 +1221,6 @@ class App:
             return ""
         return self.icon_images.get(icon_species(mon, self.profile), "")
 
-    def make_party_egg(self):
-        if self.busy or self.snapshot is None or self.current_slot is None:
-            return
-        self.egg.set(True)
-        self.preview()
-
     def new_spinda_pattern(self):
         if self.busy or self.current_slot is None or self.snapshot is None:
             return
@@ -1272,7 +1312,36 @@ class App:
             state="readonly",
             width=5,
         ).pack(side="left")
-        self.button(row, "盒的首个空槽", self.move_box_mon, side="left", padx=6)
+        self.button(row, "移动", self.move_box_mon, side="left", padx=6)
+        lock_row = ttk.Frame(tab)
+        lock_row.pack(fill="x", pady=6)
+        self.button(
+            lock_row, "关联存档（本地盒锁）", self.choose_box_save, side="left", padx=3
+        )
+        self.box_lock = tk.BooleanVar()
+        ttk.Checkbutton(
+            lock_row,
+            text="锁定当前盒",
+            variable=self.box_lock,
+            command=self.toggle_box_lock,
+        ).pack(side="left", padx=6)
+        self.button(
+            lock_row,
+            "全部未锁盒按内部编号排序",
+            self.sort_all_boxes,
+            side="left",
+            padx=3,
+        )
+        self.box_egg_ready_button = self.button(
+            lock_row, "快速生蛋（仅已有蛋）", self.ready_box_egg, side="left", padx=3
+        )
+        self.box_egg_ready_button.configure(state="disabled")
+        self.box_lock_detail = tk.StringVar(
+            value="盒锁保存在本地配置；请关联当前游戏的 .sav，不修改存档文件。"
+        )
+        ttk.Label(tab, textvariable=self.box_lock_detail, wraplength=850).pack(
+            anchor="w"
+        )
         ttk.Label(
             tab,
             text="选择左侧格子，在右侧编辑能力、形态和来源资料。盒内能力值由游戏在取出时计算。",
@@ -1292,10 +1361,240 @@ class App:
         self.box_editor_host = ttk.Frame(box, padding=(12, 0, 0, 0))
         self.box_editor_host.pack(side="left", fill="both", expand=True)
         self.box_tree.bind("<<TreeviewSelect>>", self.select_box_mon)
+        for card in self.box_tree.cards:
+            card.bind("<Button-3>", self.box_context_menu)
         self.box_detail = tk.StringVar(value="连接后选择盒子并点击读取。")
         ttk.Label(tab, textvariable=self.box_detail, wraplength=900).pack(
             anchor="w", pady=10
         )
+
+    def choose_box_save(self):
+        if self.busy or self.trainer is None:
+            return
+        path = filedialog.askopenfilename(
+            parent=self.root,
+            title="选择当前游戏存档：只关联本地盒锁，不读取或修改存档",
+            filetypes=[("游戏存档", "*.sav")],
+        )
+        if not path:
+            return
+        try:
+            locked = self.box_preferences.load(self.profile["rom_sha256"], path)
+        except (OSError, ValueError) as exc:
+            messagebox.showerror("未关联盒锁", str(exc), parent=self.root)
+            return
+        if not self.discard_box_changes():
+            return
+        self.box_save_path.set(path)
+        self.trainer.locked_boxes = locked
+        self.update_box_lock()
+
+    def update_box_lock(self):
+        locked = self.trainer.locked_boxes if self.trainer else set()
+        index = (
+            self.box_snapshot["index"]
+            if self.box_snapshot
+            else int(self.box_number.get()) - 1
+        )
+        self.box_lock.set(index in locked)
+        boxes = "、".join(str(i + 1) for i in sorted(locked)) or "无"
+        path = self.box_save_path.get()
+        self.box_lock_detail.set(
+            f"关联存档：{Path(path).name if path else '尚未选择'}；锁定盒：{boxes}。本地盒锁不影响游戏自身操作。"
+        )
+        self.update_box_egg_button()
+
+    def update_box_egg_button(self):
+        selected = self.box_tree.selection()
+        mon = (
+            self.box_snapshot["pokemon"][int(selected[0])]
+            if self.box_snapshot and selected
+            else None
+        )
+        enabled = (
+            mon
+            and mon.species
+            and mon.egg
+            and self.trainer
+            and self.box_snapshot["index"] not in self.trainer.locked_boxes
+            and not self.busy
+        )
+        self.box_egg_ready_button.configure(state="normal" if enabled else "disabled")
+
+    def toggle_box_lock(self):
+        if self.busy or self.trainer is None or self.box_snapshot is None:
+            self.update_box_lock()
+            return
+        if not self.box_save_path.get():
+            desired = self.box_lock.get()
+            self.choose_box_save()
+            if not self.box_save_path.get():
+                self.update_box_lock()
+                return
+            self.box_lock.set(desired)
+        if not self.discard_box_changes():
+            self.update_box_lock()
+            return
+        locked = set(self.trainer.locked_boxes)
+        index = self.box_snapshot["index"]
+        if self.box_lock.get():
+            locked.add(index)
+        else:
+            locked.discard(index)
+        try:
+            self.box_preferences.save(
+                self.profile["rom_sha256"], self.box_save_path.get(), locked
+            )
+        except (OSError, ValueError) as exc:
+            messagebox.showerror("盒锁未保存", str(exc), parent=self.root)
+        else:
+            self.trainer.locked_boxes = locked
+        self.update_box_lock()
+
+    def sort_all_boxes(self):
+        if self.busy or self.trainer is None or not self.discard_box_changes():
+            return
+        trainer = self.trainer
+        locked = "、".join(str(i + 1) for i in sorted(trainer.locked_boxes)) or "无"
+        if not messagebox.askokcancel(
+            "全部盒子排序",
+            f"此排序为全部盒子排序：按内部编号汇总排序，依次放回未锁定盒子，精灵可能跨盒移动。\n\n如有不想移动的盒子，请先锁定。\n当前锁定盒：{locked}\n\n是否继续读取排序预览？",
+            parent=self.root,
+        ):
+            return
+
+        def preview(prepared):
+            changed = sum(before != after for _, before, after in prepared["patches"])
+            if not changed:
+                self.status.set("全部未锁盒已经按内部编号排序，无需写入。")
+                return
+            if not messagebox.askokcancel(
+                "确认全盒排序",
+                f"参与 {len(prepared['indices'])} 盒，共 {prepared['count']} 只；将改变 {changed} 盒。\n同编号保持原顺序，空槽在末尾，完整个体记录保留。\n\n确认备份并写入？",
+                parent=self.root,
+            ):
+                return
+            index = self.box_snapshot["index"] if self.box_snapshot else 0
+
+            def job():
+                result = trainer.commit_box_sort(prepared)
+                return result, trainer.snapshot_box(index)
+
+            def done(result):
+                self.apply_box_snapshot(result[1])
+                self.status.set(
+                    "全部未锁盒排序已备份、写入及读回。请在游戏内保存；恢复备份前先解锁相关盒子。"
+                )
+
+            self.run("备份并统一比较、写入全部未锁盒…", job, done)
+
+        self.run("读取全部未锁盒并生成排序预览…", trainer.prepare_box_sort, preview)
+
+    def box_context_menu(self, event):
+        if self.busy or self.box_snapshot is None:
+            return "break"
+        slot = self.box_tree.cards.index(event.widget)
+        self.box_tree.selection_set(str(slot))
+        self.select_box_mon()
+        if self.box_tree.selection() != (str(slot),):
+            return "break"
+        mon = self.box_snapshot["pokemon"][slot]
+        locked = self.box_snapshot["index"] in self.trainer.locked_boxes
+        menu = tk.Menu(self.root, tearoff=False)
+        menu.add_command(
+            label="编辑",
+            command=self.edit_box_dialog,
+            state="normal" if mon.species and not locked else "disabled",
+        )
+        menu.add_command(
+            label="移动",
+            command=self.move_box_mon,
+            state="normal" if mon.species and not locked else "disabled",
+        )
+        menu.add_command(
+            label="快速生蛋",
+            command=self.ready_box_egg,
+            state="normal" if mon.species and mon.egg and not locked else "disabled",
+        )
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+        return "break"
+
+    def ready_box_egg(self):
+        if (
+            self.busy
+            or self.trainer is None
+            or self.box_snapshot is None
+            or not self.box_tree.selection()
+        ):
+            return
+        trainer, snap = self.trainer, self.box_snapshot
+        slot = int(self.box_tree.selection()[0])
+        try:
+            patches, _ = trainer.prepare_box_egg_ready(snap, slot)
+        except ValueError as exc:
+            messagebox.showinfo("快速生蛋", str(exc), parent=self.root)
+            return
+        if not self.discard_box_changes() or not messagebox.askokcancel(
+            "快速生蛋",
+            "仅将这个已有蛋的亲密度／孵化周期设为 0，保留蛋状态。\n取出后由游戏走路触发孵化；不会创建新蛋。\n\n确认备份并写入？",
+            parent=self.root,
+        ):
+            return
+
+        def job():
+            result = trainer.commit_box(patches, "PC 已有蛋周期归零")
+            return result, trainer.snapshot_box(snap["index"])
+
+        def done(result):
+            self.apply_box_snapshot(result[1])
+            self.status.set(
+                "已有蛋周期已设为 0 并读回；蛋状态保留。请取出后在游戏中触发孵化。"
+            )
+
+        self.run("备份并写入已有蛋周期…", job, done)
+
+    def shortcut_fill_pp(self):
+        if self.busy:
+            return
+        self.fill_pp()
+        self.nb.select(self.tab_party)
+        self.party_pages.select(self.tab_moves)
+
+    def ready_party_eggs(self):
+        if self.busy or self.trainer is None or self.snapshot is None:
+            return
+        trainer, snapshot = self.trainer, self.snapshot
+        eggs = [i for i, mon in enumerate(snapshot["party"]) if mon.egg]
+        if not eggs:
+            messagebox.showinfo(
+                "已有蛋周期归零",
+                "当前队伍没有蛋；普通精灵不会被修改。",
+                parent=self.root,
+            )
+            return
+        if not self.discard_party_changes() or not messagebox.askokcancel(
+            "已有蛋周期归零",
+            f"将队伍中 {len(eggs)} 只已有蛋的亲密度／周期设为 0。保留蛋状态及其他精灵亲密度。\n\n确认备份并写入？",
+            parent=self.root,
+        ):
+            return
+        pocket = self.pocket_id()
+
+        def job():
+            patches = []
+            for slot in eggs:
+                patches.extend(trainer.edit_pokemon(snapshot, slot, friendship=0)[0])
+            result = trainer.commit(snapshot, patches, "队伍已有蛋周期归零")
+            return result, trainer.snapshot(pocket)
+
+        def done(result):
+            self.apply_snapshot(result[1])
+            self.status.set("队伍已有蛋周期已设为 0 并读回；请在游戏内走路触发孵化。")
+
+        self.run("备份并写入队伍已有蛋周期…", job, done)
 
     def read_box(self):
         if self.trainer is None:
@@ -1348,6 +1647,7 @@ class App:
     def apply_box_snapshot(self, snapshot):
         self.clear_box_editor()
         self.box_snapshot = snapshot
+        self.update_box_lock()
         self.box_number.set(str(snapshot["index"] + 1))
         self.box_tree.delete(*self.box_tree.get_children())
         count = 0
@@ -1377,6 +1677,7 @@ class App:
             f"第 {snapshot['index'] + 1} 盒：{count} / 30。选择成员查看详情。"
         )
         self.status.set(f"已读取第 {snapshot['index'] + 1} 盒，尚未写入。")
+        self.update_box_egg_button()
 
     def clear_box_editor(self):
         if self.box_editor is not None and self.box_editor.winfo_exists():
@@ -1419,7 +1720,11 @@ class App:
         basic_scroll = ScrollingForm(editor_tabs, padding=6)
         source_scroll = ScrollingForm(editor_tabs, padding=6)
         basic, sources = basic_scroll.body, source_scroll.body
-        editor_tabs.add(basic_scroll, text="能力 / 形态")
+        editor_tabs.add(basic_scroll, text="基本 / 能力")
+        egg = tk.BooleanVar(value=mon.egg)
+        ttk.Checkbutton(basic, text="蛋状态（转换后先检查预览）", variable=egg).pack(
+            anchor="w", pady=4
+        )
         editor_tabs.add(source_scroll, text="来源 / 原训练师")
         letter = tk.StringVar(value=str(unown_form(mon.pid)))
         core_color = tk.StringVar(value="保持当前")
@@ -1459,7 +1764,6 @@ class App:
                 width=20,
             ).pack(anchor="w")
         shiny = tk.BooleanVar(value=mon.shiny)
-        egg = tk.BooleanVar(value=mon.egg)
         nature = tk.StringVar(
             value=f"{mon.pid % 25} - {self.names['pers'].get(str(mon.pid % 25), str(mon.pid % 25))}"
         )
@@ -1518,7 +1822,7 @@ class App:
             ("ot_sid", "原训练师 SID", mon.otid >> 16),
             ("ot_gender", "原训练师性别（0男/1女）", mon.ot_gender),
         ]:
-            row = ttk.Frame(sources)
+            row = ttk.Frame(basic if key == "friendship" else sources)
             row.pack(anchor="w", pady=3)
             ttk.Label(row, text=label, width=25).pack(side="left")
             var = tk.StringVar(value=str(value))
@@ -1568,9 +1872,6 @@ class App:
         ttk.Button(
             sources, text="填入当前玩家的原训练师资料（待预览）", command=fill_player_ot
         ).pack(anchor="w", pady=6)
-        ttk.Checkbutton(sources, text="蛋（转换后先检查预览）", variable=egg).pack(
-            anchor="w", pady=6
-        )
         ttk.Label(
             sources,
             text="转为蛋同步两处标志、1级及默认周期；取消标志不等于自然孵化。",
@@ -1718,15 +2019,6 @@ class App:
             side="left", padx=4
         )
 
-        def convert_egg():
-            if self.busy:
-                return
-            egg.set(True)
-            preview()
-
-        ttk.Button(actions, text="一键转为蛋（预览）", command=convert_egg).pack(
-            side="left", padx=4
-        )
         if mon.species == 308:
 
             def regenerate():
@@ -1747,6 +2039,7 @@ class App:
         return window
 
     def select_box_mon(self, event=None):
+        self.update_box_egg_button()
         selected = self.box_tree.selection()
         if self.busy or not selected or self.box_snapshot is None:
             return
@@ -2029,6 +2322,7 @@ class App:
         if self.close_requested and not self.busy:
             self.close()
             return
+        self.update_box_egg_button()
         if self.icon_request_pending and not self.busy and self.trainer is not None:
             self.icon_request_pending = False
             self.load_icons()
@@ -2106,6 +2400,15 @@ class App:
         def done(result):
             self.mem, self.trainer, snap = result
             self.profile = self.trainer.profile
+            if self.box_save_path.get():
+                try:
+                    self.trainer.locked_boxes = self.box_preferences.load(
+                        self.profile["rom_sha256"], self.box_save_path.get()
+                    )
+                except (ValueError, OSError) as exc:
+                    self.box_save_path.set("")
+                    messagebox.showerror("未加载盒锁", str(exc), parent=self.root)
+            self.update_box_lock()
             self.root.title(
                 f"水银 FC 修改器 · {APP_VERSION} · {self.profile['name'].split(' / ')[0]}"
             )
@@ -2372,7 +2675,7 @@ class App:
             self.move_vars[i].set(
                 f"{move} - {self.names['skills'].get(str(move), '未收录')}"
             )
-            self.pp_vars[i].set(str(mon.pp[i]))
+            self.pp_vars[i].set(str(mon.pp[i] if mon.moves[i] else 0))
         for i in range(6):
             self.iv[i].set(str(mon.ivs[i]))
             self.ev[i].set(str(mon.evs[i]))
@@ -2447,6 +2750,10 @@ class App:
             changes["moves"] = moves
             changes["pp"] = pp
         return self.trainer.edit_pokemon(self.snapshot, self.current_slot, **changes)
+
+    def normalize_empty_move(self, slot):
+        if self.move_vars[slot].get().split(" - ", 1)[0].strip() == "0":
+            self.pp_vars[slot].set("0")
 
     def fill_pp(self):
         if self.snapshot is None or self.current_slot is None:

@@ -49,10 +49,25 @@ def verify(rom, state, profile):
                 break
         if not detected or engine.read(PARTY + 41, 1) != b"\0":
             raise ValueError("Egg cycle did not reach game hatch detection")
+        # The user's shortcut sets the cycle to zero, not the egg flag. Check
+        # that zero is recognized and never wraps to 255 on the next cycle.
+        ready[41] = 0
+        engine.write(PARTY, bytes(ready))
+        engine.write(PARTY_COUNT, b"\1")
+        detected = False
+        for _ in range(1024):
+            if engine.call(0x80463B8):
+                detected = True
+                break
+            if engine.read(PARTY + 41, 1) != b"\0":
+                raise ValueError("Zero egg cycle wrapped or changed")
+        if not detected or engine.read(PARTY + 41, 1) != b"\0":
+            raise ValueError("Zero egg cycle not recognized by hatch detection")
         checked += 1
     return {
         "passed": True,
         "egg_cases": checked,
+        "zero_cycle_cases": checked,
         "scope": "ROM flag/stat/step hatch detection only; hatch animation, save/reload and encounter legality not verified.",
     }
 
