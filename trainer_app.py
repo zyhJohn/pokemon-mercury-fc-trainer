@@ -148,7 +148,7 @@ class App:
         ).pack(anchor="w")
         self._build_time()
         self.tab_party = ttk.Frame(self.nb, padding=8)
-        self.nb.add(self.tab_party, text="宝可梦编辑")
+        self.nb.add(self.tab_party, text="队伍")
         self.party_tree = PokemonSelector(
             self.tab_party,
             6,
@@ -396,6 +396,10 @@ class App:
         self._build_catalog()
         self._build_details()
         self._build_trainer()
+        self.nb.insert(0, self.tab_party)
+        self.nb.insert(1, self.tab_boxes)
+        self.nb.insert(2, self.tab_trainer)
+        self.nb.select(self.tab_party)
 
     def _build_details(self):
         scroller = ScrollingForm(self.party_pages)
@@ -1246,7 +1250,7 @@ class App:
 
     def _build_boxes(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="PC 盒子")
+        self.nb.add(tab, text="盒子编辑")
         self.tab_boxes = tab
         row = ttk.Frame(tab)
         row.pack(fill="x")

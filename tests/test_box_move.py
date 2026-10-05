@@ -1,6 +1,8 @@
 import struct
 import tempfile
 import unittest
+import json
+from pathlib import Path
 
 from box_data import BoxPokemon
 from rom_versions import load_profile
@@ -92,3 +94,60 @@ class BoxMoveTests(unittest.TestCase):
                 trainer.restore(result["backup"])
             self.assertEqual(memory.data, before)
             self.assertEqual(BoxPokemon(memory.read(target, 58)).species, 160)
+
+    def test_interrupted_move_keeps_both_original_slots_in_unconfirmed_backup(self):
+        with tempfile.TemporaryDirectory() as folder:
+            memory, trainer, profile = self.setup_release("4755f497", folder)
+            source, target = profile["storage"]["box_addresses"][:2]
+            original = packed_box()
+            memory.put(source, original)
+
+            def interrupted(patches, verify=False):
+                # Simulate loss of the bridge response after only the source
+                # has been cleared. A callback failure is not an atomic undo.
+                memory.put(source, b"\0" * 58)
+                memory.writes += 1
+                raise OSError("connection lost during write")
+
+            memory.batch = interrupted
+            with self.assertRaisesRegex(OSError, "connection lost"):
+                trainer.commit_box_move(
+                    trainer.snapshot_box(0), 0, trainer.snapshot_box(1)
+                )
+            path = next(Path(folder).glob("*.json"))
+            record = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(record["status"], "failed-or-unconfirmed")
+            self.assertEqual(len(record["patches"]), 2)
+            self.assertEqual(bytes.fromhex(record["patches"][0]["before"]), original)
+            self.assertEqual(bytes.fromhex(record["patches"][1]["before"]), b"\0" * 58)
+            self.assertEqual(memory.read(target, 58), b"\0" * 58)
+            with self.assertRaisesRegex(ValueError, "未被确认"):
+                trainer.restore(path)
+            self.assertEqual(memory.writes, 1)  # No retry or speculative undo.
+
+    def test_move_readback_failure_preserves_backup_and_refuses_automatic_restore(self):
+        with tempfile.TemporaryDirectory() as folder:
+            memory, trainer, profile = self.setup_release("4755f497", folder)
+            source, target = profile["storage"]["box_addresses"][:2]
+            original = packed_box()
+            memory.put(source, original)
+            batch = memory.batch
+
+            def changed_after_write(patches, verify=False):
+                batch(patches, verify)
+                memory.put(target + 18, b"\xa5")
+
+            memory.batch = changed_after_write
+            with self.assertRaisesRegex(OSError, "读回不一致"):
+                trainer.commit_box_move(
+                    trainer.snapshot_box(0), 0, trainer.snapshot_box(1)
+                )
+            path = next(Path(folder).glob("*.json"))
+            record = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(record["status"], "failed-or-unconfirmed")
+            self.assertEqual(bytes.fromhex(record["patches"][0]["before"]), original)
+            before = dict(memory.data)
+            with self.assertRaises(ValueError):
+                trainer.restore(path)
+            self.assertEqual(memory.data, before)
+            self.assertEqual(memory.writes, 2)

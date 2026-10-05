@@ -2,9 +2,9 @@
 
 更新：2026-10-05。仓库：https://github.com/zyhJohn/pokemon-mercury-fc-trainer ，当前分支 `main`。
 
-本轮交接版本0.2.11，新增V1.2支持及自动版本识别、PC盒间移动、默认图像与关闭开关、一键转蛋预览；整体界面原型待用户审阅。任务地点传送原因已由用户查明，停止排查，保留空槽创建计划。推送使用命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑根据自己的代理环境设置，无需沿用本机端口。正式便携包的build-info.json记录源码提交与是否有未提交修改。
+本轮交接版本0.2.12，正式导航为“队伍 → 盒子编辑 → 训练师”，其余现有功能保留。沿用0.2.11的V1.2支持、单只盒间移动、默认图片与转蛋预览；新分组界面与批量功能仍是原型，待审阅。用户确认引用暂存、原槽保留，新增盒名/排序/本地锁盒需求；顶部未实现的通用导入占位已移除。先读[需求及恢复核查](requirements-audit-2026-10-05.md)，再按新路线推进，不能把原型当成已接入游戏。任务地点原因已查明，停止排查。推送使用命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑按自己的代理环境设置。便携包build-info.json记录源码提交与是否有未提交修改。
 
-0.2.11回归基线193项，含V1.2实际Lua/TCP队伍/PC/数值/排序/盒间移动与恢复、跨版拒绝、界面转蛋草稿和图片开关。正式打包仍使用`python tools/build_release.py`，应包含两版JSON配置，并检查源码提交与解压启动自检。
+0.2.12回归基线195项，含原有193项及2项盒间写入中断/读回失败的未确认备份保护。正常已确认且当前值匹配时可条件恢复；未确认写入、后续游戏值改变、任意多批操作不保证自动全局回滚。当前原型为`docs/prototypes/mercury-editor-review-v2.html`。正式打包使用`python tools/build_release.py`，包含两版JSON和需求核查说明，并检查源码提交与解压启动自检。
 
 V1.0与V1.2均可连接：当前Lua完整CRC用于选择配置，随后仍检查代码特征，离线RTC以所选ROM SHA识别。保留`rom_profile.json`与`rom_profile_v12.json`两份文件，不得只换CRC/hash套用旧地址；两版备份不可跨版本恢复。V1.2 SHA=`b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896`，CRC=`4755F497`。V1.2虚拟日历启用时，RTC尾部偏移不覆盖它；相关新变量仍只读识别。
 
@@ -77,4 +77,4 @@ ROM SHA-256：`628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821`
 
 可给新电脑 Codex 的接手提示：
 
-> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md 和 docs/cross-machine-handoff.md。先运行现有测试，沿2026-10-02追加的15项清单继续开发；先给用户界面原型供审阅，再实施整体改版。用户已确认现版实机写入；不要重做已完成部分，也不要把规划字段当成已实现。新字段先核实实际ROM和用户最新存档，补充实机显示、保存重载与恢复验收；玩家/劲敌性别和阵容关联须查清后再联动。保持现有事务、备份和恢复保护，私有游戏文件不提交。
+> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md、docs/requirements-audit-2026-10-05.md 和 docs/cross-machine-handoff.md。按更新后的19项清单推进。用户偏好分组布局，已确认引用暂存，修订原型仍待审阅；仅队伍/盒子编辑导航改名排序已经进入正式版，批量、盒名、排序及锁盒均未接入。先补批量总操作日志和恢复，再开放任意数量写入，未确认状态不得盲目逆写。用户已确认早期实机写入，不推导为V1.2全部保存重载已通过。新字段先核实ROM及最新存档；玩家/劲敌性别和阵容关联查清后联动。私有游戏数据不提交。

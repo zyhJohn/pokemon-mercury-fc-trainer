@@ -40,7 +40,12 @@ def main():
         "--specpath",
         str(ROOT / "work"),
     ]
-    for file in ["names.json", "catalog.json", "rom_profile.json", "rom_profile_v12.json"]:
+    for file in [
+        "names.json",
+        "catalog.json",
+        "rom_profile.json",
+        "rom_profile_v12.json",
+    ]:
         command += ["--add-data", str(ROOT / file) + ";."]
     command.append(str(ROOT / "trainer_gui.py"))
     subprocess.run(command, cwd=ROOT, check=True)
@@ -60,6 +65,7 @@ def main():
         "development-status.md",
         "next-stage-plan.md",
         "cross-machine-handoff.md",
+        "requirements-audit-2026-10-05.md",
     ]:
         source = ROOT / "docs" / name
         if source.exists():

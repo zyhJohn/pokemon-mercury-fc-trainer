@@ -1,0 +1,208 @@
+<div id="mercury-review-v2" aria-label="水银修改器分组编辑修订版">
+  <div class="mr-window">
+    <header><span class="mr-title">水银 FC 修改器</span><span class="mr-note">V1.2 · 模拟演示</span></header>
+    <div class="mr-toolbar" aria-label="全局操作">
+      <button data-action="connect">连接</button><button data-action="refresh">刷新</button>
+      <button data-action="backups">备份 / 恢复</button>
+      <button data-action="diagnostics">导出诊断</button><button data-action="icons">关闭微缩图</button>
+      <span class="mr-connection">未连接游戏</span>
+    </div>
+    <nav aria-label="功能页面">
+      <button data-tab="party" aria-pressed="true">队伍</button><button data-tab="boxes" aria-pressed="false">盒子编辑</button>
+      <button data-tab="trainer" aria-pressed="false">训练师</button><button data-tab="bag" aria-pressed="false">道具编辑</button>
+      <button data-tab="values" aria-pressed="false">游戏数值</button><button data-tab="time" aria-pressed="false">时间 / 星期</button>
+      <button data-tab="catalog" aria-pressed="false">资料库</button>
+    </nav>
+    <main>
+      <section data-panel="party" class="mr-party">
+        <aside><h3>队伍成员</h3><div class="mr-party-grid"></div></aside><div class="mr-editor"></div>
+      </section>
+      <section data-panel="boxes" hidden>
+        <div class="mr-box-tools"><h3>盒子编辑</h3><span class="mr-selection">未选择</span><button data-action="deselect">取消选择</button></div>
+        <div class="mr-box-tools"><span class="mr-box-name">第 1 盒</span><button data-action="rename-box">盒子改名（计划）</button><button data-action="sort-box">精灵按内部编号排序（计划）</button><button data-action="lock-box" aria-pressed="false">锁定当前盒</button></div>
+        <div class="mr-box-layout">
+          <aside class="mr-stage"><h3>暂存栏 <span class="mr-small">引用</span></h3><div class="mr-small">原槽保留 · 右键移动时才生成草稿</div>
+            <div class="mr-stage-grid"></div><button data-action="unstage">移除所选引用</button></aside>
+          <div><div class="mr-box-head"><label>当前盒子<select aria-label="当前盒子" class="mr-box-picker"></select></label><button data-action="stage">暂存所选引用</button><button data-action="context">所选操作</button></div>
+            <div class="mr-box-numbers" aria-label="盒子 1 到 25"></div><div class="mr-box-grid" aria-label="当前盒子的三十个槽位"></div></div>
+        </div>
+        <div class="mr-small mr-hint">Shift＋左键：逐只追加 / 取消选择，两侧可同时选择。右键打开所选操作；键盘可用 Shift＋空格多选。</div>
+        <div class="mr-small">批量移动与批量孵化：流程演示，正式程序仍是单只跨盒移动。空槽创建待实现。</div>
+      </section>
+      <section data-panel="trainer" hidden><h3>玩家训练师资料</h3><div class="mr-fields">
+        <label>玩家姓名<input name="playerName" value="小智" maxlength="7"></label><label>TID<input name="playerTid" type="number" min="0" max="65535" value="12345"></label>
+        <label>SID<input name="playerSid" type="number" min="0" max="65535" value="54321"></label><label>玩家性别<select disabled><option>男（只读，联动待核验）</option></select></label>
+        <label>劲敌姓名<input disabled value="待核验"></label></div><button disabled>一键应用玩家 / 劲敌资料（计划中）</button><div class="mr-small">玩家资料与宝可梦原训练师资料分别编辑。</div></section>
+      <section data-panel="bag" hidden><h3>道具编辑</h3><div class="mr-box-head"><label>口袋<select class="mr-pocket"><option>道具</option><option>精灵球</option><option>重要道具</option><option>招式学习器盒</option><option>树果</option></select></label><button data-action="sort">按编号排序</button></div>
+        <div class="mr-table-wrap"><table><thead><tr><th>格子</th><th>编号</th><th>道具</th><th>数量</th></tr></thead><tbody class="mr-bag-rows"></tbody></table></div>
+        <div class="mr-fields"><label>道具编号<input class="mr-item-id" type="number" min="0" max="665" value="13"></label><label>道具名称<select class="mr-item-name"><option>伤药</option><option>好伤药</option><option>解毒药</option><option>空槽</option></select></label><label>数量<input class="mr-item-quantity" type="number" min="0" max="999" value="5"></label></div>
+        <div class="mr-actions"><button data-action="item">修改选中道具（草稿）</button><button data-action="item-clear">清空选中（草稿）</button></div>
+      </section>
+      <section data-panel="values" hidden><h3>游戏数值</h3><div class="mr-fields"><label>金钱<input name="money" type="number" min="0" max="9999999" value="10000"></label><label>代币<input name="coins" type="number" min="0" max="999999999" value="735"></label><label>BeautyPoints<input name="beauty" type="number" min="0" max="65535" value="5"></label><label>BracerPoints<input name="bracer" type="number" min="0" max="65535" value="220"></label></div></section>
+      <section data-panel="time" hidden><h3>存档日历 / 星期</h3><div class="mr-actions"><button data-action="file">选择本地 ROM</button><button data-action="file">选择 .sav</button><button data-action="read-clock">读取 .sav 时间</button></div>
+        <div class="mr-fields"><label>日期与时间<input name="calendar" type="datetime-local" value="2026-10-05T12:00"></label><label>星期<select name="weekday"><option>周一</option><option>周二</option><option>周三</option><option>周四</option><option>周五</option><option>周六</option><option>周日</option></select></label></div>
+        <div class="mr-actions"><button data-action="clock">校准到电脑时间（草稿）</button><button data-action="rtc-restore">恢复 RTC 备份</button></div>
+        <h3>累计时长 / 每日记录</h3><div class="mr-fields"><label>累计小时<input name="hours" type="number" min="0" max="65535" value="26"></label><label>分钟<input name="minutes" type="number" min="0" max="59" value="4"></label><label>秒<input name="seconds" type="number" min="0" max="59" value="18"></label><label>引擎每日日期<input readonly value="2026-10-05"></label></div>
+        <div class="mr-actions"><button data-action="read-clock">读取游戏时间</button><button data-action="daily">每日日期修复预览</button></div>
+        <div class="mr-small">RTC 文件修改须关闭游戏。V1.2 游戏内虚拟时钟另行显示，不受文件校准覆盖。</div>
+      </section>
+      <section data-panel="catalog" hidden><h3>水银离线资料库</h3><div class="mr-fields"><label>类型<select class="mr-catalog-kind"><option>宝可梦</option><option>特性</option><option>道具</option><option>招式</option></select></label><label>查询<input class="mr-search" placeholder="名称 / 内部编号"></label></div><div class="mr-catalog-result"></div></section>
+    </main>
+    <div class="mr-preview" hidden aria-live="polite"></div>
+    <footer><span class="mr-state" aria-live="polite">未修改 · 未连接游戏</span><button data-action="discard">撤销未应用草稿</button><button data-action="preview">检查与预览</button><button class="mr-primary" data-action="apply" disabled>模拟应用</button></footer>
+    <div class="mr-menu" role="menu" aria-label="所选宝可梦操作" hidden>
+      <button role="menuitem" data-action="edit">编辑</button><button role="menuitem" data-action="move">快速移动</button><button role="menuitem" data-action="hatch">快速生蛋 / 孵化（计划）</button>
+    </div>
+    <dialog class="mr-dialog"><div class="mr-dialog-head"><h3 class="mr-dialog-title"></h3><button data-action="close-dialog" aria-label="关闭弹出窗口">关闭</button></div><div class="mr-dialog-body"></div></dialog>
+  </div>
+</div>
+<style>
+ #mercury-review-v2{color-scheme:light dark;font:14px/1.5 "Microsoft YaHei",system-ui,sans-serif}
+ #mercury-review-v2 *{box-sizing:border-box}
+ #mercury-review-v2 .mr-window{--mr-bg:light-dark(#fff,#23272d);--mr-text:light-dark(#233045,#edf1f7);--mr-soft:light-dark(#f2f5f9,#303743);--mr-line:light-dark(#d5dfec,#515c6e);--mr-blue:light-dark(#225cad,#a4c9ff);--mr-button-text:light-dark(#fff,#142740);background:var(--mr-bg);color:var(--mr-text);border:1px solid var(--mr-line);border-radius:8px;position:relative;overflow-wrap:anywhere}
+ #mercury-review-v2 header,#mercury-review-v2 footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 16px}
+ #mercury-review-v2 header{border-bottom:1px solid var(--mr-line)}
+ #mercury-review-v2 .mr-title{font-size:17px;font-weight:500;margin-right:auto}
+ #mercury-review-v2 .mr-note,#mercury-review-v2 .mr-small{font-size:12px}
+ #mercury-review-v2 .mr-toolbar,#mercury-review-v2 nav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px}
+ #mercury-review-v2 nav{background:var(--mr-soft);border-block:1px solid var(--mr-line)}
+ #mercury-review-v2 button{font:inherit;border:1px solid var(--mr-line);border-radius:5px;background:var(--mr-bg);color:var(--mr-text);padding:6px 10px}
+ #mercury-review-v2 button[aria-pressed="true"]{border-color:var(--mr-blue);background:var(--mr-soft);color:var(--mr-blue)}
+ #mercury-review-v2 button:disabled{opacity:.52}
+ #mercury-review-v2 .mr-connection{font-size:12px;align-self:center;margin-left:auto}
+ #mercury-review-v2 main{padding:16px;min-height:620px}
+ #mercury-review-v2 h3{font-size:15px;font-weight:500;margin:0 0 12px}
+ #mercury-review-v2 .mr-party{display:grid;grid-template-columns:minmax(160px,26%) minmax(0,1fr);gap:20px}
+ #mercury-review-v2 .mr-party-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #mercury-review-v2 .mr-mon{display:flex;align-items:center;flex-direction:column;justify-content:center;gap:4px;padding:8px 2px;min-height:83px;min-width:0;user-select:none}
+ #mercury-review-v2 .mr-mini{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--mr-blue);background:var(--mr-soft)}
+ #mercury-review-v2 .mr-mon-name{font-size:12px;max-width:100%;overflow-wrap:anywhere}
+ #mercury-review-v2 .mr-box-layout{display:grid;grid-template-columns:minmax(175px,28%) minmax(0,1fr);gap:18px}
+ #mercury-review-v2 .mr-stage{border-right:1px solid var(--mr-line);padding-right:16px;min-width:0}
+ #mercury-review-v2 .mr-stage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0;min-height:180px;align-content:start}
+ #mercury-review-v2 .mr-box-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+ #mercury-review-v2 .mr-box-grid .mr-mon{min-height:75px}
+ #mercury-review-v2 .mr-box-numbers{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:3px;margin:12px 0}
+ #mercury-review-v2 .mr-box-numbers button{padding:4px 0;font-size:12px}
+ #mercury-review-v2 .mr-box-tools,#mercury-review-v2 .mr-box-head,#mercury-review-v2 .mr-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+ #mercury-review-v2 .mr-box-tools h3{margin:0 auto 0 0}
+ #mercury-review-v2 .mr-selection{font-size:12px}
+ #mercury-review-v2 label{display:flex;flex-direction:column;gap:4px;min-width:0}
+ #mercury-review-v2 input,#mercury-review-v2 select{width:100%;min-width:0;color:var(--mr-text);background:var(--mr-bg);border:1px solid var(--mr-line);border-radius:5px;padding:7px;font:inherit}
+ #mercury-review-v2 input:disabled,#mercury-review-v2 select:disabled{background:var(--mr-soft)}
+ #mercury-review-v2 .mr-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+ #mercury-review-v2 .mr-groups{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+ #mercury-review-v2 table{width:100%;border-collapse:collapse;margin:10px 0}
+ #mercury-review-v2 td,#mercury-review-v2 th{padding:6px 4px;text-align:left;border-bottom:1px solid var(--mr-line);font-weight:400}
+ #mercury-review-v2 th{font-weight:500}
+ #mercury-review-v2 td input{padding:5px;max-width:88px}
+ #mercury-review-v2 .mr-moves{display:grid;gap:10px}
+ #mercury-review-v2 .mr-move{display:grid;grid-template-columns:32px minmax(0,1fr) 75px 85px;gap:8px;align-items:end}
+ #mercury-review-v2 .mr-move strong{align-self:center;font-weight:500}
+ #mercury-review-v2 .mr-preview{background:var(--mr-soft);white-space:pre-line;padding:12px 16px;border-top:1px solid var(--mr-line)}
+ #mercury-review-v2 footer{border-top:1px solid var(--mr-line)}
+ #mercury-review-v2 .mr-state{margin-right:auto;font-size:12px;flex:1 1 260px}
+ #mercury-review-v2 .mr-primary{background:var(--mr-blue);color:var(--mr-button-text);border-color:var(--mr-blue)}
+ #mercury-review-v2 .mr-hint{margin:14px 0 4px}
+ #mercury-review-v2 .mr-menu{position:absolute;z-index:20;background:var(--mr-bg);border:1px solid var(--mr-line);box-shadow:0 5px 16px light-dark(#23304520,#0008);padding:5px;border-radius:6px;width:min(240px,95%);display:grid;gap:4px}
+ #mercury-review-v2 .mr-menu button{text-align:left;border-color:transparent}
+ #mercury-review-v2 .mr-dialog{background:var(--mr-bg);color:var(--mr-text);border:1px solid var(--mr-line);border-radius:8px;width:min(710px,94%);max-height:90%;padding:16px;overflow:auto}
+ #mercury-review-v2 .mr-dialog::backdrop{background:light-dark(#17273e55,#0008)}
+ #mercury-review-v2 .mr-dialog-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+ #mercury-review-v2 .mr-dialog-head h3{margin:0 auto 0 0}
+ #mercury-review-v2 .mr-logs{white-space:pre-line;padding:10px 0}
+ #mercury-review-v2 [hidden]{display:none!important}
+ @media(max-width:650px){#mercury-review-v2 .mr-party,#mercury-review-v2 .mr-box-layout{grid-template-columns:1fr}#mercury-review-v2 .mr-party-grid{grid-template-columns:repeat(3,minmax(0,1fr))}#mercury-review-v2 .mr-stage{border-right:0;border-bottom:1px solid var(--mr-line);padding:0 0 12px}#mercury-review-v2 .mr-stage-grid{grid-template-columns:repeat(4,minmax(0,1fr));min-height:0}#mercury-review-v2 .mr-box-numbers{grid-template-columns:repeat(10,minmax(0,1fr))}}
+ @media(max-width:380px){#mercury-review-v2 main,#mercury-review-v2 header,#mercury-review-v2 footer{padding:12px}#mercury-review-v2 .mr-fields{grid-template-columns:1fr}#mercury-review-v2 .mr-box-grid{grid-template-columns:repeat(5,minmax(0,1fr))}#mercury-review-v2 .mr-stage-grid{grid-template-columns:repeat(3,minmax(0,1fr))}#mercury-review-v2 .mr-move{grid-template-columns:22px minmax(0,1fr) 63px}#mercury-review-v2 .mr-move label:last-child{grid-column:2 / 4}#mercury-review-v2 .mr-dialog{padding:10px}}
+ @media(pointer:coarse){#mercury-review-v2 button{min-height:44px}#mercury-review-v2 input,#mercury-review-v2 select{font-size:16px}}
+</style>
+<script>
+(() => {
+ const root=document.getElementById('mercury-review-v2'),win=root.querySelector('.mr-window');
+ const q=s=>win.querySelector(s),qa=s=>[...win.querySelectorAll(s)],copy=v=>JSON.parse(JSON.stringify(v));
+ const species=['大竺葵','电龙','月亮伊布','暴鲤龙','皮卡丘','伊布','波克比','拉鲁拉丝'];
+ const stats=['HP','攻击','防御','速度','特攻','特防'];
+ const escaped=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+ const makeMon=(id,name,egg=false)=>({id,name,number:[154,181,197,130,25,133,175,280][species.indexOf(name)],level:egg?1:50,egg,cycle:egg?20:70,nature:'内敛',shiny:'否',tid:12345,sid:54321,ot:'小智',met:'若叶镇',ivs:[31,31,31,31,31,31],evs:[252,0,6,0,252,0],moves:['终极吸取','光合作用','守住','能量球'],pps:[10,5,10,10]});
+ let model={party:species.slice(0,4).map((n,i)=>makeMon('p'+i,n)),boxes:Array.from({length:25},(_,b)=>Array.from({length:30},(_,s)=>s<(b===0?8:b===1?3:1)?makeMon('b'+b+'s'+s,species[(b+s)%8],b===0&&s===2):null)),bags:[[{id:13,name:'伤药',qty:5},{id:4,name:'精灵球',qty:164},{id:22,name:'解毒药',qty:3}], [{id:4,name:'精灵球',qty:164},{id:2,name:'高级球',qty:10}], [{id:1,name:'树果袋',qty:null},{id:2,name:'自行车',qty:null},{id:3,name:'地图',qty:null},{id:4,name:'招式学习器盒',qty:null}], [{id:1,name:'冲浪',qty:1},{id:2,name:'怪力',qty:1}], [{id:1,name:'橙橙果',qty:8}]]};
+ model.boxNames=Array.from({length:25},(_,i)=>'第 '+(i+1)+' 盒');
+ let applied=copy(model),staged=['b0s0','b0s2'],selected=new Set(),box=0,party=0,tab='party',group='base',icons=true,dirty=false,notes=[],backup=null,bagSlot=0,previewValid=false,locked=new Set();
+ let otherValues={},appliedValues={},pendingEditorId=null;
+ const menu=q('.mr-menu'),dialog=q('.mr-dialog');
+ function locate(id){for(let b=0;b<25;b++){const s=model.boxes[b].findIndex(m=>m?.id===id);if(s>=0)return {mon:model.boxes[b][s],b,s};}const s=model.party.findIndex(m=>m?.id===id);return s>=0?{mon:model.party[s],party:s}:null;}
+ function notice(text){q('.mr-state').textContent=text;}
+ function save(){window.openai?.setWidgetState?.({modelContent:{方案:'分组编辑修订版',页面:tab,暂存方式:'引用暂存',当前盒:box+1,锁定盒:[...locked].map(i=>i+1)},privateContent:{schema:2,tab,box,group,locked:[...locked]}})?.catch(()=>{});}
+ function mark(text){dirty=true;previewValid=false;notes.push(text);q('[data-action="apply"]').disabled=true;q('.mr-preview').hidden=true;notice(text+' · 等待检查与预览');save();}
+ function monButton(mon,attrs,chosen){const safeAttrs=mon?attrs.replaceAll(mon.name,escaped(mon.name)):attrs;return `<button class="mr-mon" ${safeAttrs} aria-pressed="${chosen}" ${mon?'':'disabled'}>${icons?`<span class="mr-mini" aria-hidden="true">${mon?(mon.egg?'蛋':escaped(mon.name.slice(0,1))):'＋'}</span>`:''}<span class="mr-mon-name">${mon?escaped(mon.name):'空槽'}</span><span class="mr-small">${mon?(mon.egg?'蛋 · 周期 '+mon.cycle:'Lv.'+mon.level):'待创建'}</span></button>`;}
+ function drawParty(){q('.mr-party-grid').innerHTML=Array.from({length:6},(_,i)=>monButton(model.party[i],`data-party="${i}" aria-label="队伍第${i+1}格"`,i===party)).join('');}
+ function drawBoxes(){q('.mr-box-picker').value=String(box);q('.mr-box-name').textContent=model.boxNames[box]+(locked.has(box)?' · 已锁定':'');q('[data-action="lock-box"]').textContent=locked.has(box)?'解锁当前盒':'锁定当前盒';q('[data-action="lock-box"]').setAttribute('aria-pressed',String(locked.has(box)));for(const action of ['rename-box','sort-box'])q(`[data-action="${action}"]`).disabled=locked.has(box);q('.mr-box-numbers').innerHTML=Array.from({length:25},(_,i)=>`<button data-box="${i}" aria-pressed="${i===box}" aria-label="第${i+1}盒${locked.has(i)?' 已锁定':''}">${i+1}${locked.has(i)?' 锁':''}</button>`).join('');q('.mr-box-grid').innerHTML=model.boxes[box].map((m,s)=>monButton(m,`data-id="${m?.id||''}" aria-label="第${box+1}盒第${s+1}格 ${m?.name||'空槽'}"`,selected.has(m?.id))).join('');q('.mr-stage-grid').innerHTML=staged.map(id=>{const r=locate(id);return r?monButton(r.mon,`data-id="${id}" aria-label="暂存 ${r.mon.name} 原第${r.b+1}盒第${r.s+1}格"`,selected.has(id)):'';}).join('')||'<span class="mr-small">暂无引用</span>';q('.mr-selection').textContent=`已选择 ${selected.size} 只（跨盒去重）`;q('[data-action="unstage"]').disabled=!staged.some(id=>selected.has(id));}
+ function drawEditor(container,id,page=group){const r=locate(id);if(!r)return;const m=copy(r.mon);for(const key of ['name','ot','met'])m[key]=escaped(m[key]);m.moves=m.moves.map(escaped);
+   container.innerHTML=`<h3>${m.name} · ${m.egg?'蛋':'Lv.'+m.level}</h3><div class="mr-groups">${[['base','基本 / 能力'],['moves','招式 / PP'],['source','来源 / OT'],['egg','蛋 / 形态']].map(([key,title])=>`<button data-group="${key}" aria-pressed="${key===page}">${title}</button>`).join('')}</div>
+   <div data-edit-part="base" ${page==='base'?'':'hidden'}><div class="mr-fields"><label>昵称<input data-mon="name" value="${m.name}" maxlength="10"></label><label>等级<input data-mon="level" type="number" value="${m.level}" min="1" max="100" ${r.b!==undefined?'disabled':''}></label><label>性格<select data-mon="nature">${['内敛','胆小','固执'].map(v=>`<option ${v===m.nature?'selected':''}>${v}</option>`).join('')}</select></label><label>闪光<select data-mon="shiny">${['否','是'].map(v=>`<option ${v===m.shiny?'selected':''}>${v}</option>`).join('')}</select></label><label>性别<select disabled><option>原值保留（编辑待核验）</option></select></label><label>特性<select data-mon="ability"><option>茂盛</option><option>隐藏特性（示例）</option></select></label><label>携带道具<select data-mon="held"><option>无</option><option>剩饭</option></select></label></div><table aria-label="六项 IV EV"><thead><tr><th>能力</th><th>IV</th><th>EV</th></tr></thead><tbody>${stats.map((s,i)=>`<tr><td>${s}</td><td><input aria-label="${s} IV" data-stat="iv" data-index="${i}" type="number" min="0" max="31" value="${m.ivs[i]}"></td><td><input aria-label="${s} EV" data-stat="ev" data-index="${i}" type="number" min="0" max="252" value="${m.evs[i]}"></td></tr>`).join('')}</tbody></table><label>神秘礼物预设<select disabled><option>计划中 · 先核实来源与初始化</option></select></label></div>
+   <div data-edit-part="moves" ${page==='moves'?'':'hidden'}><div class="mr-moves">${m.moves.map((move,i)=>`<div class="mr-move"><strong>${i+1}</strong><label>招式<select data-move="${i}" ${r.b!==undefined?'disabled':''}>${[move,'冲浪','怪力','守住','空槽'].filter((v,n,a)=>a.indexOf(v)===n).map(v=>`<option>${v}</option>`).join('')}</select></label><label>当前 PP<input data-pp="${i}" type="number" value="${m.pps[i]}" min="0" max="64" ${r.b!==undefined?'disabled':''}></label><label>PP 提升<select disabled><option>原值 · 待核验</option></select></label></div>`).join('')}</div><div class="mr-small mr-hint">队伍可编辑四个招式及当前 PP。PP 提升次数 / 极限值、PC 通用招式编辑仍待实现。</div></div>
+   <div data-edit-part="source" ${page==='source'?'':'hidden'}><div class="mr-fields"><label>亲密度 / 孵化周期<input data-mon="cycle" type="number" min="0" max="255" value="${m.cycle}"></label><label>相遇地点<select data-mon="met">${[m.met,'吉野市','若叶镇'].filter((v,n,a)=>a.indexOf(v)===n).map(v=>`<option>${v}</option>`).join('')}</select></label><label>相遇等级<input data-mon="metLevel" type="number" min="0" max="100" value="5"></label><label>捕获球<select data-mon="ball"><option>精灵球</option><option>高级球</option></select></label><label>原训练师 TID<input data-mon="tid" type="number" min="0" max="65535" value="${m.tid}"></label><label>原训练师 SID<input data-mon="sid" type="number" min="0" max="65535" value="${m.sid}"></label><label>原训练师姓名<input data-mon="ot" value="${m.ot}" maxlength="7"></label><label>原训练师性别<select data-mon="otGender"><option>男</option><option>女</option></select></label><label>相遇方式<select disabled><option>待核验</option></select></label></div><button data-action="fill-ot">填入已读取玩家 OT（草稿）</button></div>
+   <div data-edit-part="egg" ${page==='egg'?'':'hidden'}><div class="mr-fields"><label>蛋状态<select data-mon="egg"><option value="false" ${m.egg?'':'selected'}>宝可梦</option><option value="true" ${m.egg?'selected':''}>蛋</option></select></label><label>形态<select disabled><option>当前物种默认形态</option></select></label><label>PID 花纹 / 字形<input readonly value="仅对已支持的物种显示专属选择"></label></div><button data-action="egg">一键转为蛋（草稿）</button><div class="mr-small mr-hint">只生成转蛋草稿，不等于自然生蛋或孵化。</div></div>`;
+   container.dataset.editorId=id;container.dataset.editorGroup=page;
+ }
+ function drawBag(){const index=q('.mr-pocket').selectedIndex,rows=model.bags[index];q('.mr-bag-rows').innerHTML=rows.map((r,i)=>`<tr><td><button data-bag-slot="${i}" aria-pressed="${i===bagSlot}">${i+1}</button></td><td>${r.id}</td><td>${r.name}</td><td>${r.qty===null?'—':r.qty}</td></tr>`).join('');const r=rows[bagSlot]||rows[0];q('.mr-item-id').value=r.id;q('.mr-item-quantity').value=r.qty??0;q('.mr-item-quantity').disabled=index===2;}
+ function render(){drawParty();drawBoxes();drawEditor(q('.mr-editor'),model.party[party].id);drawBag();renderCatalog();}
+ function renderCatalog(){const term=q('.mr-search').value.trim(),kind=q('.mr-catalog-kind').selectedIndex,rows=[species,['茂盛','静电','同步'],['伤药','精灵球','树果袋'],['冲浪','怪力','终极吸取']][kind];q('.mr-catalog-result').textContent=rows.filter(n=>n.includes(term)).join('　')||'没有匹配的演示条目';}
+ function closeMenu(){menu.hidden=true;}
+ function showMenu(anchor){if(!selected.size){notice('先选择至少一只非空槽宝可梦');return;}const bounds=win.getBoundingClientRect(),pos=anchor.getBoundingClientRect();menu.hidden=false;menu.style.left=Math.max(8,Math.min(pos.left-bounds.left,win.clientWidth-menu.offsetWidth-8))+'px';menu.style.top=Math.min(pos.bottom-bounds.top,win.clientHeight-menu.offsetHeight-8)+'px';q('[data-action="edit"]').disabled=selected.size!==1||[...selected].some(id=>locked.has(locate(id)?.b));}
+ function lockedSelection(){return [...selected].some(id=>locked.has(locate(id)?.b));}
+ function openDialog(title,html){closeMenu();q('.mr-dialog-title').textContent=title;q('.mr-dialog-body').innerHTML=html;dialog.showModal();}
+ function view(tabName,persist=true){closeMenu();tab=tabName;qa('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));qa('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==tab);if(persist)save();}
+ function selectMon(id,add){if(!locate(id))return;if(add){if(selected.has(id))selected.delete(id);else selected.add(id);}else{selected=new Set([id]);}drawBoxes();save();}
+ function stageSelected(){for(const id of selected){const r=locate(id);if(r?.b!==undefined&&!staged.includes(id))staged.push(id);}drawBoxes();notice(`暂存 ${staged.length} 个引用；原盒与原槽保持完整`);save();}
+ function preview(){const invalid=qa('input:not(:disabled)').some(i=>!i.checkValidity())||[...model.party,...model.boxes.flat()].filter(Boolean).some(m=>m.evs.reduce((a,b)=>a+b,0)>510||m.ivs.some(v=>v<0||v>31)||m.evs.some(v=>v<0||v>252));q('.mr-preview').hidden=false;q('.mr-preview').textContent=invalid?'数值检查失败：IV 0～31；单项 EV 0～252，总和 ≤510':dirty?`模拟预览：\n${[...new Set(notes)].join('\n')}\n模拟应用会保留本轮前后快照；此演示没有游戏连接。`:'没有待应用的修改';previewValid=!invalid&&dirty;q('[data-action="apply"]').disabled=!previewValid;notice(invalid?'请修正数值':dirty?'草稿已预览，等待模拟应用':'没有修改');}
+ function collectExternal(){return Object.fromEntries(qa('[name]').filter(e=>!e.disabled).map(e=>[e.name,e.value]));}
+ function restoreExternal(values){qa('[name]').forEach(e=>{if(e.name in values)e.value=values[e.name];});}
+ q('.mr-box-picker').innerHTML=Array.from({length:25},(_,i)=>`<option value="${i}">第 ${i+1} 盒</option>`).join('');
+ win.addEventListener('contextmenu',e=>{const b=e.target.closest('[data-id]');if(!b?.dataset.id)return;e.preventDefault();const id=b.dataset.id;if(!selected.has(id))selectMon(id,false);showMenu(win.querySelector(`[data-id="${id}"]`)||q('[data-action="context"]'));});
+ win.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(e.shiftKey&&(e.key===' '||e.key==='Enter')){const b=e.target.closest('[data-id]');if(b?.dataset.id){e.preventDefault();selectMon(b.dataset.id,true);}}if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10')){const b=e.target.closest('[data-id]');if(b?.dataset.id){e.preventDefault();if(!selected.has(b.dataset.id))selectMon(b.dataset.id,false);showMenu(b);}}});
+ win.addEventListener('input',e=>{const input=e.target;if(input.matches('.mr-search')){renderCatalog();return;}if(input.readOnly||input.disabled||input.tagName==='SELECT')return;const editor=input.closest('[data-editor-id]');if(editor){const m=locate(editor.dataset.editorId).mon;if(input.dataset.stat){m[input.dataset.stat==='iv'?'ivs':'evs'][Number(input.dataset.index)]=Number(input.value);}else if(input.dataset.pp!==undefined)m.pps[Number(input.dataset.pp)]=Number(input.value);else if(input.dataset.mon)m[input.dataset.mon]=input.type==='number'?Number(input.value):input.value;mark(m.name+'：编辑草稿');drawParty();drawBoxes();}else if(input.name){otherValues=collectExternal();mark('编辑 '+input.closest('label').firstChild.textContent);} });
+ win.addEventListener('change',e=>{const input=e.target;if(input.matches('.mr-box-picker')){box=Number(input.value);drawBoxes();save();return;}if(input.matches('.mr-pocket')){bagSlot=0;drawBag();return;}if(input.matches('.mr-catalog-kind')){renderCatalog();return;}const editor=input.closest('[data-editor-id]');if(editor){const m=locate(editor.dataset.editorId).mon;if(input.dataset.move!==undefined)m.moves[Number(input.dataset.move)]=input.value;else if(input.dataset.mon)m[input.dataset.mon]=input.dataset.mon==='egg'?input.value==='true':input.value;mark(m.name+'：编辑草稿');drawParty();drawBoxes();}else if(input.name){otherValues=collectExternal();mark('编辑 '+input.closest('label').firstChild.textContent);} });
+ win.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(!b.closest('.mr-menu')&&!['context','edit','move','hatch'].includes(b.dataset.action))closeMenu();
+   if(b.dataset.tab){view(b.dataset.tab);return;}if(b.dataset.party!==undefined){party=Number(b.dataset.party);drawParty();drawEditor(q('.mr-editor'),model.party[party].id);save();return;}
+   if(b.dataset.box!==undefined){box=Number(b.dataset.box);drawBoxes();save();return;}if(b.dataset.id){selectMon(b.dataset.id,e.shiftKey);return;}
+   if(b.dataset.group){const editor=b.closest('[data-editor-id]');if(editor===q('.mr-editor'))group=b.dataset.group;drawEditor(editor,editor.dataset.editorId,b.dataset.group);save();return;}
+   if(b.dataset.bagSlot!==undefined){bagSlot=Number(b.dataset.bagSlot);drawBag();return;}
+   const action=b.dataset.action;if(!action)return;
+   if(action==='connect'){q('.mr-connection').textContent='演示连接 · V1.2（非实机）';notice('仅切换演示连接状态，没有访问游戏');}
+   if(action==='refresh'){notice(dirty?'保留未应用草稿，未覆盖编辑内容':'演示刷新完成');render();}
+   if(action==='icons'){icons=!icons;b.textContent=icons?'关闭微缩图':'显示微缩图';drawParty();drawBoxes();save();}
+   if(action==='stage')stageSelected();
+   if(action==='unstage'){staged=staged.filter(id=>!selected.has(id));drawBoxes();notice('已移除所选暂存引用，游戏原槽不变');}
+   if(action==='deselect'){selected.clear();drawBoxes();}
+   if(action==='context')showMenu(b);
+   if(action==='edit'){pendingEditorId=[...selected][0];openDialog('编辑所选宝可梦','<div class="mr-modal-editor"></div><div class="mr-actions"><button data-action="finish-edit">保留草稿并关闭</button></div>');drawEditor(q('.mr-modal-editor'),pendingEditorId,'base');}
+   if(action==='finish-edit'||action==='close-dialog'){dialog.close();drawBoxes();drawEditor(q('.mr-editor'),model.party[party].id);}
+   if(action==='move'){openDialog(`快速移动 · 已选 ${selected.size} 只`,`<label>目标<select class="mr-move-target"><option value="stage">加入左侧暂存引用（不移动游戏记录）</option>${Array.from({length:25},(_,i)=>`<option value="${i}">第 ${i+1} 盒的空槽</option>`).join('')}</select></label><div class="mr-logs">保留完整已有个体；目标空间不足时不生成任何移动草稿。\n批量事务尚未接入正式程序。</div><button data-action="confirm-move">生成模拟移动草稿</button>`);}
+   if(action==='confirm-move'){const dest=q('.mr-move-target').value;if(dest==='stage'){stageSelected();dialog.close();return;}const target=Number(dest);if(locked.has(target)||lockedSelection()){q('.mr-dialog-title').textContent='源盒或目标盒已锁定 · 整批拒绝';notice('先解锁相关盒子；暂存引用不能绕过盒锁');return;}const sources=[...selected].map(locate).filter(r=>r&&r.b!==undefined&&r.b!==target);const empty=model.boxes[target].map((m,i)=>m===null?i:-1).filter(i=>i>=0);if(empty.length<sources.length){notice('目标空槽不足，整批草稿未生成');q('.mr-dialog-title').textContent='目标空间不足 · 未移动';return;}if(!sources.length){notice('所选成员已在目标盒，没有需要移动的记录');dialog.close();return;}sources.forEach((r,i)=>{model.boxes[target][empty[i]]=r.mon;model.boxes[r.b][r.s]=null;});box=target;dialog.close();drawBoxes();mark(`模拟批量移动 ${sources.length} 只到第 ${target+1} 盒（正式批量待实现）`);}
+   if(action==='hatch'){const eggs=[...selected].map(locate).filter(r=>r?.mon.egg).length;openDialog(`快速生蛋 / 孵化 · 已选 ${selected.size} 只`,`<div class="mr-logs">现有蛋：${eggs} 只\n周期归零只是减少等待的候选操作，完整孵化流程仍需核验。\n培育屋生成待领取蛋、计步器及批量写入尚未实现。</div><div class="mr-actions"><button data-action="confirm-hatch" ${eggs?'':'disabled'}>模拟现有蛋周期归零</button><button disabled>培育屋快速生蛋（待核验）</button></div>`);}
+   if(action==='confirm-hatch'){if(lockedSelection()){q('.mr-dialog-title').textContent='所选源盒已锁定 · 整批拒绝';return;}const eggs=[...selected].map(locate).filter(r=>r?.mon.egg);eggs.forEach(r=>r.mon.cycle=0);dialog.close();drawBoxes();mark(`模拟 ${eggs.length} 只现有蛋周期归零（快速孵化待核验）`);}
+   if(action==='lock-box'){if(dirty){notice('先应用或撤销当前草稿，再改变盒锁，避免草稿绕过新锁');return;}if(locked.has(box))locked.delete(box);else locked.add(box);drawBoxes();notice(locked.has(box)?'修改器内盒锁已启用；游戏自身仍可改动盒子':'当前盒已解锁');save();}
+   if(action==='rename-box'){if(locked.has(box))return;openDialog('盒子改名 · 计划中','<label>新盒名<input class="mr-new-box-name" value=""></label><div class="mr-logs">正式实现会检查本版字节容量、编码、终止符和可显示字符。\n游戏内命名标准尚未核验；这里只演示非空名称草稿。</div><button data-action="confirm-rename">生成模拟改名草稿</button>');q('.mr-new-box-name').value=model.boxNames[box];}
+   if(action==='confirm-rename'){const name=q('.mr-new-box-name').value.trim();if(locked.has(box)){notice('当前盒已锁定');return;}if(!name){q('.mr-dialog-title').textContent='名称不能为空';return;}model.boxNames[box]=name;dialog.close();drawBoxes();mark('模拟盒子改名（游戏命名标准待核验）');}
+   if(action==='sort-box'){if(locked.has(box))return;const members=model.boxes[box].filter(Boolean);members.sort((a,b)=>a.number-b.number);model.boxes[box]=members.concat(Array(30-members.length).fill(null));drawBoxes();mark('模拟盒内精灵按编号排序（示例编号，正式内部ID排序待实现）');}
+   if(action==='egg'){const editor=b.closest('[data-editor-id]'),m=locate(editor.dataset.editorId).mon;m.egg=true;m.level=1;m.cycle=20;drawEditor(editor,m.id,'egg');drawParty();drawBoxes();mark(m.name+'：一键转蛋草稿');}
+   if(action==='fill-ot'){const editor=b.closest('[data-editor-id]'),m=locate(editor.dataset.editorId).mon;m.ot=appliedValues.playerName;m.tid=Number(appliedValues.playerTid);m.sid=Number(appliedValues.playerSid);drawEditor(editor,m.id,'source');mark(m.name+'：填入已应用玩家 OT');}
+   if(action==='sort'){const p=q('.mr-pocket').selectedIndex;model.bags[p].sort((a,b)=>a.id-b.id);drawBag();mark('当前口袋按编号排序草稿');}
+   if(action==='item'||action==='item-clear'){const p=q('.mr-pocket').selectedIndex;model.bags[p][bagSlot]=action==='item-clear'?{id:0,name:'空槽',qty:p===2?null:0}:{id:Number(q('.mr-item-id').value),name:q('.mr-item-name').value,qty:p===2?null:Number(q('.mr-item-quantity').value)};drawBag();mark('选中道具修改草稿');}
+   if(action==='clock'){const now=new Date(),local=new Date(now-now.getTimezoneOffset()*60000).toISOString().slice(0,16);q('[name="calendar"]').value=local;otherValues=collectExternal();mark('RTC 校准草稿');}
+   if(action==='daily'){notice('演示日期没有处于未来；不生成每日修复草稿');}
+   if(['file','read-clock','rtc-restore','diagnostics'].includes(action))notice('仅展示原有功能入口；演示不读取或写入本地文件');
+   if(action==='preview')preview();
+   if(action==='apply'&&previewValid){backup={before:copy(applied),after:copy(model),beforeValues:copy(appliedValues),afterValues:collectExternal(),notes:[...new Set(notes)]};applied=copy(model);appliedValues=collectExternal();dirty=false;previewValid=false;notes=[];b.disabled=true;notice('模拟应用完成；已保留本轮前后快照 · 未写游戏');save();}
+   if(action==='discard'){model=copy(applied);restoreExternal(appliedValues);otherValues={};notes=[];dirty=false;previewValid=false;q('.mr-preview').hidden=true;q('[data-action="apply"]').disabled=true;render();notice('未应用草稿已撤销；暂存引用保留，原槽未丢失');}
+   if(action==='backups'){const matched=backup&&!dirty&&JSON.stringify(model)===JSON.stringify(backup.after)&&JSON.stringify(collectExternal())===JSON.stringify(backup.afterValues);openDialog('备份 / 恢复',`<div class="mr-logs">${backup?'最近一次模拟应用：\n'+backup.notes.join('\n'):'还没有模拟写入备份。正式程序每次写前自动备份。'}\n${dirty?'当前还有草稿，先应用或撤销。':''}\n正式恢复只接受已确认的记录，且所有修改处当前值仍匹配。</div><button data-action="restore-demo" ${matched?'':'disabled'}>恢复最近一次演示备份</button>`);}
+   if(action==='restore-demo'&&backup&&!dirty){if(JSON.stringify(model)!==JSON.stringify(backup.after)||JSON.stringify(collectExternal())!==JSON.stringify(backup.afterValues)){notice('当前值与备份修改后值不一致，拒绝覆盖');return;}model=copy(backup.before);applied=copy(model);appliedValues=copy(backup.beforeValues);restoreExternal(appliedValues);backup=null;dialog.close();render();notice('演示备份已恢复 · 未写游戏');}
+ });
+ qa('button').forEach(b=>b.classList.add('cursor-interaction'));
+ new MutationObserver(mutations=>{for(const m of mutations)for(const n of m.addedNodes)if(n.nodeType===1){if(n.matches('button'))n.classList.add('cursor-interaction');n.querySelectorAll('button').forEach(b=>b.classList.add('cursor-interaction'));}}).observe(win,{subtree:true,childList:true});
+ const remembered=window.openai?.widgetState?.privateContent;
+ function restoreState(value){if(value?.schema!==2)return;if(Number.isInteger(value.box)&&value.box>=0&&value.box<25)box=value.box;if(Array.isArray(value.locked))locked=new Set(value.locked.filter(i=>Number.isInteger(i)&&i>=0&&i<25));if(['base','moves','source','egg'].includes(value.group))group=value.group;if(['party','boxes','trainer','bag','values','time','catalog'].includes(value.tab))view(value.tab,false);render();}
+ appliedValues=collectExternal();render();restoreState(remembered);
+ window.addEventListener('openai:set_globals',e=>restoreState(e.detail?.globals?.widgetState?.privateContent));
+})();
+</script>
