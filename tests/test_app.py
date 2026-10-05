@@ -15,6 +15,16 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_resizing_basic_form_handles_labels_with_default_empty_wraplength(self):
+        self.app.nb.select(self.app.tab_party)
+        self.app.party_pages.select(self.app.tab_party_basic)
+        form = self.app.tab_party_basic
+        self.assertEqual(str(self.app.detail_image.cget("wraplength")), "")
+        form._resize(type("Resize", (), {"width": 640})())
+        self.root.update_idletasks()
+        self.assertEqual(form.canvas.itemcget(form.window_id, "width"), "640")
+        self.assertGreaterEqual(self.app.detail_image.winfo_reqheight(), 1)
+
     def test_empty_move_zero_pp_and_egg_control_are_drafts(self):
         self.app.pp_vars[0].set("50")
         self.app.move_vars[0].set("0 - 无")

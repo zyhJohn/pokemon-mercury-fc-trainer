@@ -28,6 +28,7 @@ class ScrollingForm(ttk.Frame):
         def wrap_labels(widget):
             if (
                 isinstance(widget, ttk.Label)
+                and widget.cget("wraplength") not in ("", 0, "0")
                 and widget.winfo_pixels(widget.cget("wraplength")) > 0
             ):
                 widget.configure(wraplength=max(100, event.width - 32))
