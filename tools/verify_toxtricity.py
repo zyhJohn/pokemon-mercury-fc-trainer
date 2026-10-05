@@ -83,6 +83,10 @@ def verify(rom, state, profile):
         )
         engine.write(0x2001000, bytes(raw))
         engine.call(0x803E47C, 0x2001000)
+        # This fixture changes species by replacing bytes before recalculation;
+        # it is not an editor operation. Start the matrix at full HP so a
+        # damaged source's old HP deficit cannot underflow after that injection.
+        engine.write(0x2001000 + 86, engine.read(0x2001000 + 88, 2))
         party = Pokemon(engine.read(0x2001000, 100))
         raw = bytearray(packed.raw)
         struct.pack_into("<H", raw, 28, species)

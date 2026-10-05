@@ -16,6 +16,82 @@ from pokemon_data import Pokemon
 
 @unittest.skipIf(LuaRuntime is None, "lupa is required")
 class EndToEndTests(unittest.TestCase):
+    def test_v12_party_pc_values_and_sort_use_new_guards_over_lua_tcp(self):
+        from rom_versions import load_profile
+        from tests.test_rom_versions import install_profile
+        from tests.test_box import packed_box
+
+        self.profile = load_profile(crc="4755f497")
+        install_profile(self.memory, self.profile)
+        self.trainer = Trainer(self.client, self.profile, self.temp.name)
+        snapshot = self.trainer.snapshot()
+        patches, _ = self.trainer.edit_pokemon(
+            snapshot, 0, shiny=True, egg=True, ivs=[31] * 6
+        )
+        result = self.trainer.commit(snapshot, patches, "V1.2 party")
+        self.assertTrue(Pokemon(self.client.read(PARTY, 100)).egg)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(PARTY, 100), sample().raw)
+
+        snapshot = self.trainer.snapshot()
+        result = self.trainer.commit(
+            snapshot,
+            self.trainer.edit_values(snapshot, 100, 735, 5, 220),
+            "V1.2 values",
+        )
+        self.assertEqual(self.trainer.snapshot()["coins"], 735)
+        self.trainer.restore(result["backup"])
+
+        pocket = self.profile["pockets"][0]
+        raw = struct.pack("<4H", 13, 2, 4, 164) + b"\0" * (pocket["capacity"] * 4 - 8)
+        self.memory.put(pocket["address"], raw)
+        snapshot = self.trainer.snapshot()
+        result = self.trainer.commit(
+            snapshot, self.trainer.sort_bag(snapshot), "V1.2 sort"
+        )
+        self.assertEqual(
+            self.client.read(pocket["address"], 4), struct.pack("<HH", 4, 164)
+        )
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(pocket["address"], len(raw)), raw)
+
+        address = self.profile["storage"]["box_addresses"][24]
+        raw = bytearray(packed_box())
+        raw[39:44] = (757).to_bytes(5, "little")
+        raw = bytes(raw)
+        self.memory.put(address, raw)
+        snapshot = self.trainer.snapshot_box(24)
+        patches, _ = self.trainer.edit_box(snapshot, 0, egg=True)
+        result = self.trainer.commit_box(patches, "V1.2 PC egg")
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(address, 58), raw)
+
+        result = self.trainer.commit_box_move(
+            self.trainer.snapshot_box(24), 0, self.trainer.snapshot_box(19)
+        )
+        destination = (
+            self.profile["storage"]["box_addresses"][19] + result["target_slot"] * 58
+        )
+        self.assertEqual(self.client.read(address, 58), b"\0" * 58)
+        self.assertEqual(self.client.read(destination, 58), raw)
+        self.trainer.restore(result["backup"])
+        self.assertEqual(self.client.read(address, 58), raw)
+        self.assertEqual(self.client.read(destination, 58), b"\0" * 58)
+
+    def test_v12_rom_swap_blocks_transaction_before_any_byte_is_written(self):
+        from rom_versions import load_profile
+        from tests.test_rom_versions import install_profile
+
+        self.profile = load_profile(crc="4755f497")
+        install_profile(self.memory, self.profile)
+        self.trainer = Trainer(self.client, self.profile, self.temp.name)
+        snapshot = self.trainer.snapshot()
+        patches, _ = self.trainer.edit_pokemon(snapshot, 0, shiny=True)
+        self.memory.rom_crc32 = "b4af11c8"
+        with self.assertRaises((ValueError, OSError)):
+            self.trainer.commit(snapshot, patches, "ROM changed")
+        self.assertEqual(self.memory.writes, 0)
+
     def setUp(self):
         self.memory = Memory()
         self.profile = json.loads(Path("rom_profile.json").read_text(encoding="utf-8"))

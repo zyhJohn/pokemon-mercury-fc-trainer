@@ -182,6 +182,10 @@ class Trainer:
                 "invert_ampm": bool(invert),
                 "rtc_error": int.from_bytes(error, "little"),
                 "clock_raw": clock_raw,
+                "virtual_clock": bool(
+                    layout.get("virtual_clock")
+                    and clock_raw[2] == layout["virtual_clock"]["marker"]
+                ),
                 "daily_raw": daily_raw,
                 "daily_date": daily_date,
                 "daily_error": daily_error,
@@ -315,6 +319,52 @@ class Trainer:
         ):
             raise ValueError("不是支持的盒子编辑记录")
         return self.commit(self.snapshot(), patches, label)
+
+    def prepare_box_move(self, source, slot, target, target_slot=None):
+        layout = self.profile["storage"]
+        slot = integer(slot, 0, 29, "源槽位")
+        for snap in (source, target):
+            index = integer(
+                snap["index"], 0, len(layout["box_addresses"]) - 1, "盒子位置"
+            )
+            if (
+                snap["address"] != layout["box_addresses"][index]
+                or len(snap["raw"]) != 1740
+            ):
+                raise ValueError("盒子快照地址或长度不一致")
+        if source["address"] == target["address"]:
+            raise ValueError("请选择另一个目标盒子")
+        raw = source["raw"][slot * 58 : (slot + 1) * 58]
+        if not BoxPokemon(raw).species:
+            raise ValueError("源槽位为空，不能移动")
+        if target_slot is None:
+            target_slot = next(
+                (
+                    i
+                    for i in range(30)
+                    if target["raw"][i * 58 : (i + 1) * 58] == b"\0" * 58
+                ),
+                None,
+            )
+            if target_slot is None:
+                raise ValueError("目标盒子没有可用的空槽")
+        target_slot = integer(target_slot, 0, 29, "目标槽位")
+        empty = target["raw"][target_slot * 58 : (target_slot + 1) * 58]
+        if empty != b"\0" * 58:
+            raise ValueError("目标槽位非空或保留了未知数据，不能覆盖")
+        return [
+            (source["address"] + slot * 58, raw, b"\0" * 58),
+            (target["address"] + target_slot * 58, empty, raw),
+        ], target_slot
+
+    def commit_box_move(self, source, slot, target, target_slot=None):
+        slot = integer(slot, 0, 29, "源槽位")
+        patches, target_slot = self.prepare_box_move(source, slot, target, target_slot)
+        result = self.commit_box(
+            patches,
+            f"PC 移动：第{source['index'] + 1}盒第{slot + 1}格→第{target['index'] + 1}盒第{target_slot + 1}格",
+        )
+        return {**result, "target_box": target["index"], "target_slot": target_slot}
 
     def edit_pokemon(self, snap, slot, **changes):
         slot = integer(slot, 0, len(snap["party"]) - 1, "队伍位置")

@@ -1,0 +1,104 @@
+<div id="mercury-editor-review" aria-label="水银修改器界面审阅">
+  <div class="viz-carousel" aria-label="编辑界面方案" data-previous-label="上一方案" data-next-label="下一方案">
+    <section data-variant="分组编辑" aria-label="分组编辑方案"><div class="mt-window" data-layout="grouped"></div></section>
+    <section data-variant="紧凑编辑" aria-label="紧凑编辑方案" hidden><div class="mt-window" data-layout="compact"></div></section>
+  </div>
+</div>
+<style>
+  #mercury-editor-review {color-scheme:light dark;font:14px/1.55 "Microsoft YaHei",system-ui,sans-serif}
+  #mercury-editor-review * {box-sizing:border-box}
+  #mercury-editor-review .mt-window {--mt-bg:light-dark(#fff,#22252a);--mt-text:light-dark(#202a36,#eef0f4);--mt-soft:light-dark(#f3f5f8,#30353e);--mt-line:light-dark(#d9dfe7,#515a68);--mt-blue:light-dark(#245caf,#9fc5ff);background:var(--mt-bg);color:var(--mt-text);border:1px solid var(--mt-line);border-radius:10px;min-height:850px;overflow-wrap:anywhere;display:flex;flex-direction:column}
+  #mercury-editor-review header,#mercury-editor-review footer {padding:14px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  #mercury-editor-review header {border-bottom:1px solid var(--mt-line)}
+  #mercury-editor-review .mt-title {font-size:17px;font-weight:500;margin-right:auto}
+  #mercury-editor-review .mt-tag {font-size:12px;color:var(--mt-blue)}
+  #mercury-editor-review nav {display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px;background:var(--mt-soft)}
+  #mercury-editor-review button {font:inherit;color:inherit;background:var(--mt-bg);border:1px solid var(--mt-line);border-radius:5px;padding:6px 10px}
+  #mercury-editor-review button[aria-pressed="true"] {color:var(--mt-blue);border-color:var(--mt-blue);background:var(--mt-soft)}
+  #mercury-editor-review button:disabled {opacity:.5}
+  #mercury-editor-review .mt-main {display:grid;grid-template-columns:minmax(210px,32%) minmax(0,1fr);gap:20px;padding:18px;flex:1}
+  #mercury-editor-review aside {min-width:0}
+  #mercury-editor-review .mt-selectors {display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  #mercury-editor-review .mt-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #mercury-editor-review .mt-mon {display:flex;flex-direction:column;align-items:center;min-height:83px;gap:3px;padding:10px 4px}
+  #mercury-editor-review .mt-mini {display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:50%;background:var(--mt-soft);color:var(--mt-blue);font-weight:500}
+  #mercury-editor-review .mt-mon small {font-size:12px}
+  #mercury-editor-review .mt-grid.mt-pc {grid-template-columns:repeat(6,minmax(0,1fr))}
+  #mercury-editor-review .mt-pc .mt-mon {min-height:65px}
+  #mercury-editor-review details {margin-top:12px}
+  #mercury-editor-review summary {color:var(--mt-blue);padding:6px 0}
+  #mercury-editor-review h3 {font-size:16px;font-weight:500;margin:0 0 14px}
+  #mercury-editor-review .mt-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
+  #mercury-editor-review label {display:flex;flex-direction:column;gap:4px;min-width:0}
+  #mercury-editor-review input,#mercury-editor-review select {width:100%;min-width:0;border:1px solid var(--mt-line);border-radius:5px;background:var(--mt-bg);color:var(--mt-text);padding:7px;font:inherit}
+  #mercury-editor-review table {border-collapse:collapse;width:100%;margin:10px 0}
+  #mercury-editor-review th {font-weight:500;text-align:left}
+  #mercury-editor-review td,#mercury-editor-review th {padding:5px;border-bottom:1px solid var(--mt-line)}
+  #mercury-editor-review td input {max-width:100px;padding:5px}
+  #mercury-editor-review .mt-actions {display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  #mercury-editor-review .mt-state {margin-right:auto;font-size:12px}
+  #mercury-editor-review footer {border-top:1px solid var(--mt-line)}
+  #mercury-editor-review .mt-primary {background:var(--mt-blue);color:light-dark(#fff,#152743);border-color:var(--mt-blue)}
+  #mercury-editor-review .mt-preview {background:var(--mt-soft);padding:12px;margin-top:12px;border-radius:5px;white-space:pre-line}
+  #mercury-editor-review .mt-help {font-size:12px;margin-top:12px}
+  #mercury-editor-review .mt-pane {min-width:0}
+  #mercury-editor-review [hidden] {display:none!important}
+  @media(max-width:590px) {#mercury-editor-review .mt-main {grid-template-columns:1fr}#mercury-editor-review .mt-grid {grid-template-columns:repeat(3,minmax(0,1fr))}#mercury-editor-review .mt-window {min-height:890px}}
+  @media(max-width:380px) {#mercury-editor-review .mt-fields {grid-template-columns:1fr}#mercury-editor-review header,#mercury-editor-review footer,#mercury-editor-review .mt-main {padding:12px}}
+  @media(pointer:coarse) {#mercury-editor-review button {min-height:44px}#mercury-editor-review input,#mercury-editor-review select {font-size:16px}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('mercury-editor-review');
+  const examples = ['大竺葵','电龙','月亮伊布','暴鲤龙','空槽','空槽'];
+  const stats = ['HP','攻击','防御','速度','特攻','特防'];
+  root.querySelectorAll('.mt-window').forEach((win, variant) => {
+    const compact = win.dataset.layout === 'compact';
+    const id = `mt-${variant}`;
+    win.innerHTML = `<header><span class="mt-title">水银 FC 修改器</span><span>V1.2</span><span class="mt-tag">界面演示 · 模拟数据</span></header>
+      <nav aria-label="功能"><button class="cursor-interaction" data-tab="pokemon" aria-pressed="true">宝可梦</button><button class="cursor-interaction" data-tab="trainer" aria-pressed="false">训练师</button><button class="cursor-interaction" data-tab="bag" aria-pressed="false">背包 / 数值</button><button class="cursor-interaction" data-tab="time" aria-pressed="false">时间 / 星期</button></nav>
+      <div class="mt-main"><aside><div class="mt-selectors"><select aria-label="队伍或盒子"><option>队伍</option><option>PC 第 1 盒</option><option>PC 第 25 盒</option></select><button class="cursor-interaction" data-action="icons">关闭微缩图</button></div><div class="mt-grid"></div><div class="mt-help">选择成员后，在右侧编辑数值</div></aside>
+      <main class="mt-pane"><h3 class="mt-member">大竺葵 · Lv.50</h3><div class="mt-tabs mt-actions"><button class="cursor-interaction" data-page="base" aria-pressed="true">基础 / 能力</button><button class="cursor-interaction" data-page="moves" aria-pressed="false">招式</button><button class="cursor-interaction" data-page="source" aria-pressed="false">来源 / 进阶</button></div>
+      <div data-section="pokemon"><div data-part="base"><div class="mt-fields"><label>昵称<input name="nickname" value="大竺葵" maxlength="10"></label><label>等级<input name="level" type="number" min="1" max="100" value="50"></label><label>性格<select name="nature"><option>内敛</option><option>胆小</option><option>固执</option></select></label><label>闪光<select name="shiny"><option>否</option><option>是</option></select></label></div><table aria-label="个体值和努力值"><thead><tr><th>能力</th><th>IV</th><th>EV</th></tr></thead><tbody>${stats.map((s,i)=>`<tr><td>${s}</td><td><input aria-label="${s} IV" name="iv${i}" type="number" min="0" max="31" value="31"></td><td><input aria-label="${s} EV" name="ev${i}" type="number" min="0" max="252" value="${i===0||i===4?252:i===2?6:0}"></td></tr>`).join('')}</tbody></table></div>
+      <div data-part="moves" ${compact?'':'hidden'}><h3>招式 / PP</h3><div class="mt-fields"><label>招式 1<input name="move" value="终极吸取"></label><label>当前 PP<input name="pp" type="number" value="10" min="0" max="16"></label></div></div>
+      <div data-part="source" ${compact?'':'hidden'}><h3>来源 / 进阶</h3><div class="mt-fields"><label>亲密度 / 周期<input name="friendship" type="number" value="70" min="0" max="255"></label><label>状态<select name="egg"><option>宝可梦</option><option>蛋</option></select></label><label>相遇地点<select name="met"><option>若叶镇</option><option>吉野市</option></select></label><label>原训练师 TID<input name="tid" type="number" value="12345" min="0" max="65535"></label></div></div><div class="mt-actions"><button class="cursor-interaction" data-action="egg">一键转为蛋</button><select aria-label="宝可梦预设" disabled><option>神秘礼物预设（计划中）</option></select></div></div>
+      <div data-section="trainer" hidden><h3>玩家资料</h3><div class="mt-fields"><label>姓名<input name="player" value="小智"></label><label>TID<input name="playerid" type="number" value="12345"></label><label>SID<input name="playersid" type="number" value="54321"></label><label>性别<select disabled><option>男（待核验）</option></select></label><label>劲敌姓名<input disabled value="待核验"></label></div></div>
+      <div data-section="bag" hidden><h3>游戏数值</h3><div class="mt-fields"><label>代币<input name="coins" type="number" value="735"></label><label>BeautyPoints<input name="beauty" type="number" value="5"></label><label>BracerPoints<input name="bracer" type="number" value="220"></label></div><button class="cursor-interaction" data-action="sort">按道具编号排序</button><div class="mt-help mt-bag">13 伤药 ×5　4 精灵球 ×164</div></div>
+      <div data-section="time" hidden><h3>时间 / 星期</h3><div class="mt-fields"><label>存档日历<input name="date" type="datetime-local" value="2026-10-05T12:00"></label><label>星期<input value="周一" readonly></label></div><button class="cursor-interaction" data-action="clock">按电脑时间填入</button></div>
+      <div class="mt-preview" hidden aria-live="polite"></div></main></div>
+      <footer><span class="mt-state" aria-live="polite">未修改</span><button class="cursor-interaction" data-action="reset">恢复示例</button><button class="cursor-interaction" data-action="preview">检查与预览</button><button class="mt-primary cursor-interaction" data-action="apply" disabled>模拟应用</button></footer>`;
+    let selected=0, icons=true, dirty=false;
+    const display = {compact};
+    const q = s => win.querySelector(s);
+    const mark = () => {dirty=true;q('.mt-state').textContent='有未应用的修改';q('[data-action="apply"]').disabled=true;q('.mt-preview').hidden=true;save();};
+    function save(){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{方案:compact?'紧凑编辑':'分组编辑',所选成员:member(selected)},privateContent:{slot:selected,scope:scope.selectedIndex}}).catch(()=>{});}
+    const scope=q('aside select');
+    const member=i=>examples[i]||'空槽';
+    if(compact){['moves','source'].forEach(name=>{const part=q(`[data-part="${name}"]`);const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent=name==='moves'?'招式 / PP':'来源 / 进阶';summary.className='cursor-interaction';part.before(details);details.append(summary,part);part.querySelector('h3').remove();});}
+    function draw(){const pc=scope.selectedIndex>0;q('.mt-grid').classList.toggle('mt-pc',pc);q('.mt-grid').innerHTML=Array.from({length:pc?30:6},(_,i)=>{const n=member(i);return `<button class="mt-mon cursor-interaction" data-slot="${i}" aria-label="第${i+1}格 ${n}" aria-pressed="${i===selected}">${icons?`<span class="mt-mini" aria-hidden="true">${n==='空槽'?'+':n.slice(0,1)}</span>`:''}<span>${pc?i+1:n}</span>${pc?'':`<small>${i<4?'Lv.50':'待创建'}</small>`}</button>`;}).join('');}
+    function pages(){win.querySelectorAll('[data-part]').forEach(p=>p.hidden=!display.compact&&p.dataset.part!=='base');q('.mt-tabs').hidden=display.compact;}
+    draw();pages();
+    win.addEventListener('input',e=>{if(!e.target.readOnly&&!e.target.disabled)mark();});
+    let previousScope=scope.selectedIndex;
+    win.addEventListener('change',e=>{if(e.target.closest('aside')){if(dirty){scope.selectedIndex=previousScope;q('.mt-state').textContent='先应用或恢复当前草稿，再切换范围';return;}previousScope=scope.selectedIndex;selected=0;draw();q('.mt-member').textContent=member(selected)+' · Lv.50';q('[name="nickname"]').value=member(selected);q('.mt-state').textContent='已切换选择范围（演示）';}else if(!e.target.disabled)mark();});
+    win.addEventListener('click',e=>{
+      const b=e.target.closest('button');if(!b)return;
+      if(b.dataset.slot!==undefined){if(dirty){q('.mt-state').textContent='先应用或恢复当前草稿，再切换成员';return;}selected=Number(b.dataset.slot);draw();q('.mt-member').textContent=selected<4?member(selected)+' · Lv.50':'空槽 · 创建功能待实现';q('[name="nickname"]').value=member(selected);q('[data-action="egg"]').disabled=selected>=4;save();}
+      if(b.dataset.tab){win.querySelectorAll('[data-tab]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));win.querySelectorAll('[data-section]').forEach(p=>p.hidden=p.dataset.section!==b.dataset.tab);q('.mt-tabs').hidden=b.dataset.tab!=='pokemon'||display.compact;q('.mt-member').hidden=b.dataset.tab!=='pokemon';}
+      if(b.dataset.page){win.querySelectorAll('[data-page]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));win.querySelectorAll('[data-part]').forEach(p=>p.hidden=p.dataset.part!==b.dataset.page);}
+      if(b.dataset.action==='icons'){icons=!icons;b.textContent=icons?'关闭微缩图':'显示微缩图';draw();save();}
+      if(b.dataset.action==='egg'){q('[name="egg"]').value='蛋';q('[name="level"]').value='1';q('[name="friendship"]').value='20';mark();q('.mt-state').textContent='转蛋草稿：1级，周期20，等待预览';}
+      if(b.dataset.action==='sort'){q('.mt-bag').textContent='4 精灵球 ×164　13 伤药 ×5';mark();}
+      if(b.dataset.action==='clock'){q('[name="date"]').value='2026-10-05T12:00';mark();}
+      if(b.dataset.action==='reset'){win.querySelectorAll('input').forEach(i=>i.value=i.defaultValue);win.querySelectorAll('main select').forEach(s=>s.selectedIndex=0);q('[name="nickname"]').value=member(selected);dirty=false;q('.mt-preview').hidden=true;q('[data-action="apply"]').disabled=true;q('.mt-state').textContent='已恢复示例';draw();save();}
+      if(b.dataset.action==='preview'){const total=stats.reduce((n,s,i)=>n+Number(q(`[name="ev${i}"]`).value),0);const invalid=[...win.querySelectorAll('input')].some(i=>!i.checkValidity())||total>510;const box=q('.mt-preview');box.hidden=false;box.textContent=invalid?'数值检查失败：IV 0～31；单项EV 0～252，总和≤510':'模拟检查通过\nEV 总和：'+total+'；状态：'+q('[name="egg"]').value+'\n应用仅改变这份演示中的状态';q('[data-action="apply"]').disabled=invalid||!dirty;q('.mt-state').textContent=invalid?'请修正数值':'已预览，等待模拟应用';}
+      if(b.dataset.action==='apply'){dirty=false;q('.mt-state').textContent='演示已应用 · 未连接游戏';b.disabled=true;save();}
+    });
+    if(globalThis.Tweak){const tweak=new Tweak({container:win,onChange:pages});tweak.addToggle(display,'compact',{label:'同屏显示进阶信息'});}
+    const stored=window.openai?.widgetState?.modelContent;
+    function restoreState(stored){if(stored&&examples.includes(stored.所选成员)){selected=examples.indexOf(stored.所选成员);draw();q('.mt-member').textContent=selected<4?member(selected)+' · Lv.50':'空槽 · 创建功能待实现';q('[name="nickname"]').value=member(selected);}}
+    restoreState(stored);
+    window.addEventListener('openai:set_globals',e=>restoreState(e.detail?.globals?.widgetState?.modelContent));
+  });
+})();
+</script>

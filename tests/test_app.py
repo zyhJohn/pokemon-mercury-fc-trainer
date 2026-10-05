@@ -15,6 +15,98 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_connect_automatically_selects_v12_and_keeps_offline_rtc_profile(self):
+        from rom_versions import load_profile
+        from tests.test_rom_versions import install_profile
+
+        profile = load_profile(crc="4755f497")
+        memory = Memory()
+        install_profile(memory, profile)
+        memory.put(SAVE_POINTER, struct.pack("<I", 0x0202552C))
+        memory.put(PARTY_COUNT, b"\1")
+        memory.put(PARTY, sample().raw)
+        memory.connect = lambda: None
+        memory.close = lambda: None
+        self.app.run = lambda label, job, done: done(job())
+        old_rtc = self.app.rtc_profile
+        with patch("trainer_app.MemClient", return_value=memory):
+            self.app.connect()
+        self.assertEqual(self.app.profile["rom_crc32"], "4755f497")
+        self.assertIn("1.2", self.root.title())
+        self.assertIs(self.app.rtc_profile, old_rtc)
+        self.assertTrue(self.app.icon_request_pending)
+        self.assertEqual(memory.writes, 0)
+
+    def test_icons_start_enabled_and_user_disable_survives_refresh(self):
+        self.assertTrue(self.app.icons_enabled)
+        self.assertEqual(self.app.icon_button.cget("text"), "关闭微缩图")
+        self.app.toggle_icons()
+        self.assertFalse(self.app.icons_enabled)
+        self.assertEqual(self.app.icon_button.cget("text"), "显示微缩图")
+        self.app.run = lambda label, job, done: done(job())
+        self.app.refresh()
+        self.assertFalse(self.app.icon_request_pending)
+        self.assertFalse(self.app.icons_enabled)
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_one_click_egg_is_a_preview_and_preserves_iv_draft(self):
+        self.app.iv[0].set("31")
+        self.app.make_party_egg()
+        updated = Pokemon(self.app.prepare_mon()[0][0][2])
+        self.assertTrue(updated.egg)
+        self.assertEqual(updated.level, 1)
+        self.assertEqual(updated.ivs[0], 31)
+        self.assertEqual(self.mem.read(PARTY, 100), sample().raw)
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_automatic_icons_queue_after_refresh_and_ignore_old_connection(self):
+        self.app.run = lambda label, job, done: done(job())
+        self.app.refresh()
+        self.assertTrue(self.app.icon_request_pending)
+        callbacks = []
+        self.app.run = lambda label, job, done: callbacks.append(done)
+        self.app.load_icons()
+        self.app.trainer = None
+        callbacks[0](({201: b"not valid PNG"}, None))
+        self.assertFalse(self.app.icon_images)
+        self.assertEqual(self.mem.writes, 0)
+
+    def test_box_move_selects_destination_and_egg_button_only_previews(self):
+        from tests.test_box import packed_box
+        from box_data import BoxPokemon
+
+        raw = bytearray(packed_box())
+        raw[39:44] = (757).to_bytes(5, "little")
+        for sig in self.app.profile["storage"]["signatures"]:
+            self.mem.put(sig["address"], bytes.fromhex(sig["hex"]))
+        source = self.app.profile["storage"]["box_addresses"][0]
+        self.mem.put(source, raw)
+        self.app.apply_box_snapshot(self.app.trainer.snapshot_box(0))
+        self.app.box_tree.selection_set("0")
+        self.app.select_box_mon()
+
+        def children(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from children(child)
+
+        button = next(
+            w
+            for w in children(self.app.box_editor)
+            if w.winfo_class() == "TButton" and w.cget("text") == "一键转为蛋（预览）"
+        )
+        button.invoke()
+        self.assertTrue(self.app.box_editor_values[1].get())
+        self.assertEqual(self.mem.writes, 0)
+        self.app.box_editor_values[1].set(False)
+        self.app.run = lambda label, job, done: done(job())
+        self.app.box_move_target.set("2")
+        self.app.move_box_mon()
+        self.assertEqual(self.app.box_snapshot["index"], 1)
+        self.assertEqual(self.mem.read(source, 58), b"\0" * 58)
+        self.assertEqual(self.app.box_snapshot["pokemon"][0].raw, bytes(raw))
+        self.assertEqual(BoxPokemon(self.app.box_snapshot["raw"][:58]).species, 160)
+
     def test_daily_date_repair_requires_preview_and_preserves_pokemon_draft(self):
         from tests.test_time import put_time
 
@@ -48,7 +140,9 @@ class AppTests(unittest.TestCase):
         self.app.play_seconds.set("56")
         self.app.iv[0].set("31")
         self.app.write_playtime()
-        self.assertEqual(self.app.trainer.snapshot_time()["playtime"], (12, 34, 56, 255))
+        self.assertEqual(
+            self.app.trainer.snapshot_time()["playtime"], (12, 34, 56, 255)
+        )
         self.assertEqual(self.app.iv[0].get(), "31")
         self.assertEqual(self.mem.read(PARTY, 100), sample().raw)
 
@@ -85,13 +179,16 @@ class AppTests(unittest.TestCase):
             self.app.rtc_save_path.set(str(save))
             self.app.time_backup_dir = lambda: root / "backups"
             self.app.run = lambda label, job, done: done(job())
-            self.app.read_saved_time()
+            with patch("trainer_app.load_profile", return_value=self.app.profile):
+                self.app.read_saved_time()
             self.assertIn("周五", self.app.rtc_detail.get())
             self.app.rtc_target.set("2026-10-04 00:00:00")
             self.app.write_saved_time()
             self.assertIn("周日", self.app.rtc_detail.get())
             record = next((root / "backups").glob("*.json"))
-            with patch("trainer_app.filedialog.askopenfilename", return_value=str(record)):
+            with patch(
+                "trainer_app.filedialog.askopenfilename", return_value=str(record)
+            ):
                 self.app.restore_saved_time()
             self.assertEqual(save.read_bytes(), before)
             self.assertEqual(self.mem.writes, 0)

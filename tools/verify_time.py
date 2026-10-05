@@ -42,7 +42,13 @@ def verify(rom, state, profile):
     def skip_hardware(cpu, address, size, user_data):
         cpu.reg_write(UC_ARM_REG_PC, cpu.reg_read(UC_ARM_REG_LR))
 
-    engine.cpu.hook_add(UC_HOOK_CODE, skip_hardware, begin=0x09D569D4, end=0x09D569D4)
+    hardware_reader = engine.addresses.get(0x09D569D4, 0x09D569D4)
+    engine.cpu.hook_add(
+        UC_HOOK_CODE, skip_hardware, begin=hardware_reader, end=hardware_reader
+    )
+    virtual = layout.get("virtual_clock")
+    if virtual:
+        engine.call(0x0806E6A8, virtual["flag"])
     clock_cases = 0
     monday = datetime(2026, 9, 28)
     dates = [monday + timedelta(days=n) for n in range(7)] + [
@@ -72,6 +78,28 @@ def verify(rom, state, profile):
             if engine.call(layout["weekday_getter"]) != (value.weekday() + 1) % 7:
                 raise ValueError("实际 ROM 星期读取不同")
             clock_cases += 1
+    virtual_cases = 0
+    if virtual:
+        engine.call(0x0806E680, virtual["flag"])
+        for value in [
+            datetime(2024, 2, 29, 23, 59, 58),
+            datetime(2026, 10, 5, 12, 34, 56),
+        ]:
+            fields = [
+                value.year,
+                value.month << 8 | value.day,
+                value.hour << 8 | value.minute,
+                value.second << 8 | (value.weekday() + 1) % 7,
+            ]
+            for variable, content in zip(virtual["variables"], fields):
+                engine.call(0x0806E584, variable, content)
+            engine.call(layout["clock_update"])
+            raw = engine.read(layout["clock_address"], 9)
+            actual, mismatch = decode_game_clock(raw)
+            if actual != value or mismatch or raw[2] != virtual["marker"]:
+                raise ValueError("V1.2 虚拟日历与实际 ROM 不符")
+            virtual_cases += 1
+        engine.call(0x0806E6A8, virtual["flag"])
     play_address = snapshot["address"] + 14
     play_cases = [
         ((0, 0, 0, 255), (0, 0, 1, 0)),
@@ -114,7 +142,8 @@ def verify(rom, state, profile):
         ),
     )
     daily_cases = 0
-    for day_offset, allowed in [(1, False), (0, False), (-1, True)]:
+    future_allowed = not daily.get("future_blocks_refresh", True)
+    for day_offset, allowed in [(1, future_allowed), (0, False), (-1, True)]:
         before = encode_daily_event(value + timedelta(days=day_offset))
         engine.write(daily["address"], before)
         if bool(engine.call(daily["future_checker"], daily["variable"])) != (
@@ -144,6 +173,7 @@ def verify(rom, state, profile):
         "passed": True,
         "rom_sha256": profile["rom_sha256"],
         "clock_conversion_and_weekday_cases": clock_cases,
+        "virtual_clock_cases": virtual_cases,
         "playtime_rollover_cases": len(play_cases),
         "daily_event_cases": daily_cases,
         "daily_event_serialization": True,

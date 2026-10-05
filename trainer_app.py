@@ -38,6 +38,7 @@ from scrolling_form import ScrollingForm
 from spinda_images import read_spinda_assets, spinda_png
 from sprite_images import icon_species, read_icons
 from trainer_core import Trainer
+from rom_versions import load_profile
 from version import APP_VERSION
 from wiki_catalog import load_catalog, search_rows
 
@@ -69,9 +70,12 @@ class App:
         self.trainer_snapshot = None
         self.time_snapshot = None
         self.rtc_snapshot = None
+        self.rtc_profile = self.profile
         self.rtc_calibrate = False
         self.daily_repair_ready = None
         self.icon_images = {}
+        self.icons_enabled = True
+        self.icon_request_pending = False
         self.spinda_assets = None
         self.spinda_photos = []
         self.party_form_original = None
@@ -104,9 +108,11 @@ class App:
             ("刷新", self.refresh),
             ("导出诊断", self.export),
             ("恢复备份", self.restore),
-            ("加载游戏微缩图", self.load_icons),
+            ("关闭微缩图", self.toggle_icons),
         ]:
-            self.button(top, text, cmd, side="left", padx=3)
+            widget = self.button(top, text, cmd, side="left", padx=3)
+            if cmd == self.toggle_icons:
+                self.icon_button = widget
         ttk.Label(self.root, textvariable=self.status, wraplength=900, padding=8).pack(
             fill="x"
         )
@@ -408,6 +414,7 @@ class App:
         ttk.Checkbutton(tab, text="蛋（转换时请先检查预览）", variable=self.egg).pack(
             anchor="w", pady=4
         )
+        self.button(tab, "一键转为蛋（预览）", self.make_party_egg, anchor="w", pady=4)
         for key, label in [
             ("friendship", "亲密度 / 孵化周期（0～255）"),
             ("met_location", "相遇地点编号（0～255）"),
@@ -742,7 +749,13 @@ class App:
         else:
             daily_text += calendar_text(daily)
             if daily.date() > snap["clock"].date():
-                daily_text += "；处于未来，可能阻止当天刷新。可先预览修复。"
+                daily_text += (
+                    "；处于未来，可能阻止当天刷新。可先预览修复。"
+                    if self.profile["time"]["daily_event"].get(
+                        "future_blocks_refresh", True
+                    )
+                    else "；处于未来。V1.2 的跨日判断已改变，可按需预览日期修复。"
+                )
             else:
                 daily_text += "；没有未来日期异常。"
         self.daily_detail.set(daily_text)
@@ -752,6 +765,8 @@ class App:
         ):
             var.set(str(value))
         note = "（游戏已开启上午/下午对调）" if snap["invert_ampm"] else ""
+        if snap.get("virtual_clock"):
+            note += "；当前为 V1.2 游戏内虚拟时钟，修改 RTC 文件不会覆盖它"
         if snap["weekday_mismatch"]:
             note += "；游戏星期缓存与日期不一致"
         if snap["rtc_error"]:
@@ -881,6 +896,8 @@ class App:
         )
         if snap["weekday_mismatch"]:
             text += "；RTC 星期字节异常，写入时会按日期校正"
+        if "virtual_clock" in self.rtc_profile.get("time", {}):
+            text += "\nV1.2 若启用游戏内虚拟时钟，RTC 文件校准不会覆盖该时钟设置。"
         self.rtc_detail.set(text)
         self.rtc_target.set(snap["current"].strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -892,10 +909,21 @@ class App:
             messagebox.showinfo("选择文件", "请先选择本地 ROM 和 .sav。")
             return
         self.rtc_snapshot = None
+
+        def job():
+            profile = load_profile(
+                Path(rom).read_bytes(), root=resource_path("rom_profile.json").parent
+            )
+            return read_save(path, rom, profile), profile
+
+        def done(result):
+            self.rtc_profile = result[1]
+            self.apply_saved_time(result[0])
+
         self.run(
             "核对 ROM 并读取存档 RTC…",
-            lambda: read_save(path, rom, self.profile),
-            self.apply_saved_time,
+            job,
+            done,
         )
 
     def update_time_preview(self, *_):
@@ -937,15 +965,17 @@ class App:
     def write_saved_time(self):
         if self.busy or self.rtc_snapshot is None:
             return
-        snapshot, rom = self.rtc_snapshot, self.rtc_rom_path.get()
+        snapshot, rom, profile = (
+            self.rtc_snapshot,
+            self.rtc_rom_path.get(),
+            self.rtc_profile,
+        )
         target, calibrate = self.rtc_target.get(), self.rtc_calibrate
         folder = self.time_backup_dir()
 
         def job():
-            result = write_calendar(
-                snapshot, target, rom, self.profile, folder, calibrate
-            )
-            return result, read_save(snapshot["path"], rom, self.profile)
+            result = write_calendar(snapshot, target, rom, profile, folder, calibrate)
+            return result, read_save(snapshot["path"], rom, profile)
 
         def done(result):
             self.apply_saved_time(result[1])
@@ -967,11 +997,15 @@ class App:
         )
         if not path:
             return
-        snapshot, rom = self.rtc_snapshot, self.rtc_rom_path.get()
+        snapshot, rom, profile = (
+            self.rtc_snapshot,
+            self.rtc_rom_path.get(),
+            self.rtc_profile,
+        )
 
         def job():
-            result = restore_calendar(snapshot, path, rom, self.profile, folder)
-            return result, read_save(snapshot["path"], rom, self.profile)
+            result = restore_calendar(snapshot, path, rom, profile, folder)
+            return result, read_save(snapshot["path"], rom, profile)
 
         def done(result):
             self.apply_saved_time(result[1])
@@ -1049,10 +1083,47 @@ class App:
             )
         )
 
-    def load_icons(self):
-        if self.busy or self.trainer is None or self.snapshot is None:
+    def toggle_icons(self):
+        if self.busy:
             return
+        self.icons_enabled = not self.icons_enabled
+        self.icon_button.configure(
+            text="关闭微缩图" if self.icons_enabled else "显示微缩图"
+        )
+        if self.icons_enabled:
+            self.load_icons()
+        else:
+            self.icon_images.clear()
+            self.spinda_assets = None
+            self.spinda_photos.clear()
+            self.detail_image.configure(image="")
+            for tree in (self.party_tree, self.box_tree):
+                for item in tree.get_children():
+                    tree.item(item, image="")
+            for label in [
+                self.spinda_before,
+                self.spinda_after,
+                *getattr(self, "box_pattern_labels", []),
+            ]:
+                if label.winfo_exists():
+                    label.configure(image="")
+            self.status.set("微缩图已关闭；本次会话刷新后保持关闭。")
+
+    def request_icons(self):
+        if self.icons_enabled:
+            self.icon_request_pending = True
+
+    def load_icons(self):
+        if (
+            self.busy
+            or not self.icons_enabled
+            or self.trainer is None
+            or self.snapshot is None
+        ):
+            return
+        self.icon_request_pending = False
         trainer = self.trainer
+        profile = trainer.profile
         pokemon = list(self.snapshot["party"])
         try:
             patches, _ = self.prepare_mon()
@@ -1065,9 +1136,9 @@ class App:
 
         def job():
             trainer.verify()
-            result = read_icons(trainer.g, self.profile, pokemon)
+            result = read_icons(trainer.g, profile, pokemon)
             assets = (
-                read_spinda_assets(trainer.g, self.profile)
+                read_spinda_assets(trainer.g, profile)
                 if any(mon.species == 308 for mon in pokemon)
                 else None
             )
@@ -1075,6 +1146,8 @@ class App:
             return result, assets
 
         def done(result):
+            if trainer is not self.trainer or not self.icons_enabled:
+                return
             if result[1] is not None:
                 self.spinda_assets = result[1]
             for ident, png in result[0].items():
@@ -1089,12 +1162,20 @@ class App:
             if preview_mon is not None:
                 self.detail_image.configure(image=self.mon_image(preview_mon))
                 self.show_spinda_patterns(preview_mon)
-            self.status.set("已从当前 ROM 加载微缩图；图像保存在本次会话，不写入游戏。")
+            self.status.set(f"{profile['name']}；已加载微缩图。")
 
         self.run("读取游戏微缩图…", job, done)
 
     def mon_image(self, mon):
+        if not self.icons_enabled:
+            return ""
         return self.icon_images.get(icon_species(mon, self.profile), "")
+
+    def make_party_egg(self):
+        if self.busy or self.snapshot is None or self.current_slot is None:
+            return
+        self.egg.set(True)
+        self.preview()
 
     def new_spinda_pattern(self):
         if self.busy or self.current_slot is None or self.snapshot is None:
@@ -1178,6 +1259,16 @@ class App:
             width=6,
         ).pack(side="left")
         self.button(row, "读取盒子", self.read_box, side="left", padx=8)
+        ttk.Label(row, text="移到第").pack(side="left", padx=(10, 2))
+        self.box_move_target = tk.StringVar(value="2")
+        ttk.Combobox(
+            row,
+            textvariable=self.box_move_target,
+            values=list(range(1, 26)),
+            state="readonly",
+            width=5,
+        ).pack(side="left")
+        self.button(row, "盒的首个空槽", self.move_box_mon, side="left", padx=6)
         ttk.Label(
             tab,
             text="选择左侧格子，在右侧编辑能力、形态和来源资料。盒内能力值由游戏在取出时计算。",
@@ -1209,11 +1300,46 @@ class App:
             self.box_number.set(str(self.box_snapshot["index"] + 1))
             return
         index = int(self.box_number.get()) - 1
+
+        def done(snapshot):
+            self.apply_box_snapshot(snapshot)
+            self.request_icons()
+
         self.run(
             "读取 PC 盒子…",
             lambda: self.trainer.snapshot_box(index),
-            self.apply_box_snapshot,
+            done,
         )
+
+    def move_box_mon(self):
+        selected = self.box_tree.selection()
+        if (
+            self.busy
+            or self.trainer is None
+            or self.box_snapshot is None
+            or not selected
+        ):
+            return
+        if not self.discard_box_changes():
+            return
+        trainer, source, slot = self.trainer, self.box_snapshot, int(selected[0])
+        target_index = int(self.box_move_target.get()) - 1
+
+        def job():
+            target = trainer.snapshot_box(target_index)
+            result = trainer.commit_box_move(source, slot, target)
+            return result, trainer.snapshot_box(target_index)
+
+        def done(result):
+            self.apply_box_snapshot(result[1])
+            self.box_tree.selection_set(str(result[0]["target_slot"]))
+            self.select_box_mon()
+            self.request_icons()
+            self.status.set(
+                f"已移动至第{target_index + 1}盒第{result[0]['target_slot'] + 1}格，两槽已备份并读回。请在游戏内保存。"
+            )
+
+        self.run("检查源/目标槽、备份并移动宝可梦…", job, done)
 
     def apply_box_snapshot(self, snapshot):
         self.clear_box_editor()
@@ -1296,6 +1422,8 @@ class App:
         pattern_seed = tk.StringVar()
         pattern_photos = []
         pattern_labels = []
+        if parent is not None:
+            self.box_pattern_labels = pattern_labels
         if mon.species in TOXTRICITY_SPECIES:
             ttk.Label(
                 basic,
@@ -1583,6 +1711,16 @@ class App:
             side="left", padx=4
         )
         ttk.Button(actions, text="写入此宝可梦", command=write).pack(
+            side="left", padx=4
+        )
+
+        def convert_egg():
+            if self.busy:
+                return
+            egg.set(True)
+            preview()
+
+        ttk.Button(actions, text="一键转为蛋（预览）", command=convert_egg).pack(
             side="left", padx=4
         )
         if mon.species == 308:
@@ -1887,6 +2025,9 @@ class App:
         if self.close_requested and not self.busy:
             self.close()
             return
+        if self.icon_request_pending and not self.busy and self.trainer is not None:
+            self.icon_request_pending = False
+            self.load_icons()
         self.timer = self.root.after(50, self._poll)
 
     def pocket_id(self):
@@ -1921,6 +2062,10 @@ class App:
         self.player_name.set("")
         self.player_detail.set("连接已改变，请重新读取训练师资料。")
         self.box_snapshot = None
+        self.icon_images.clear()
+        self.spinda_assets = None
+        self.icon_request_pending = False
+        self.detail_image.configure(image="")
         self.box_tree.delete(*self.box_tree.get_children())
         self.box_detail.set("请连接后重新读取盒子。")
 
@@ -1935,7 +2080,15 @@ class App:
                     if getattr(sys, "frozen", False)
                     else Path(__file__).resolve().parent
                 )
-                trainer = Trainer(mem, self.profile, base / "backups")
+                if "ROMCRC" not in mem.capabilities:
+                    raise ValueError(
+                        "请重新加载 mercury_bridge.lua，以完整 ROM CRC32 识别版本"
+                    )
+                profile = load_profile(
+                    crc=mem.command("ROMCRC").decode("ascii").lower(),
+                    root=resource_path("rom_profile.json").parent,
+                )
+                trainer = Trainer(mem, profile, base / "backups")
                 trainer.verify()
                 snap = trainer.snapshot()
                 if self.closed:
@@ -1948,8 +2101,13 @@ class App:
 
         def done(result):
             self.mem, self.trainer, snap = result
+            self.profile = self.trainer.profile
+            self.root.title(
+                f"水银 FC 修改器 · {APP_VERSION} · {self.profile['name'].split(' / ')[0]}"
+            )
             self.pocket.set("道具")
             self.apply_snapshot(snap)
+            self.request_icons()
 
         self.run("连接并检查 ROM 布局…", job, done)
 
@@ -1970,6 +2128,8 @@ class App:
             applied = self.apply_snapshot(snap, preserve_party=after is not None)
             if after and applied:
                 after()
+            if applied:
+                self.request_icons()
 
         self.run("读取游戏数据…", lambda: self.trainer.snapshot(pocket), done)
 

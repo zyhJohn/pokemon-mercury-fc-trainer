@@ -88,6 +88,9 @@ def verify(rom, state, profile):
                         struct.pack_into("<I", raw, 72, ivword)
                         engine.write(0x2001000, bytes(raw))
                         engine.call(0x803E47C, 0x2001000)
+                        # A byte-injected species fixture needs a fresh HP
+                        # baseline before the real editor-operation matrix.
+                        engine.write(0x2001000 + 86, engine.read(0x2001000 + 88, 2))
                         party = Pokemon(engine.read(0x2001000, 100))
                         raw = bytearray(pc_template.raw)
                         raw[19] &= ~4

@@ -25,11 +25,14 @@ from unicorn.arm_const import (
 from tools.read_state import read_state, StateMemory
 from pokemon_data import Pokemon, calculate_stats
 from trainer_core import Trainer
+from rom_versions import RELEASES, V12_ADDRESSES
 
 
 class RomCPU:
-    def __init__(self, rom, state, timeout_us=200000):
+    def __init__(self, rom, state, timeout_us=0):
         self.timeout_us = timeout_us
+        info = RELEASES.get(hashlib.sha256(rom).hexdigest())
+        self.addresses = V12_ADDRESSES if info and info[0] == "1.2" else {}
         self.cpu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
         for a, size, data in [
             (0x8000000, len(rom), rom),
@@ -40,6 +43,7 @@ class RomCPU:
             self.cpu.mem_write(a, data)
 
     def call(self, address, *args):
+        address = self.addresses.get(address, address)
         for register, value in zip(
             [UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3], args
         ):
@@ -284,8 +288,15 @@ def verify(rom, state, profile, all_species=False):
     if all_species and snap["party"]:
         original = snap["party"][0]
         for ident, metadata in profile["species"].items():
+            nature = original.pid % 25
+            tox = profile["toxtricity"]
+            if int(ident) == tox["high_species"]:
+                nature = tox["high_natures"][0]
+            elif int(ident) == tox["low_species"]:
+                nature = next(n for n in range(25) if n not in tox["high_natures"])
             mon, _ = original.edit(
                 species=int(ident),
+                nature=nature,
                 level=50,
                 growth=metadata["growth"],
                 experience_tables=profile["experience_tables"],

@@ -1,8 +1,16 @@
 # 跨电脑接手
 
-更新：2026-10-03。仓库：https://github.com/zyhJohn/pokemon-mercury-fc-trainer ，当前分支 `main`。
+更新：2026-10-05。仓库：https://github.com/zyhJohn/pokemon-mercury-fc-trainer ，当前分支 `main`。
 
-本轮交接版本0.2.10，回归基线177项；新增RTC日历/周一至周日显示与存档修改/校准、独立累计时长编辑及引擎未来每日日期修复。完成此范围后按用户要求停止。推送使用命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑根据自己的代理环境设置，无需沿用本机端口。正式便携包的build-info.json记录源码提交与是否有未提交修改。
+本轮交接版本0.2.11，新增V1.2支持及自动版本识别、PC盒间移动、默认图像与关闭开关、一键转蛋预览；整体界面原型待用户审阅。任务地点传送原因已由用户查明，停止排查，保留空槽创建计划。推送使用命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑根据自己的代理环境设置，无需沿用本机端口。正式便携包的build-info.json记录源码提交与是否有未提交修改。
+
+0.2.11回归基线193项，含V1.2实际Lua/TCP队伍/PC/数值/排序/盒间移动与恢复、跨版拒绝、界面转蛋草稿和图片开关。正式打包仍使用`python tools/build_release.py`，应包含两版JSON配置，并检查源码提交与解压启动自检。
+
+V1.0与V1.2均可连接：当前Lua完整CRC用于选择配置，随后仍检查代码特征，离线RTC以所选ROM SHA识别。保留`rom_profile.json`与`rom_profile_v12.json`两份文件，不得只换CRC/hash套用旧地址；两版备份不可跨版本恢复。V1.2 SHA=`b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896`，CRC=`4755F497`。V1.2虚拟日历启用时，RTC尾部偏移不覆盖它；相关新变量仍只读识别。
+
+新版复现入口：`python tools/verify_release.py ROM.gba STATE.ss1 --all --report diagnostics/release.json`，自动核对受支持ROM身份并执行19组实际函数矩阵。旧单项工具默认配置仍为V1.0；跨版优先使用该入口。测试夹具可以来自V1.0，但只能证明隔离算法，不能标记V1.2存档迁移/实机菜单/保存重载已验收。两版完整矩阵已通过，个人报告不入库。`tools/extract_profile.py ROM --output PATH`支持两版且可重现配置；对应地址映射在`rom_versions.py`，仅用于隔离研究和提取，运行修改器直接使用各版配置。
+
+界面审阅源码在`docs/prototypes/mercury-editor-preview.html`，是无网络/无游戏连接的HTML片段；可在visualize预览或用其`render.py`包装，不能因原型存在就直接改版。下一批是PP提升/上限、宝可梦性别、空槽初始化/礼物模板及其他未完成项，按计划先核验新ROM。
 
 ## 读取顺序
 

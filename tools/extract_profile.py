@@ -5,7 +5,6 @@ that a superficially similar code/header has the same data layout.
 """
 
 import argparse
-import hashlib
 import json
 import struct
 import sys
@@ -14,8 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from name_codec import decode_name
+from rom_versions import release, V12_ADDRESSES
 
-ROM_SHA256 = "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821"
 SIGNATURES = [
     (0x80000AC, 4),
     (0x803F94C, 8),
@@ -69,17 +68,24 @@ SIGNATURES = [
 
 
 def extract(rom, catalog):
-    if hashlib.sha256(rom).hexdigest() != ROM_SHA256:
-        raise ValueError("不是已验证的 ROM SHA-256")
+    sha, (version, _, _) = release(rom)
+    relocations = V12_ADDRESSES if version == "1.2" else {}
+
+    def resolve_address(a):
+        return relocations.get(a, a)
 
     def read(a, n):
+        a = resolve_address(a)
+        if not 0x08000000 <= a <= 0x08000000 + len(rom) - n:
+            raise ValueError("ROM 表地址或长度超出范围")
         return rom[a - 0x08000000 : a - 0x08000000 + n]
 
     base = struct.unpack_from("<I", rom, 0x1BC)[0]
     moves = struct.unpack_from("<I", rom, 0x1CC)[0]
     profile = {
-        "name": "Mercury FC 1.0 / verified 2026-10-02",
-        "rom_sha256": ROM_SHA256,
+        "name": f"Mercury FC {version} / verified "
+        + ("2026-10-05" if version == "1.2" else "2026-10-02"),
+        "rom_sha256": sha,
         "rom_crc32": f"{zlib.crc32(rom) & 0xFFFFFFFF:08x}",
         "layout": "fixed-gaem-plaintext",
         "shiny_threshold": 8,
@@ -267,6 +273,8 @@ def extract(rom, catalog):
         ident = row["id"]
         b = read(base + ident * 28, 28)
         if len(b) == 28 and min(b[:6]) > 0:
+            if b[19] not in range(6):
+                raise ValueError(f"物种 {ident} 的成长类型异常")
             profile["species"][str(ident)] = {
                 "base": list(b[:6]),
                 "gender_ratio": b[16],
@@ -310,6 +318,12 @@ def extract(rom, catalog):
                 )
     for i, name in enumerate(["道具", "重要道具", "精灵球", "招式学习器盒", "树果袋"]):
         address, capacity = struct.unpack("<II", read(0x9DD6250 + i * 8, 8))
+        if (
+            address % 4
+            or not 1 <= capacity <= 1024
+            or not 0x02000000 <= address <= 0x02040000 - capacity * 4
+        ):
+            raise ValueError("背包表地址或容量异常")
         profile["pockets"].append(
             {
                 "id": i + 1,
@@ -368,7 +382,35 @@ def extract(rom, catalog):
             ]
         ],
     }
-    return profile
+    if version == "1.2":
+        # The wrapper now supports a ROM-controlled virtual clock. Include its
+        # larger body and the physical RTC converter without adding guard count.
+        profile["time"]["signatures"][0] = {
+            "address": 0x09D5AA94,
+            "hex": read(0x09D5AA94, 316).hex(),
+        }
+        profile["time"]["signatures"][-1] = {
+            "address": 0x09D5A90C,
+            "hex": read(0x09D5A90C, 156).hex(),
+        }
+        profile["time"]["virtual_clock"] = {
+            "flag": 0x1335,
+            "variables": [0x51EF, 0x51F0, 0x51F1, 0x51F2],
+            "marker_address": 0x03005EA2,
+            "marker": 0x56,
+        }
+        profile["time"]["daily_event"]["future_blocks_refresh"] = False
+
+    # Literal ROM symbols in metadata are relocated too. Runtime RAM addresses
+    # and values read from the new ROM remain unchanged.
+    def relocate(value):
+        if isinstance(value, dict):
+            return {key: relocate(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [relocate(item) for item in value]
+        return resolve_address(value) if isinstance(value, int) else value
+
+    return relocate(profile)
 
 
 def main():
