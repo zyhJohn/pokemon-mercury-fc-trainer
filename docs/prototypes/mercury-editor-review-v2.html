@@ -4,6 +4,7 @@
     <div class="mr-toolbar" aria-label="全局操作">
       <button data-action="connect">连接</button><button data-action="refresh">刷新</button>
       <button data-action="backups">备份 / 恢复</button>
+      <button data-action="gift">神秘礼物</button>
       <button data-action="diagnostics">导出诊断</button><button data-action="icons">关闭微缩图</button>
       <span class="mr-connection">未连接游戏</span>
     </div>
@@ -128,6 +129,8 @@
  model.boxNames=Array.from({length:25},(_,i)=>'第 '+(i+1)+' 盒');
  let applied=copy(model),staged=['b0s0','b0s2'],selected=new Set(),box=0,party=0,tab='party',group='base',icons=true,dirty=false,notes=[],backup=null,bagSlot=0,previewValid=false,locked=new Set();
  let otherValues={},appliedValues={},pendingEditorId=null;
+ let giftPreview=null,giftSerial=0;
+ const giftExamples=[{name:'伊布',level:5},{name:'皮卡丘',level:10}];
  const menu=q('.mr-menu'),dialog=q('.mr-dialog');
  function locate(id){for(let b=0;b<25;b++){const s=model.boxes[b].findIndex(m=>m?.id===id);if(s>=0)return {mon:model.boxes[b][s],b,s};}const s=model.party.findIndex(m=>m?.id===id);return s>=0?{mon:model.party[s],party:s}:null;}
  function notice(text){q('.mr-state').textContent=text;}
@@ -138,7 +141,7 @@
  function drawBoxes(){q('.mr-box-picker').value=String(box);q('.mr-box-name').textContent=model.boxNames[box]+(locked.has(box)?' · 已锁定':'');q('[data-action="lock-box"]').textContent=locked.has(box)?'解锁当前盒':'锁定当前盒';q('[data-action="lock-box"]').setAttribute('aria-pressed',String(locked.has(box)));for(const action of ['rename-box','sort-box'])q(`[data-action="${action}"]`).disabled=locked.has(box);q('.mr-box-numbers').innerHTML=Array.from({length:25},(_,i)=>`<button data-box="${i}" aria-pressed="${i===box}" aria-label="第${i+1}盒${locked.has(i)?' 已锁定':''}">${i+1}${locked.has(i)?' 锁':''}</button>`).join('');q('.mr-box-grid').innerHTML=model.boxes[box].map((m,s)=>monButton(m,`data-id="${m?.id||''}" aria-label="第${box+1}盒第${s+1}格 ${m?.name||'空槽'}"`,selected.has(m?.id))).join('');q('.mr-stage-grid').innerHTML=staged.map(id=>{const r=locate(id);return r?monButton(r.mon,`data-id="${id}" aria-label="暂存 ${r.mon.name} 原第${r.b+1}盒第${r.s+1}格"`,selected.has(id)):'';}).join('')||'<span class="mr-small">暂无引用</span>';q('.mr-selection').textContent=`已选择 ${selected.size} 只（跨盒去重）`;q('[data-action="unstage"]').disabled=!staged.some(id=>selected.has(id));}
  function drawEditor(container,id,page=group){const r=locate(id);if(!r)return;const m=copy(r.mon);for(const key of ['name','ot','met'])m[key]=escaped(m[key]);m.moves=m.moves.map(escaped);
    container.innerHTML=`<h3>${m.name} · ${m.egg?'蛋':'Lv.'+m.level}</h3><div class="mr-groups">${[['base','基本 / 能力'],['moves','招式 / PP'],['source','来源 / OT'],['egg','蛋 / 形态']].map(([key,title])=>`<button data-group="${key}" aria-pressed="${key===page}">${title}</button>`).join('')}</div>
-   <div data-edit-part="base" ${page==='base'?'':'hidden'}><div class="mr-fields"><label>昵称<input data-mon="name" value="${m.name}" maxlength="10"></label><label>等级<input data-mon="level" type="number" value="${m.level}" min="1" max="100" ${r.b!==undefined?'disabled':''}></label><label>性格<select data-mon="nature">${['内敛','胆小','固执'].map(v=>`<option ${v===m.nature?'selected':''}>${v}</option>`).join('')}</select></label><label>闪光<select data-mon="shiny">${['否','是'].map(v=>`<option ${v===m.shiny?'selected':''}>${v}</option>`).join('')}</select></label><label>性别<select disabled><option>原值保留（编辑待核验）</option></select></label><label>特性<select data-mon="ability"><option>茂盛</option><option>隐藏特性（示例）</option></select></label><label>携带道具<select data-mon="held"><option>无</option><option>剩饭</option></select></label></div><table aria-label="六项 IV EV"><thead><tr><th>能力</th><th>IV</th><th>EV</th></tr></thead><tbody>${stats.map((s,i)=>`<tr><td>${s}</td><td><input aria-label="${s} IV" data-stat="iv" data-index="${i}" type="number" min="0" max="31" value="${m.ivs[i]}"></td><td><input aria-label="${s} EV" data-stat="ev" data-index="${i}" type="number" min="0" max="252" value="${m.evs[i]}"></td></tr>`).join('')}</tbody></table><label>神秘礼物预设<select disabled><option>计划中 · 先核实来源与初始化</option></select></label></div>
+   <div data-edit-part="base" ${page==='base'?'':'hidden'}><div class="mr-fields"><label>昵称<input data-mon="name" value="${m.name}" maxlength="10"></label><label>等级<input data-mon="level" type="number" value="${m.level}" min="1" max="100" ${r.b!==undefined?'disabled':''}></label><label>性格<select data-mon="nature">${['内敛','胆小','固执'].map(v=>`<option ${v===m.nature?'selected':''}>${v}</option>`).join('')}</select></label><label>闪光<select data-mon="shiny">${['否','是'].map(v=>`<option ${v===m.shiny?'selected':''}>${v}</option>`).join('')}</select></label><label>性别<select disabled><option>原值保留（编辑待核验）</option></select></label><label>特性<select data-mon="ability"><option>茂盛</option><option>隐藏特性（示例）</option></select></label><label>携带道具<select data-mon="held"><option>无</option><option>剩饭</option></select></label></div><table aria-label="六项 IV EV"><thead><tr><th>能力</th><th>IV</th><th>EV</th></tr></thead><tbody>${stats.map((s,i)=>`<tr><td>${s}</td><td><input aria-label="${s} IV" data-stat="iv" data-index="${i}" type="number" min="0" max="31" value="${m.ivs[i]}"></td><td><input aria-label="${s} EV" data-stat="ev" data-index="${i}" type="number" min="0" max="252" value="${m.evs[i]}"></td></tr>`).join('')}</tbody></table></div>
    <div data-edit-part="moves" ${page==='moves'?'':'hidden'}><div class="mr-moves">${m.moves.map((move,i)=>`<div class="mr-move"><strong>${i+1}</strong><label>招式<select data-move="${i}" ${r.b!==undefined?'disabled':''}>${[move,'冲浪','怪力','守住','空槽'].filter((v,n,a)=>a.indexOf(v)===n).map(v=>`<option>${v}</option>`).join('')}</select></label><label>当前 PP<input data-pp="${i}" type="number" value="${m.pps[i]}" min="0" max="64" ${r.b!==undefined?'disabled':''}></label><label>PP 提升<select disabled><option>原值 · 待核验</option></select></label></div>`).join('')}</div><div class="mr-small mr-hint">队伍可编辑四个招式及当前 PP。PP 提升次数 / 极限值、PC 通用招式编辑仍待实现。</div></div>
    <div data-edit-part="source" ${page==='source'?'':'hidden'}><div class="mr-fields"><label>亲密度 / 孵化周期<input data-mon="cycle" type="number" min="0" max="255" value="${m.cycle}"></label><label>相遇地点<select data-mon="met">${[m.met,'吉野市','若叶镇'].filter((v,n,a)=>a.indexOf(v)===n).map(v=>`<option>${v}</option>`).join('')}</select></label><label>相遇等级<input data-mon="metLevel" type="number" min="0" max="100" value="5"></label><label>捕获球<select data-mon="ball"><option>精灵球</option><option>高级球</option></select></label><label>原训练师 TID<input data-mon="tid" type="number" min="0" max="65535" value="${m.tid}"></label><label>原训练师 SID<input data-mon="sid" type="number" min="0" max="65535" value="${m.sid}"></label><label>原训练师姓名<input data-mon="ot" value="${m.ot}" maxlength="7"></label><label>原训练师性别<select data-mon="otGender"><option>男</option><option>女</option></select></label><label>相遇方式<select disabled><option>待核验</option></select></label></div><button data-action="fill-ot">填入已读取玩家 OT（草稿）</button></div>
    <div data-edit-part="egg" ${page==='egg'?'':'hidden'}><div class="mr-fields"><label>蛋状态<select data-mon="egg"><option value="false" ${m.egg?'':'selected'}>宝可梦</option><option value="true" ${m.egg?'selected':''}>蛋</option></select></label><label>形态<select disabled><option>当前物种默认形态</option></select></label><label>PID 花纹 / 字形<input readonly value="仅对已支持的物种显示专属选择"></label></div><button data-action="egg">一键转为蛋（草稿）</button><div class="mr-small mr-hint">只生成转蛋草稿，不等于自然生蛋或孵化。</div></div>`;
@@ -157,17 +160,61 @@
  function preview(){const invalid=qa('input:not(:disabled)').some(i=>!i.checkValidity())||[...model.party,...model.boxes.flat()].filter(Boolean).some(m=>m.evs.reduce((a,b)=>a+b,0)>510||m.ivs.some(v=>v<0||v>31)||m.evs.some(v=>v<0||v>252));q('.mr-preview').hidden=false;q('.mr-preview').textContent=invalid?'数值检查失败：IV 0～31；单项 EV 0～252，总和 ≤510':dirty?`模拟预览：\n${[...new Set(notes)].join('\n')}\n模拟应用会保留本轮前后快照；此演示没有游戏连接。`:'没有待应用的修改';previewValid=!invalid&&dirty;q('[data-action="apply"]').disabled=!previewValid;notice(invalid?'请修正数值':dirty?'草稿已预览，等待模拟应用':'没有修改');}
  function collectExternal(){return Object.fromEntries(qa('[name]').filter(e=>!e.disabled).map(e=>[e.name,e.value]));}
  function restoreExternal(values){qa('[name]').forEach(e=>{if(e.name in values)e.value=values[e.name];});}
+ function giftChoice(){
+   const template=Number(q('.mr-gift-template').value),destination=q('.mr-gift-destination').value;
+   if(!giftExamples[template])throw new Error('请选择礼物示例');
+   if(destination==='party'){
+     const empty=Array.from({length:6},(_,i)=>i).find(i=>!model.party[i]);
+     if(empty!==undefined)return {template,destination,slot:empty,before:null,partyCount:model.party.filter(Boolean).length};
+     const value=q('.mr-gift-replace').value;
+     if(value==='')throw new Error('队伍已满，请亲自选择要顶替的槽位');
+     const slot=Number(value);
+     if(!Number.isInteger(slot)||slot<0||slot>5)throw new Error('队伍槽位无效');
+     return {template,destination,slot,before:copy(model.party[slot]),partyCount:6};
+   }
+   const target=Number(q('.mr-gift-box').value);
+   if(!Number.isInteger(target)||target<0||target>24)throw new Error('请选择目标盒子');
+   if(locked.has(target))throw new Error('目标盒已锁定，请先解锁；没有生成投放草稿');
+   const slot=model.boxes[target].findIndex(m=>m===null);
+   if(slot<0)throw new Error('目标盒已满，请选择其他盒子；不会覆盖已有精灵');
+   return {template,destination,box:target,slot,before:null};
+ }
+ function updateGiftChoices(){
+   giftPreview=null;q('[data-action="confirm-gift"]').disabled=true;q('.mr-gift-preview').hidden=true;
+   const toParty=q('.mr-gift-destination').value==='party';
+   q('.mr-gift-box-field').hidden=toParty;
+   const full=model.party.filter(Boolean).length===6;
+   q('.mr-gift-replace-field').hidden=!toParty||!full;
+   q('.mr-gift-replace').disabled=!toParty||!full;
+   try{const choice=giftChoice();q('.mr-gift-status').textContent=choice.destination==='party'?choice.before?`将顶替队伍第 ${choice.slot+1} 格：${choice.before.name} Lv.${choice.before.level}`:`队伍有空位，将加入第 ${choice.slot+1} 格（无需顶替）`:`将加入第 ${choice.box+1} 盒第 ${choice.slot+1} 个空槽`;q('[data-action="preview-gift"]').disabled=false;}
+   catch(error){q('.mr-gift-status').textContent=error.message;q('[data-action="preview-gift"]').disabled=true;}
+ }
+ function openGift(){
+   openDialog('神秘礼物 · 投放预览',`<div class="mr-fields"><label>礼物示例<select class="mr-gift-template">${giftExamples.map((m,i)=>`<option value="${i}">${m.name} Lv.${m.level}（自定义演示）</option>`).join('')}</select></label><label>加入位置<select class="mr-gift-destination"><option value="party">加入队伍</option><option value="box">加入盒子</option></select></label><label class="mr-gift-box-field" hidden>目标盒子<select class="mr-gift-box">${model.boxNames.map((name,i)=>`<option value="${i}">${escaped(name)}${locked.has(i)?'（锁定）':''}</option>`).join('')}</select></label><label class="mr-gift-replace-field" hidden>队伍已满 · 请选择要顶替的槽位<select class="mr-gift-replace"><option value="">请选择，不自动顶替</option>${model.party.map((m,i)=>`<option value="${i}">第 ${i+1} 格：${escaped(m.name)} Lv.${m.level}</option>`).join('')}</select></label></div><div class="mr-gift-status mr-logs" aria-live="polite"></div><div class="mr-small">模板来源：自定义演示，非本改版已核实配信。创建与替换尚未接入正式程序。</div><div class="mr-gift-preview mr-preview" hidden aria-live="polite"></div><div class="mr-actions"><button data-action="preview-gift">预览礼物投放</button><button data-action="confirm-gift" disabled>生成模拟投放草稿</button></div>`);
+   q('.mr-gift-box').value=String(box);updateGiftChoices();
+ }
  q('.mr-box-picker').innerHTML=Array.from({length:25},(_,i)=>`<option value="${i}">第 ${i+1} 盒</option>`).join('');
  win.addEventListener('contextmenu',e=>{const b=e.target.closest('[data-id]');if(!b?.dataset.id)return;e.preventDefault();const id=b.dataset.id;if(!selected.has(id))selectMon(id,false);showMenu(win.querySelector(`[data-id="${id}"]`)||q('[data-action="context"]'));});
  win.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(e.shiftKey&&(e.key===' '||e.key==='Enter')){const b=e.target.closest('[data-id]');if(b?.dataset.id){e.preventDefault();selectMon(b.dataset.id,true);}}if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10')){const b=e.target.closest('[data-id]');if(b?.dataset.id){e.preventDefault();if(!selected.has(b.dataset.id))selectMon(b.dataset.id,false);showMenu(b);}}});
  win.addEventListener('input',e=>{const input=e.target;if(input.matches('.mr-search')){renderCatalog();return;}if(input.readOnly||input.disabled||input.tagName==='SELECT')return;const editor=input.closest('[data-editor-id]');if(editor){const m=locate(editor.dataset.editorId).mon;if(input.dataset.stat){m[input.dataset.stat==='iv'?'ivs':'evs'][Number(input.dataset.index)]=Number(input.value);}else if(input.dataset.pp!==undefined)m.pps[Number(input.dataset.pp)]=Number(input.value);else if(input.dataset.mon)m[input.dataset.mon]=input.type==='number'?Number(input.value):input.value;mark(m.name+'：编辑草稿');drawParty();drawBoxes();}else if(input.name){otherValues=collectExternal();mark('编辑 '+input.closest('label').firstChild.textContent);} });
- win.addEventListener('change',e=>{const input=e.target;if(input.matches('.mr-box-picker')){box=Number(input.value);drawBoxes();save();return;}if(input.matches('.mr-pocket')){bagSlot=0;drawBag();return;}if(input.matches('.mr-catalog-kind')){renderCatalog();return;}const editor=input.closest('[data-editor-id]');if(editor){const m=locate(editor.dataset.editorId).mon;if(input.dataset.move!==undefined)m.moves[Number(input.dataset.move)]=input.value;else if(input.dataset.mon)m[input.dataset.mon]=input.dataset.mon==='egg'?input.value==='true':input.value;mark(m.name+'：编辑草稿');drawParty();drawBoxes();}else if(input.name){otherValues=collectExternal();mark('编辑 '+input.closest('label').firstChild.textContent);} });
+ win.addEventListener('change',e=>{const input=e.target;if(input.matches('.mr-gift-template,.mr-gift-destination,.mr-gift-box,.mr-gift-replace')){updateGiftChoices();return;}if(input.matches('.mr-box-picker')){box=Number(input.value);drawBoxes();save();return;}if(input.matches('.mr-pocket')){bagSlot=0;drawBag();return;}if(input.matches('.mr-catalog-kind')){renderCatalog();return;}const editor=input.closest('[data-editor-id]');if(editor){const m=locate(editor.dataset.editorId).mon;if(input.dataset.move!==undefined)m.moves[Number(input.dataset.move)]=input.value;else if(input.dataset.mon)m[input.dataset.mon]=input.dataset.mon==='egg'?input.value==='true':input.value;mark(m.name+'：编辑草稿');drawParty();drawBoxes();}else if(input.name){otherValues=collectExternal();mark('编辑 '+input.closest('label').firstChild.textContent);} });
  win.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(!b.closest('.mr-menu')&&!['context','edit','move','hatch'].includes(b.dataset.action))closeMenu();
    if(b.dataset.tab){view(b.dataset.tab);return;}if(b.dataset.party!==undefined){party=Number(b.dataset.party);drawParty();drawEditor(q('.mr-editor'),model.party[party].id);save();return;}
    if(b.dataset.box!==undefined){box=Number(b.dataset.box);drawBoxes();save();return;}if(b.dataset.id){selectMon(b.dataset.id,e.shiftKey);return;}
    if(b.dataset.group){const editor=b.closest('[data-editor-id]');if(editor===q('.mr-editor'))group=b.dataset.group;drawEditor(editor,editor.dataset.editorId,b.dataset.group);save();return;}
    if(b.dataset.bagSlot!==undefined){bagSlot=Number(b.dataset.bagSlot);drawBag();return;}
    const action=b.dataset.action;if(!action)return;
+   if(action==='gift')openGift();
+   if(action==='preview-gift'){
+     try{const choice=giftChoice(),example=giftExamples[choice.template];giftPreview=copy(choice);q('.mr-gift-preview').hidden=false;q('.mr-gift-preview').textContent=`礼物：${example.name} Lv.${example.level}（自定义示例）\n${choice.destination==='party'?choice.before?`队伍第 ${choice.slot+1} 格：${choice.before.name} Lv.${choice.before.level} → ${example.name}\n原成员将在应用时被替换；写前备份保留其完整记录。`:`加入队伍第 ${choice.slot+1} 个空位；不替换任何成员。`:`加入第 ${choice.box+1} 盒第 ${choice.slot+1} 个空槽；不覆盖已有成员。`}\n这里只生成草稿，之后仍需检查与模拟应用。`;q('[data-action="confirm-gift"]').disabled=false;}
+     catch(error){q('.mr-gift-status').textContent=error.message;giftPreview=null;q('[data-action="confirm-gift"]').disabled=true;}
+   }
+   if(action==='confirm-gift'){
+     try{const choice=giftChoice();if(!giftPreview||JSON.stringify(choice)!==JSON.stringify(giftPreview))throw new Error('目标或选择已改变，请重新预览');const example=giftExamples[choice.template],mon=makeMon('gift-'+(++giftSerial),example.name);mon.level=example.level;mon.evs=[0,0,0,0,0,0];mon.moves=['撞击','空槽','空槽','空槽'];mon.pps=[35,0,0,0];
+       if(choice.destination==='party'){model.party[choice.slot]=mon;party=choice.slot;view('party');}else{model.boxes[choice.box][choice.slot]=mon;box=choice.box;view('boxes');}
+       dialog.close();giftPreview=null;render();mark(`神秘礼物示例 ${mon.name}：${choice.destination==='party'?choice.before?`顶替队伍第${choice.slot+1}格 ${choice.before.name}`:`加入队伍第${choice.slot+1}个空位`:`加入第${choice.box+1}盒第${choice.slot+1}个空槽`}（正式投放待实现）`);
+     }catch(error){q('.mr-gift-status').textContent=error.message;q('[data-action="confirm-gift"]').disabled=true;giftPreview=null;}
+   }
    if(action==='connect'){q('.mr-connection').textContent='演示连接 · V1.2（非实机）';notice('仅切换演示连接状态，没有访问游戏');}
    if(action==='refresh'){notice(dirty?'保留未应用草稿，未覆盖编辑内容':'演示刷新完成');render();}
    if(action==='icons'){icons=!icons;b.textContent=icons?'关闭微缩图':'显示微缩图';drawParty();drawBoxes();save();}
