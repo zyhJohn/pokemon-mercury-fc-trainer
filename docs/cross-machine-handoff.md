@@ -89,4 +89,20 @@ ROM SHA-256：`628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821`
 
 可给新电脑 Codex 的接手提示：
 
-> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md、docs/requirements-audit-2026-10-05.md 和 docs/cross-machine-handoff.md。按更新后的19项清单推进。用户偏好分组布局，已确认引用暂存，修订原型仍待审阅；仅队伍/盒子编辑导航改名排序已经进入正式版，批量、盒名、排序及锁盒均未接入。先补批量总操作日志和恢复，再开放任意数量写入，未确认状态不得盲目逆写。用户已确认早期实机写入，不推导为V1.2全部保存重载已通过。新字段先核实ROM及最新存档；玩家/劲敌性别和阵容关联查清后联动。私有游戏数据不提交。
+> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md、docs/requirements-audit-2026-10-05.md 和 docs/cross-machine-handoff.md。按更新后的19项清单推进。用户偏好分组布局，已确认引用暂存，双栏批量/礼物原型仍待审阅；0.2.13已接入分组、单只右键编辑/移动/已有蛋周期归零、全部未锁盒内部编号排序及关联本地存档的盒锁，批量移动、盒名和礼物创建未接入。全盒排序使用受限BOXBATCH协议，不能推导为任意批量流程已经具备恢复；未确认状态不得盲目逆写。用户已确认早期实机写入，不推导为V1.2全部保存重载已通过。新字段先核实ROM及最新存档；玩家/劲敌性别和阵容关联查清后联动。私有游戏数据不提交。
+
+## 历史便携包与发行日志
+
+2026-10-05补齐0.2.0～0.2.13的14个原始便携包和一个未编号早期归档。下载见[GitHub Releases](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)，逐版日志见[CHANGELOG](../CHANGELOG.md)；登记表为`docs/releases/assets.json`。编号标签指向包内记录的原提交；未编号归档缺少源码记录，其标签仅为历史锚点，不能当作已确认的编译来源。
+
+原包没有重新编译，SHA-256与上传资产逐一对应；每个Release同时附`SHA256SUMS.txt`。历史包内README保留原状态，阅读对应发行说明中的支持范围与限制。不要把当前源码文档变动误认为原始二进制发生了变化。
+
+发行工具默认只核对本地原包；使用本机的目录参数，不依赖旧电脑路径。可重复指定`--archive-dir`。新电脑若需再次复核，应先从Releases取回原包；未编号ZIP上传名称改变，本地复核需恢复原文件名`MercuryTrainer-portable.zip`。
+
+```powershell
+python tools/publish_releases.py --archive-dir outputs --archive-dir '另一个本地历史包目录'
+# 确实需要补发时再加 --publish；凭据由Git凭据管理器提供，不写入文件。
+python tools/publish_releases.py --archive-dir outputs --archive-dir '另一个本地历史包目录' --proxy http://127.0.0.1:7078 --publish
+```
+
+工具先核对全部原包、文件清单哈希与源码身份，再创建草稿、上传、核对GitHub资产摘要、发布并核对标签。已存在且内容一致的资产复用；不覆盖不同内容的同名资产。网络中断后可用同一登记表重跑，若遇到未完成的上传资产则停下交由维护者检查，不自动删除。发行只传ZIP与校验文件，ROM、存档、备份、缓存和凭据不入库、不上传。
