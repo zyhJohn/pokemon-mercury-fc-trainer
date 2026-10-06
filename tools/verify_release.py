@@ -30,6 +30,7 @@ from tools import (
     verify_held_forms,
     verify_pc_abilities,
     verify_chinese_names,
+    verify_pp_gender,
 )
 
 
@@ -70,6 +71,7 @@ def main():
             verify_held_forms,
             verify_pc_abilities,
             verify_chinese_names,
+            verify_pp_gender,
         ]:
             matrices[module.__name__.split(".")[-1]] = lambda m=module: m.verify(
                 rom, state, profile

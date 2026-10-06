@@ -16,6 +16,44 @@ from pokemon_data import Pokemon
 
 @unittest.skipIf(LuaRuntime is None, "lupa is required")
 class EndToEndTests(unittest.TestCase):
+    def test_gender_and_pp_ups_write_readback_restore_over_actual_lua_tcp(self):
+        from rom_versions import load_profile
+        from tests.test_rom_versions import install_profile
+        from pokemon_data import gender
+        from tests.test_box import packed_box
+        from box_data import BoxPokemon
+
+        for crc in ("b4af11c8", "4755f497"):
+            profile = load_profile(crc=crc)
+            install_profile(self.memory, profile)
+            trainer = Trainer(self.client, profile, self.temp.name)
+            snapshot = trainer.snapshot()
+            patches, _ = trainer.edit_pokemon(
+                snapshot, 0, target_gender="雌性", pp_ups=[3] * 4
+            )
+            result = trainer.commit(snapshot, patches, "gender/PP")
+            updated = Pokemon(self.client.read(PARTY, 100))
+            self.assertEqual(updated.pp_ups, (3, 3, 3, 3))
+            self.assertEqual(gender(updated.pid, 31), "雌性")
+            trainer.restore(result["backup"])
+            self.assertEqual(self.client.read(PARTY, 100), sample().raw)
+            raw = bytearray(packed_box())
+            raw[39:44] = sum(
+                m << (10 * i) for i, m in enumerate((757, 242, 8, 700))
+            ).to_bytes(5, "little")
+            address = profile["storage"]["box_addresses"][0]
+            self.memory.put(address, bytes(raw) + b"\0" * 58 * 29)
+            box = trainer.snapshot_box(0)
+            patches, _ = trainer.edit_box(
+                box, 0, target_gender="雌性", pp_ups=[3, 2, 1, 0]
+            )
+            result = trainer.commit_box(patches, "PC gender/PP")
+            updated = BoxPokemon(self.client.read(address, 58))
+            self.assertEqual(updated.pp_ups, (3, 2, 1, 0))
+            self.assertEqual(gender(updated.pid, 31), "雌性")
+            trainer.restore(result["backup"])
+            self.assertEqual(self.client.read(address, 58), bytes(raw))
+
     def test_all_25_boxes_sort_compare_in_one_large_lua_callback_and_restore(self):
         from tests.test_box_sort_lock import record
         from tests.test_rom_versions import install_profile

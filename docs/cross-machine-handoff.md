@@ -1,108 +1,96 @@
-# 跨电脑接手
+# 跨电脑交接 · 2026-10-06
 
-更新：2026-10-05。仓库：https://github.com/zyhJohn/pokemon-mercury-fc-trainer ，当前分支 `main`。
+仓库：[pokemon-mercury-fc-trainer](https://github.com/zyhJohn/pokemon-mercury-fc-trainer)，分支`main`。本次接手点为 **0.2.14-dev源码**，已发布稳定便携版仍是 **0.2.13**。本轮不打包、不创建新Release，不改动既有历史包及标签。用`git log -1 --oneline`识别本次交接提交，用`version.py`确认源码版本；不要按旧便携程序判断新源码是否存在功能。
 
-## 0.2.13本轮完成与边界
+## 当前现场与审核结果
 
-- 按用户反馈删除队伍/PC一键转蛋按钮，保留蛋状态转换；蛋状态前置，亲密度移入基本/能力，队伍基础组增加滚动。四个招式保留，空招式默认并写为0 PP、清除对应PP提升位。道具与资料库沿用原来的列表编辑，未替换为简化占位。
-- 盒子操作名为“移动”。右键提供单只编辑弹窗、移动、快速生蛋；快速生蛋只对已有蛋启用，把亲密度/周期归零，普通精灵和锁盒置灰。数值页增加队伍已有蛋周期归零与选中成员填满PP草稿；培育屋待领取蛋、喷雾步数、持续金手指列为待核验并置灰，不宣称已实现。
-- 第18项改为**全部未锁盒汇总按内部物种/形态编号稳定排序**，再依次放回未锁盒；不是逐盒单独排序，也不是全国图鉴号。执行前弹窗提示“此排序为全部盒子排序，如有不想移动的盒子请先锁定”，再显示参加盒数/个体数/变化盒数供确认。保留完整58字节和同号原顺序，空槽末尾；未知物种或非全零空槽残留拒绝排序。
-- 第19项本地盒锁已接入后端编辑、移动源/目标、排序及恢复检查。用户显式关联当前`.sav`，按规范化绝对路径与ROM SHA的哈希分别保存于程序旁`box-locks.json`；不读写游戏存档，配置不入库。重新启动后重新选择同一存档加载锁，另一路径/另一ROM使用独立配置；文件搬家需要重新设置。桥接不能自动识别当前存档，用户须选择匹配文件；游戏自身仍能改变锁盒。
-- 新`BOXBATCH`能力：仅整盒写入使用`BOXBATCHCRC`，最多96项/65,536字节/270,000字符，比较所有参加盒及守卫后同回调写入并读回。原小事务仍64项/8192字节/40000字符。允许已确认的最多25个整盒补丁条件恢复；恢复前相关盒必须解锁。异常中途写入仍可能部分完成，备份记为未确认并拒绝盲目恢复，不承诺自动全局回滚。**全盒排序/恢复须重载0.2.13桥接脚本。**
-- 自动化211项通过：两版各750只满盒全局稳定排序、完整记录守恒/幂等/锁盒排除/旧值变化/备份恢复、故障注入及实际Lua/TCP大请求；本地配置分离与无存档改写、蛋与空PP草稿覆盖。两版实际ROM各6队伍周期0检测、432个PC蛋转换对照、6个PC周期0解压取出及检测通过；证明周期0不会回绕，未覆盖孵化动画与保存重载。
-- 原型同步最新交互，礼物投放、跨盒Shift多选/引用暂存与任意数量批量移动仍只演示。原型礼物取消/满队替换/恢复及全局排序锁盒排除、蛋筛选和320/360/736/1024宽度通过。正式版单只右键弹窗已实现；完整双栏盒子布局、批量移动/批量盒内蛋、盒子改名、PP提升上限、宝可梦性别、空槽创建/礼物、玩家性别/劲敌/相遇方式/喷雾仍待推进。
+- 第8项PP提升/上限、第14项宝可梦自身性别：已接入队伍与PC编辑界面，源码可运行，未发布。PP四槽提升0～3，PC招式只读且没有独立当前PP；性别选项遵循实际物种比例，PID搜索保护性格、闪光、适用特性和形态。
+- 第4/11项：`Trainer.box_reference`、`prepare_box_batch`、`commit_box_batch`为新增后端；含ROM/完整58字节引用检查、去重、锁盒、容量/目标旧值比较、一份整盒事务备份与条件恢复。**未接入双栏暂存、Shift多选、多选右键及连接代次保护**，不能把后端接口或HTML原型当作正式批量功能。
+- 第15项界面部分完成；保留现有导航、四招式、连接/刷新/备份/诊断/恢复、道具及资料库列表。现有正式盒子仍为单只选择与右键编辑/移动/已有蛋归零。
+- 19项合计：7项已发布、2项源码实现未发布、3项部分完成、7项未实现。完整范围见[最新审核](requirements-audit-2026-10-06.md)与[下一阶段路线](next-stage-plan.md)。任务地点点击问题已由用户查明，不再继续排查。
 
-上一阶段礼物交互：用户要求独立神秘礼物按钮，选择加入队伍或盒子；队伍空位优先、满队伍由用户自行指定顶替槽，禁止默认替换。当前修订原型提供自定义示例、目标及旧成员预览、草稿与模拟恢复；正式创建/替换仍未实现。先核实模板来源、初始化与PC完整编码，再扩展队伍数量/目标旧值守卫及写前完整旧成员备份。见下一阶段计划第10/16项；不要把原型当成新正式功能。
+本机Python 3.11.3、Windows桌面环境运行`python -m unittest discover -v`，**225项全部通过，无跳过**；关键错误检查通过。两版实际ROM新增隔离矩阵分别通过：每版16,192组PP、5,352组性别比例边界、256组PC提升解压、46组队伍编辑和179组PC编辑/取出。新增矩阵已加入`verify_release.py --all`，该入口现为20组；本轮只单独重跑新增矩阵，没有重跑整个20组。报告在忽略的`diagnostics/`，不随Git迁移。
 
-上一阶段交接版本0.2.12，正式导航为“队伍 → 盒子编辑 → 训练师”，其余现有功能保留。沿用0.2.11的V1.2支持、单只盒间移动、默认图片与转蛋预览；新分组界面与批量功能仍是原型，待审阅。用户确认引用暂存、原槽保留，新增盒名/排序/本地锁盒需求；顶部未实现的通用导入占位已移除。先读[需求及恢复核查](requirements-audit-2026-10-05.md)，再按新路线推进，不能把原型当成已接入游戏。任务地点原因已查明，停止排查。推送使用命令参数`git -c http.proxy=http://127.0.0.1:7078 push origin main`；新电脑按自己的代理环境设置。便携包build-info.json记录源码提交与是否有未提交修改。
+这些结果不等于V1.2旧存档加载、游戏内菜单、自然孵化、每日事件或全部保存重载通过。用户2026-10-02确认过早期实机写入，具体覆盖范围以[开发状态](development-status.md)为准。
 
-0.2.12回归基线195项，含原有193项及2项盒间写入中断/读回失败的未确认备份保护。正常已确认且当前值匹配时可条件恢复；未确认写入、后续游戏值改变、任意多批操作不保证自动全局回滚。当前原型为`docs/prototypes/mercury-editor-review-v2.html`。正式打包使用`python tools/build_release.py`，包含两版JSON和需求核查说明，并检查源码提交与解压启动自检。
+## 新电脑安装与首次检查
 
-V1.0与V1.2均可连接：当前Lua完整CRC用于选择配置，随后仍检查代码特征，离线RTC以所选ROM SHA识别。保留`rom_profile.json`与`rom_profile_v12.json`两份文件，不得只换CRC/hash套用旧地址；两版备份不可跨版本恢复。V1.2 SHA=`b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896`，CRC=`4755F497`。V1.2虚拟日历启用时，RTC尾部偏移不覆盖它；相关新变量仍只读识别。
-
-新版复现入口：`python tools/verify_release.py ROM.gba STATE.ss1 --all --report diagnostics/release.json`，自动核对受支持ROM身份并执行19组实际函数矩阵。旧单项工具默认配置仍为V1.0；跨版优先使用该入口。测试夹具可以来自V1.0，但只能证明隔离算法，不能标记V1.2存档迁移/实机菜单/保存重载已验收。两版完整矩阵已通过，个人报告不入库。`tools/extract_profile.py ROM --output PATH`支持两版且可重现配置；对应地址映射在`rom_versions.py`，仅用于隔离研究和提取，运行修改器直接使用各版配置。
-
-界面审阅源码在`docs/prototypes/mercury-editor-preview.html`，是无网络/无游戏连接的HTML片段；可在visualize预览或用其`render.py`包装，不能因原型存在就直接改版。下一批是PP提升/上限、宝可梦性别、空槽初始化/礼物模板及其他未完成项，按计划先核验新ROM。
-
-## 读取顺序
-
-时间操作见README“时间与星期操作”和已验证布局末节。RTC文件编辑无需桥接，但必须先关闭对应游戏、选择本版ROM与带16字节尾部的`.sav`；切换电脑保持相同本地时区，关闭mGBA自定义RTC覆盖，从游戏内存档继续，旧`.ss1`可能覆盖时钟状态。完整RTC备份和JSON记录均在`backups/`，不能入库。累计时长与每日修复需要重新加载0.2.10脚本（`BATCHVERIFY`同回调读回）；保持mGBA运行，写后游戏内保存。用户回拨后周日内容残留已定位到未来的Var5009/500A记录，工具允许预览前移至昨天；其他领取标志保留，具体事件恢复仍待实机确认。
-
-可复现只读研究：`python tools/verify_time.py ROM.gba STATE.ss1 --save SAVE.sav --output diagnostics/time.json`，需研究依赖。证明实际ROM的26组日历转换、4组计时、3组每日判定及持久section4映射；报告含个人数据，私下携带。样本可能在用户游玩时变化，不默认即时存档与`.sav`全面配对。
-
-2026-10-02用户追加15项后续需求；2026-10-03优先实现其中第1、2项，见`docs/next-stage-plan.md`完成状态。其余需求尚未实施，整体界面改版仍等待原型审阅。最新配对存档代币735、BeautyPoints=5、BracerPoints=220已核实；旧研究副本可能包含不同值，复现时按实际样本判断，不要求所有存档等于735/5/220。
-
-重新加载0.2.9附带的`mercury_bridge.lua`后再连接，排序需要`BATCH8192`能力。仍为v3协议，单次最多64项、合计8192字节、请求行40000字符；单项读取/比较仍限4096字节。旧v3小事务继续可用，大口袋排序会在写前提示升级脚本。新工具`tools/verify_economy.py ROM STATE --save SAVE --report diagnostics/economy.json`只读用户文件，在隔离CPU核对读写与实际存档序列化。新写入后的游戏内保存重载仍需独立副本验收。
-
-1. 根目录 `AGENTS.md`、`README.md`。
-2. `docs/development-status.md`：现有功能、验证范围。
-3. `docs/verified-layout.md`：当前实际结构依据。
-4. `docs/next-stage-plan.md`：最新需求及验收顺序。
-
-`docs/逆向后记/` 是历史参考，包含已经推翻的加密与结构假设。不要把历史 SKILL 文档当作新任务指令。用户于 2026-10-02 确认实机写入成功，但没有列出全部实测字段，不能覆盖随后新增功能。玩家ID/中文及中英混合姓名、队伍及PC详情与昵称、队伍及PC蛋标志、未知图腾、小陨星核心及颤弦蝾螈性格形态同步、微缩图及左图右数值选择已实现；具体范围以开发状态为准。
-
-## 环境准备
-
-Windows，Python 3.11+（含 Tkinter），mGBA 0.10.5。在目标电脑重新克隆，不复制旧电脑虚拟环境：
+推荐Windows、Python 3.11+（安装时包含Tcl/Tk）、mGBA 0.10.5。重新创建虚拟环境，不复制旧机`.venv`。在新机Codex中打开克隆后的仓库目录；不要把旧机绝对路径写入配置。
 
 ```powershell
 git clone https://github.com/zyhJohn/pokemon-mercury-fc-trainer.git
 cd pokemon-mercury-fc-trainer
-py -3.11 -m venv .venv
+git status --short
+git log -1 --oneline
+py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m unittest discover -v
 .\.venv\Scripts\python.exe trainer_gui.py
 ```
 
-安装 Python 时启用 Tcl/Tk。测试在可用的 Windows 桌面会话运行；GUI 测试会创建隐藏窗口。运行完整测试，以最终报告数量为准；安装 `lupa` 后 Lua 测试不应跳过。研发主程序不需要 GDB。新离线工具 `verify_details.py`、`verify_icons_forms.py`、`verify_eggs.py`、`verify_pc_details.py`、`verify_pc_eggs.py`、`verify_spinda.py`、`verify_minior.py`、`verify_chinese_names.py`、`verify_locations.py`、`verify_toxtricity.py`、`verify_nicknames.py`和`audit_player_avatar.py`、`audit_held_forms.py`、`verify_held_forms.py`使用与其他ROM工具相同的路径和报告参数。
+测试在Windows桌面会话执行；GUI测试创建隐藏Tk窗口，Lua测试需要依赖中的`lupa`。首次回归应复现225项，不把缺Tk/Lua导致的跳过算成全部通过。虚拟环境命令使用完整相对路径，无需修改PowerShell执行策略。
 
-实际游戏函数研究另安装：
+如新机也运行7078代理，可将克隆命令改为：
 
-新增`tools/verify_pc_abilities.py`同样接收ROM、即时存档和`--report`；覆盖1432物种3350可用特性槽位及5组队伍单一普通特性PID保留。大型函数矩阵关闭每次调用的墙钟计时器，但仍保留每次100万条指令上限及返回地址检查。
+```powershell
+git -c http.proxy=http://127.0.0.1:7078 clone https://github.com/zyhJohn/pokemon-mercury-fc-trainer.git
+```
+
+7078是用户指定的推送代理。本轮推送使用`git -c http.proxy=http://127.0.0.1:7078 push origin main`，不修改全局代理。新机先启动该端口对应服务；若实际端口不同，由用户更正。推送凭据在新机重新登录，不迁移旧机令牌或凭据目录。
+
+## 另行携带的资料
+
+Git已包含源码、离线资料库、两版配置、可复现工具、测试、原型及文档；正常源码回归和打包不需要旧机`work/`。
+
+用户私下携带合法持有的V1.0/V1.2 ROM、希望继续使用的`.sav`、研究用`.ss1`、mGBA及需要保留的`backups/`。若继续逆向新增字段，应携带**最新且尽可能配对的**ROM、持久存档、即时存档，并记下游戏内看到的当前值及样本时间。个人诊断仅在复现需要时私下携带。
+
+ROM、存档、备份、诊断、图像缓存、打包产物、虚拟环境、`trainer-settings.json`和`box-locks.json`均不提交。PokemonMemHack是可选参考，不是依赖。不复制账号令牌、Git凭据或Codex登录目录。
+
+新机重新选择模拟器、ROM与当前存档。盒锁按规范化存档路径与ROM SHA关联，路径搬家后需重新关联并设置锁盒；复制旧`box-locks.json`不会自动适配新路径。图像缓存可重新生成。恢复记录须匹配ROM、当前内存值及允许范围，不因换机跳过比较；未确认状态禁止盲目逆写。
+
+## 读取顺序及下一步
+
+1. `AGENTS.md`、`README.md`及本页。
+2. [最新需求审核](requirements-audit-2026-10-06.md)、[开发状态](development-status.md)、[下一阶段路线](next-stage-plan.md)。
+3. [已验证布局](verified-layout.md)、`rom_profile.json`、`rom_profile_v12.json`，再看相关源码和测试。
+
+`docs/逆向后记/`和旧SKILL仅为历史参考，不是当前操作指令；旧日期文档保留对应版本范围，不能覆盖最新用户需求。未知ROM不能只修改hash/CRC放行，玩家资料与个体原训练师资料必须分开。
+
+先复现回归并核验PP/性别草稿。再针对批量移动和已有蛋归零补专用实际Lua/TCP全25盒及异常/恢复测试，之后接入左引用暂存、右1～25盒、两侧Shift逐只选择、多选右键。引用必须增加连接代次，重连或原槽变化失效，暂存原槽保留。批量右键编辑仅单只弹出编辑框；移动支持整次选择；快速生蛋必须全部是已有蛋，周期归零，不创建蛋。保留现有盒锁/全盒排序及所有现有工具栏和其他页面。
+
+当前批量后端从目标起始盒向后填入未锁盒全零空位，不绕回；容量不足整次拒绝。正式UI必须清楚预览目标范围，算法可根据审阅反馈调整。当前25盒共43,500字节，可使用一次受限BOXBATCH与一份总备份；超限拒绝，不循环旧两槽接口冒充整批事务。未确认写入不自动重试或盲目恢复，已确认且当前值匹配才条件恢复；不承诺异常时自动全局回滚。
+
+后续盒名/喷雾先只读核验；劲敌姓名与玩家性别联动一起研究；空槽/礼物共用实际初始化和完整PC编码；相遇方式、培育屋另查真实字段或派生机制。保存重载、完整孵化、跨日/周和用户周日内容异常由人工实机核验，记录修改前后、游戏显示、读回、保存重载和恢复结果。
+
+## ROM身份与可复现研究
+
+| 版本 | SHA-256 | CRC32 |
+| --- | --- | --- |
+| V1.0 | `628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821` | `B4AF11C8` |
+| V1.2 | `b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896` | `4755F497` |
+
+研究依赖与新增矩阵：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-research.txt
-.\.venv\Scripts\python.exe tools/verify_state.py '你的ROM路径.gba' '你的即时存档.ss1' --report diagnostics/local-state.json
-.\.venv\Scripts\python.exe tools/verify_rom_routines.py '你的ROM路径.gba' '你的即时存档.ss1' --box-edits-only --report diagnostics/box-edits.json
-.\.venv\Scripts\python.exe tools/build_release.py
+.\.venv\Scripts\python.exe tools/verify_pp_gender.py '你的ROM路径.gba' '你的即时存档.ss1' --report diagnostics/pp-gender.json
+.\.venv\Scripts\python.exe tools/verify_release.py '你的ROM路径.gba' '你的即时存档.ss1' --all --report diagnostics/release.json
 ```
 
-ROM SHA-256：`628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821`；CRC32：`B4AF11C8`。不同版本先停止写入并重新验证布局，不能删掉版本检查继续使用。
+工具只读用户文件，调用隔离CPU，不改运行游戏。旧版即时存档可提供算法夹具，但不能证明新版成功加载旧存档。V1.2实际地址由`rom_versions.py`映射；运行修改器使用对应配置，不能把V1.0地址直接套用V1.2。
 
-## 哪些资料需要另行携带
+游戏测试用独立ROM/存档副本，在mGBA重载仓库`mercury_bridge.lua`，保持游戏运行再连接。全盒操作/恢复需要BOXBATCH能力；关闭修改器后可重开连接，Lua无报错只是预期现象，仍需实际重连检查。Tk操作留在主线程，通信留在后台。
 
-仓库包含源码、离线资料库、名称覆盖、ROM 数值配置、自动化测试与文档，正常开发和打包不需要旧电脑的 `work/`。
+RTC文件编辑需关闭对应游戏、选本版ROM与带16字节尾部的`.sav`；换机保持相同时区，关闭mGBA自定义RTC覆盖，从游戏内存档继续，旧`.ss1`可能覆盖时钟状态。每日修复仅已核实Var5009/500A，不清空其它领取标志。
 
-用户自行携带合法持有的 ROM、希望继续使用的 `.sav`、研究所需的即时存档、mGBA、需要保留的 `backups/`。诊断含个人游戏数据，仅在需要复现时私下携带。PokemonMemHack 仅是可选参考，不是依赖。
+## 发布与历史发行
 
-这些文件不提交 Git：ROM/存档/即时存档、备份、诊断、图像缓存、工作目录、虚拟环境、打包产物、`trainer-settings.json`。新电脑重新选择模拟器与 ROM，不复用旧电脑绝对路径。不要拷贝账号令牌、Git 凭据或 Codex 登录目录。
+用户要求的历史包已发行：0.2.0～0.2.13共14个编号Release和一个未编号历史归档。见[Releases](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)、[CHANGELOG](../CHANGELOG.md)及`docs/releases/assets.json`。编号标签指向原包build-info记录的源码，未编号标签仅为历史锚点；不要重编译覆盖历史资产。
 
-原机的隔离 CPU 原始报告在 `diagnostics/`，ROM 副本与一次性研究脚本在 `work/`，均不会通过 Git 同步。可复现工具已在 `tools/`；如需过去反汇编中间材料，由用户另行私下转移，不应让新代理误以为仓库包含这些文件。
+下一次正式发行须先完成本阶段验收、更新版本及发行日志并保存干净源码，再执行`python tools/build_release.py`。本次dev交接不执行该步骤，不存在0.2.14发布包或标签。发布工具`tools/publish_releases.py`默认只审计，通过显式`--publish`才发行，参数使用新机本地包目录，凭据不写入文件。
 
-## 首次接手验收
+## 给新电脑Codex的提示词
 
-- `git status --short` 确认工作树；`git log -1 --oneline` 核对最新推送。
-- 测试通过后，复制游戏与存档到独立测试目录。
-- 在 mGBA 加载仓库的 v3 `mercury_bridge.lua`，保持模拟器运行，连接读取。
-- 关闭修改器后重新打开，确认可重连；无需重复加载 Lua。
-- 每个新字段记录修改前后、读回、游戏显示、保存重载与恢复结果。
+复制下面文字到**新机已打开的仓库项目**；如只想审查，把最后“继续推进”改为“只审核，不开发”。
 
-可给新电脑 Codex 的接手提示：
-
-> 阅读 AGENTS.md、README.md、docs/development-status.md、docs/verified-layout.md、docs/next-stage-plan.md、docs/requirements-audit-2026-10-05.md 和 docs/cross-machine-handoff.md。按更新后的19项清单推进。用户偏好分组布局，已确认引用暂存，双栏批量/礼物原型仍待审阅；0.2.13已接入分组、单只右键编辑/移动/已有蛋周期归零、全部未锁盒内部编号排序及关联本地存档的盒锁，批量移动、盒名和礼物创建未接入。全盒排序使用受限BOXBATCH协议，不能推导为任意批量流程已经具备恢复；未确认状态不得盲目逆写。用户已确认早期实机写入，不推导为V1.2全部保存重载已通过。新字段先核实ROM及最新存档；玩家/劲敌性别和阵容关联查清后联动。私有游戏数据不提交。
-
-## 历史便携包与发行日志
-
-2026-10-05补齐0.2.0～0.2.13的14个原始便携包和一个未编号早期归档。下载见[GitHub Releases](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)，逐版日志见[CHANGELOG](../CHANGELOG.md)；登记表为`docs/releases/assets.json`。编号标签指向包内记录的原提交；未编号归档缺少源码记录，其标签仅为历史锚点，不能当作已确认的编译来源。
-
-原包没有重新编译，SHA-256与上传资产逐一对应；每个Release同时附`SHA256SUMS.txt`。历史包内README保留原状态，阅读对应发行说明中的支持范围与限制。不要把当前源码文档变动误认为原始二进制发生了变化。
-
-发行工具默认只核对本地原包；使用本机的目录参数，不依赖旧电脑路径。可重复指定`--archive-dir`。新电脑若需再次复核，应先从Releases取回原包；未编号ZIP上传名称改变，本地复核需恢复原文件名`MercuryTrainer-portable.zip`。
-
-```powershell
-python tools/publish_releases.py --archive-dir outputs --archive-dir '另一个本地历史包目录'
-# 确实需要补发时再加 --publish；凭据由Git凭据管理器提供，不写入文件。
-python tools/publish_releases.py --archive-dir outputs --archive-dir '另一个本地历史包目录' --proxy http://127.0.0.1:7078 --publish
-```
-
-工具先核对全部原包、文件清单哈希与源码身份，再创建草稿、上传、核对GitHub资产摘要、发布并核对标签。已存在且内容一致的资产复用；不覆盖不同内容的同名资产。网络中断后可用同一登记表重跑，若遇到未完成的上传资产则停下交由维护者检查，不自动删除。发行只传ZIP与校验文件，ROM、存档、备份、缓存和凭据不入库、不上传。
+> 接手这个项目，使用中文。先读AGENTS.md、README.md、docs/cross-machine-handoff.md、docs/requirements-audit-2026-10-06.md、docs/development-status.md、docs/next-stage-plan.md和docs/verified-layout.md，检查Git并运行python -m unittest discover -v。当前main是0.2.14-dev：PP提升/上限和宝可梦自身性别已在源码接入、未发行；稳定便携版仍0.2.13。批量移动/已有蛋归零只有后端，双栏引用暂存、两侧Shift逐只多选及多选右键未接入，不把原型当完成。先补新批量流程的实际Lua/TCP及故障恢复测试，再完成这些界面，暂存原槽保留，重连/源变化使引用失效；快速生蛋只对已有蛋周期归零，普通精灵置灰。保留现有功能及盒锁/全盒排序，按最新计划继续剩余项，直到实际阻塞或需要人工/实机核验。新字段先核实两版实际ROM，保留版本检查、旧值比较、写前备份、读回和条件恢复，未确认写入不盲目恢复；不再查任务地点传送。ROM/存档/诊断/凭据不入库，不使用旧机绝对路径。完成阶段后更新状态和计划并push，命令局部设置proxy http://127.0.0.1:7078；正式打包用python tools/build_release.py，不把源码测试等同全部保存重载已通过。

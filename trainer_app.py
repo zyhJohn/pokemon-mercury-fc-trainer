@@ -31,6 +31,8 @@ from pokemon_data import (
     STAT_NAMES,
     Pokemon,
     gender,
+    gender_choices,
+    maximum_pp,
     toxtricity_species,
     unown_form,
 )
@@ -221,6 +223,7 @@ class App:
         self.identity = tk.StringVar()
         self.shiny = tk.BooleanVar()
         self.nature = tk.StringVar()
+        self.target_gender = tk.StringVar(value="保持当前")
         self.ability = tk.StringVar()
         self.original_ability = ""
         labels = [
@@ -278,6 +281,16 @@ class App:
             fields, textvariable=self.ability, state="readonly", width=30
         )
         self.ability_cb.grid(row=5, column=1, columnspan=3, sticky="w")
+        ttk.Label(fields, text="宝可梦性别").grid(row=7, column=0, sticky="w")
+        self.gender_cb = ttk.Combobox(
+            fields,
+            textvariable=self.target_gender,
+            state="readonly",
+            width=30,
+            values=["保持当前"],
+        )
+        self.gender_cb.grid(row=7, column=1, columnspan=3, sticky="w", pady=3)
+        self.species.trace_add("write", lambda *_: self.update_gender_choices())
         ttk.Label(fields, text="性格").grid(row=6, column=0, sticky="w")
         ttk.Combobox(
             fields,
@@ -341,6 +354,10 @@ class App:
         ).pack(anchor="w", pady=5)
         self.move_vars = [tk.StringVar() for _ in range(4)]
         self.pp_vars = [tk.StringVar() for _ in range(4)]
+        self.pp_up_vars = [tk.StringVar(value="0") for _ in range(4)]
+        self.pp_max_vars = [tk.StringVar(value="上限 —") for _ in range(4)]
+        for var in self.pp_up_vars:
+            var.trace_add("write", lambda *_: self.update_pp_limits())
         for i, var in enumerate(self.move_vars):
             var.trace_add("write", lambda *_, slot=i: self.normalize_empty_move(slot))
         self.move_target = tk.IntVar(value=0)
@@ -370,6 +387,24 @@ class App:
             )
             ttk.Label(row, text="PP", width=5, anchor="center").pack(side="left")
             ttk.Entry(row, textvariable=self.pp_vars[i], width=6).pack(side="left")
+            ttk.Label(row, text="提升", padding=(8, 0)).pack(side="left")
+            ttk.Combobox(
+                row,
+                textvariable=self.pp_up_vars[i],
+                values=(0, 1, 2, 3),
+                state="readonly",
+                width=3,
+            ).pack(side="left")
+            ttk.Label(row, textvariable=self.pp_max_vars[i], padding=(8, 0)).pack(
+                side="left"
+            )
+        self.button(
+            self.tab_moves,
+            "已有招式满提升（草稿）",
+            self.max_pp_ups,
+            anchor="w",
+            pady=6,
+        )
         self.button(
             self.tab_moves, "按当前招式填满 PP", self.fill_pp, anchor="w", pady=6
         )
@@ -1777,6 +1812,68 @@ class App:
             ],
         ).pack(anchor="w")
         metadata = self.profile["species"].get(str(mon.species), {})
+        target_gender = tk.StringVar(value="保持当前")
+        ttk.Label(
+            basic,
+            text=f"宝可梦性别（当前{gender(mon.pid, metadata.get('gender_ratio', 255))}）",
+        ).pack(anchor="w", pady=(6, 0))
+        ttk.Combobox(
+            basic,
+            textvariable=target_gender,
+            state="readonly",
+            width=24,
+            values=["保持当前", *gender_choices(metadata.get("gender_ratio", 255))],
+        ).pack(anchor="w")
+        moves_page = ttk.Frame(editor_tabs, padding=6)
+        editor_tabs.insert(1, moves_page, text="招式 / PP上限")
+        ttk.Label(
+            moves_page,
+            text="盒内取出时按上限补满PP；这里仅修改提升次数，不更换招式。",
+            wraplength=500,
+        ).pack(anchor="w", pady=5)
+        pp_ups = [
+            tk.StringVar(value=str(ups if move else 0))
+            for move, ups in zip(mon.moves, mon.pp_ups)
+        ]
+        pp_limits = [tk.StringVar() for _ in range(4)]
+
+        def update_box_pp_limits(*_):
+            for move, ups, label in zip(mon.moves, pp_ups, pp_limits):
+                try:
+                    label.set(
+                        f"上限 {maximum_pp(move, ups.get(), self.profile['moves'])}"
+                    )
+                except ValueError:
+                    label.set("上限 —")
+
+        for i, move in enumerate(mon.moves):
+            row = ttk.Frame(moves_page)
+            row.pack(fill="x", pady=6)
+            ttk.Label(
+                row,
+                text=f"{i + 1}. {move} - {self.names['skills'].get(str(move), '无' if not move else '未收录')}",
+                width=30,
+            ).pack(side="left")
+            ttk.Combobox(
+                row,
+                textvariable=pp_ups[i],
+                values=(0, 1, 2, 3) if move else (0,),
+                state="readonly" if move else "disabled",
+                width=3,
+            ).pack(side="left")
+            ttk.Label(row, textvariable=pp_limits[i], padding=(8, 0)).pack(side="left")
+            pp_ups[i].trace_add("write", update_box_pp_limits)
+        update_box_pp_limits()
+        ttk.Button(
+            moves_page,
+            text="已有招式满提升（草稿）",
+            command=lambda: [
+                var.set("3" if move else "0") for var, move in zip(pp_ups, mon.moves)
+            ],
+        ).pack(anchor="w", pady=6)
+        if parent is not None:
+            self.box_pp_up_vars = pp_ups
+            self.box_gender_var = target_gender
         slots = metadata.get("abilities", [0, 0, 0])
         current_ability = (
             2 if mon.ability_flag and slots[2] else mon.pid & 1 if slots[1] else 0
@@ -1891,6 +1988,8 @@ class App:
                 nickname,
                 *source_values.values(),
                 ability,
+                target_gender,
+                *pp_ups,
                 *iv,
                 *ev,
             ]
@@ -1929,6 +2028,10 @@ class App:
                 details["minior_color"] = core_color.get().split(" - ", 1)[0]
             if ability.get() != original_ability:
                 details["ability_slot"] = ability.get().split(" - ", 1)[0]
+            if target_gender.get() != "保持当前":
+                details["target_gender"] = target_gender.get()
+            if [var.get() for var in pp_ups] != list(map(str, mon.pp_ups)):
+                details["pp_ups"] = [var.get() for var in pp_ups]
             return trainer.edit_box(
                 snapshot,
                 slot,
@@ -1958,6 +2061,10 @@ class App:
                     )
                 detail.set(detail.get() + self.nature_form_summary(mon, updated))
                 detail.set(detail.get() + self.held_form_summary(mon, updated))
+                detail.set(
+                    detail.get()
+                    + f"\n宝可梦性别：{report.get('gender', '未知')}；PP提升：{mon.pp_ups} → {updated.pp_ups}；取出PP上限：{report.get('maximum_pp', [])}。"
+                )
                 if mon.species == 308 and self.spinda_assets is not None:
                     pattern_photos.clear()
                     for displayed, label in zip([mon, updated], pattern_labels):
@@ -2518,7 +2625,7 @@ class App:
             self.spinda_after.configure(image="")
             self.set_report("")
             self.ability.set("")
-            for var in [*self.move_vars, *self.pp_vars]:
+            for var in [*self.move_vars, *self.pp_vars, *self.pp_up_vars]:
                 var.set("")
         self.bag_tree.delete(*self.bag_tree.get_children())
         self.current_bag_slot = None
@@ -2576,6 +2683,7 @@ class App:
                 self.hp,
                 self.held,
                 self.nature,
+                self.target_gender,
                 self.ability,
                 self.shiny,
                 self.egg,
@@ -2588,6 +2696,7 @@ class App:
                 *self.ev,
                 *self.move_vars,
                 *self.pp_vars,
+                *self.pp_up_vars,
                 *self.detail_vars.values(),
             ]
         )
@@ -2616,6 +2725,7 @@ class App:
             self.party_tree.selection_set(str(self.current_slot))
             return
         self.current_slot = i
+        self.target_gender.set("保持当前")
         mon = self.snapshot["party"][i]
         self.species.set(
             f"{mon.species} - {self.names['breeds'].get(str(mon.species), '未收录')}"
@@ -2676,6 +2786,7 @@ class App:
                 f"{move} - {self.names['skills'].get(str(move), '未收录')}"
             )
             self.pp_vars[i].set(str(mon.pp[i] if mon.moves[i] else 0))
+            self.pp_up_vars[i].set(str(mon.pp_ups[i] if mon.moves[i] else 0))
         for i in range(6):
             self.iv[i].set(str(mon.ivs[i]))
             self.ev[i].set(str(mon.evs[i]))
@@ -2744,21 +2855,64 @@ class App:
             changes["hp"] = self.hp.get()
         if self.ability.get() != self.original_ability:
             changes["ability_slot"] = self.ability.get().split(" - ", 1)[0]
+        if self.target_gender.get() != "保持当前":
+            changes["target_gender"] = self.target_gender.get()
         moves = [v.get().split(" - ", 1)[0] for v in self.move_vars]
         pp = [v.get() for v in self.pp_vars]
         if moves != list(map(str, mon.moves)) or pp != list(map(str, mon.pp)):
             changes["moves"] = moves
             changes["pp"] = pp
+        if [var.get() for var in self.pp_up_vars] != list(map(str, mon.pp_ups)):
+            changes["pp_ups"] = [var.get() for var in self.pp_up_vars]
+            changes["pp"] = pp
         return self.trainer.edit_pokemon(self.snapshot, self.current_slot, **changes)
 
     def normalize_empty_move(self, slot):
-        if self.move_vars[slot].get().split(" - ", 1)[0].strip() == "0":
+        move = self.move_vars[slot].get().split(" - ", 1)[0].strip()
+        if move == "0":
             self.pp_vars[slot].set("0")
+        mon = (
+            self.snapshot["party"][self.current_slot]
+            if self.snapshot is not None and self.current_slot is not None
+            else None
+        )
+        if move == "0" or (mon is not None and move != str(mon.moves[slot])):
+            self.pp_up_vars[slot].set("0")
+        self.update_pp_limits()
+
+    def update_gender_choices(self):
+        metadata = self.profile["species"].get(self.species.get().split(" - ", 1)[0])
+        choices = (
+            ["保持当前", *gender_choices(metadata["gender_ratio"])]
+            if metadata
+            else ["保持当前"]
+        )
+        self.gender_cb.configure(values=choices)
+        if self.target_gender.get() not in choices:
+            self.target_gender.set("保持当前")
+
+    def update_pp_limits(self):
+        for move, ups, label in zip(self.move_vars, self.pp_up_vars, self.pp_max_vars):
+            try:
+                label.set(
+                    f"上限 {maximum_pp(int(move.get().split(' - ', 1)[0]), ups.get(), self.profile['moves'])}"
+                )
+            except ValueError:
+                label.set("上限 —")
+
+    def max_pp_ups(self):
+        if self.snapshot is None or self.current_slot is None:
+            return
+        mon = self.snapshot["party"][self.current_slot]
+        for i, var in enumerate(self.move_vars):
+            move = var.get().split(" - ", 1)[0]
+            self.pp_up_vars[i].set(
+                "3" if move != "0" and move == str(mon.moves[i]) else "0"
+            )
 
     def fill_pp(self):
         if self.snapshot is None or self.current_slot is None:
             return
-        mon = self.snapshot["party"][self.current_slot]
         try:
             values = []
             for i, var in enumerate(self.move_vars):
@@ -2769,8 +2923,9 @@ class App:
                 metadata = self.profile.get("moves", {}).get(str(move))
                 if not metadata:
                     raise ValueError(f"未知招式 {move}")
-                bonus = (mon.raw[40] >> (2 * i)) & 3 if move == mon.moves[i] else 0
-                values.append(metadata["pp"] * (5 + bonus) // 5)
+                values.append(
+                    maximum_pp(move, self.pp_up_vars[i].get(), self.profile["moves"])
+                )
             for var, value in zip(self.pp_vars, values):
                 var.set(str(value))
         except ValueError as exc:
@@ -2872,6 +3027,13 @@ class App:
                 + "能力值："
                 + " / ".join(changes)
                 + f"\n当前 HP：{original.hp} → {updated.hp}\n"
+                + f"PP提升：{original.pp_ups} → {updated.pp_ups}；当前PP：{original.pp} → {updated.pp}\n"
+                + "PP上限："
+                + " / ".join(
+                    str(maximum_pp(move, ups, self.profile["moves"]))
+                    for move, ups in zip(updated.moves, updated.pp_ups)
+                )
+                + "\n"
                 + self.source_report(report)
                 + "\n"
                 + "\n".join(report["notes"])

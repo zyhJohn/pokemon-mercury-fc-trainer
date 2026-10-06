@@ -368,8 +368,117 @@ class Trainer:
             raise ValueError("预览后盒锁已变化，请重新预览排序")
         self.check_box_patches_unlocked(prepared["patches"])
         snap = self.snapshot()
-        snap["box_sort_guards"] = [p for p in prepared["patches"] if p[1] == p[2]]
+        snap["box_batch_guards"] = [p for p in prepared["patches"] if p[1] == p[2]]
         return self.commit(snap, prepared["patches"], "全部未锁盒按内部编号排序")
+
+    def box_reference(self, snapshot, slot):
+        slot = integer(slot, 0, 29, "盒子位置")
+        index = integer(snapshot["index"], 0, 24, "盒子位置")
+        if snapshot["address"] != self.profile["storage"]["box_addresses"][index]:
+            raise ValueError("盒子快照地址不一致")
+        raw = snapshot["raw"][slot * 58 : (slot + 1) * 58]
+        if len(raw) != 58 or not BoxPokemon(raw).species:
+            raise ValueError("空槽不能暂存或移动")
+        return {
+            "box": index,
+            "slot": slot,
+            "raw": raw,
+            "rom_sha256": self.profile["rom_sha256"],
+        }
+
+    def prepare_box_batch(self, references, operation, target_start=None):
+        """Resolve fingerprints and build one whole-box transaction, no writes."""
+        if operation not in ("move", "egg"):
+            raise ValueError("未知盒子批量操作")
+        unique = {}
+        boxes = {}
+
+        def read(index):
+            if index not in boxes:
+                boxes[index] = self.snapshot_box(index)
+            return boxes[index]
+
+        for reference in references:
+            index = integer(reference["box"], 0, 24, "盒子位置")
+            slot = integer(reference["slot"], 0, 29, "盒子位置")
+            self.check_box_unlocked(index)
+            if reference.get("rom_sha256") != self.profile["rom_sha256"]:
+                raise ValueError("暂存引用来自另一ROM版本，请重新选择")
+            raw = read(index)["raw"][slot * 58 : (slot + 1) * 58]
+            if raw != reference["raw"]:
+                raise ValueError("暂存引用的原槽已变化，请移除并重新暂存")
+            mon = BoxPokemon(raw)
+            if not mon.species or str(mon.species) not in self.profile["species"]:
+                raise ValueError("空槽或未知物种不能批量操作")
+            if operation == "egg" and not mon.egg:
+                raise ValueError("快速生蛋仅适用于全部选中成员均为已有蛋")
+            unique[(index, slot)] = reference
+        if not unique:
+            raise ValueError("请逐只选择至少一个非空槽")
+        if len(unique) > 750:
+            raise ValueError("选择数量超过25盒容量")
+        refs = tuple(unique.values())
+        buffers = {
+            index: bytearray(snapshot["raw"]) for index, snapshot in boxes.items()
+        }
+        destinations = []
+        if operation == "move":
+            target_start = integer(target_start, 0, 24, "目标起始盒")
+            self.check_box_unlocked(target_start)
+            for reference in refs:
+                index, slot = reference["box"], reference["slot"]
+                buffers[index][slot * 58 : (slot + 1) * 58] = b"\0" * 58
+            empty = []
+            for index in range(target_start, 25):
+                if index in self.locked_boxes:
+                    continue
+                if index not in buffers:
+                    buffers[index] = bytearray(read(index)["raw"])
+                empty.extend(
+                    (index, slot)
+                    for slot in range(30)
+                    if buffers[index][slot * 58 : (slot + 1) * 58] == b"\0" * 58
+                )
+                if len(empty) >= len(refs):
+                    break
+            if len(empty) < len(refs):
+                raise ValueError(
+                    "目标起始盒及其后未锁盒的空位不足；未写入，不会覆盖其他精灵"
+                )
+            for reference, (index, slot) in zip(refs, empty):
+                buffers[index][slot * 58 : (slot + 1) * 58] = reference["raw"]
+                destinations.append((index, slot))
+        else:
+            for reference in refs:
+                index, slot = reference["box"], reference["slot"]
+                patches, _ = self.prepare_box_egg_ready(boxes[index], slot)
+                buffers[index][slot * 58 : (slot + 1) * 58] = patches[0][2]
+                destinations.append((index, slot))
+        return {
+            "operation": operation,
+            "references": refs,
+            "destinations": tuple(destinations),
+            "locked": frozenset(self.locked_boxes),
+            "patches": [
+                (boxes[index]["address"], boxes[index]["raw"], bytes(raw))
+                for index, raw in sorted(buffers.items())
+            ],
+        }
+
+    def commit_box_batch(self, prepared):
+        if prepared["locked"] != frozenset(self.locked_boxes):
+            raise ValueError("预览后盒锁已变化，请重新预览")
+        self.check_box_patches_unlocked(prepared["patches"])
+        snap = self.snapshot()
+        snap["box_batch_guards"] = [p for p in prepared["patches"] if p[1] == p[2]]
+        label = (
+            "PC 批量移动"
+            if prepared["operation"] == "move"
+            else "PC 已有蛋批量周期归零"
+        )
+        return self.commit(
+            snap, prepared["patches"], f"{label}（{len(prepared['references'])}只）"
+        )
 
     def prepare_box_egg_ready(self, snapshot, slot):
         slot = integer(slot, 0, 29, "盒子位置")
@@ -491,6 +600,10 @@ class Trainer:
             **changes,
         )
         report = self.validate_pokemon(updated)
+        if updated.pp_ups != mon.pp_ups:
+            report["notes"].append(
+                f"PP提升次数：{mon.pp_ups} → {updated.pp_ups}；当前PP：{mon.pp} → {updated.pp}。降低上限时仅对未另行填写的当前PP作收敛。"
+            )
         if report["errors"]:
             raise ValueError("；".join(report["errors"]))
         return [(PARTY + 100 * slot, mon.raw, updated.raw)], report
@@ -790,7 +903,7 @@ class Trainer:
                 (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
                 for s in self.profile["storage"]["signatures"]
             ]
-        guards += snap.get("box_sort_guards", [])
+        guards += snap.get("box_batch_guards", [])
         # Also reject a ROM swap between Python validation and the callback.
         guards += [
             (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
@@ -800,7 +913,9 @@ class Trainer:
             self.is_box_patch(a, len(b)) and len(b) == 1740 for a, b, _ in patches
         )
         if large_boxes and "BOXBATCH" not in self.g.capabilities:
-            raise ValueError("全盒排序及恢复需要重新加载 0.2.13 的 mercury_bridge.lua")
+            raise ValueError(
+                "整盒批量操作及恢复需要重新加载支持BOXBATCH的 mercury_bridge.lua"
+            )
         if (
             sum(len(before) for _, before, _ in guards + changes) > 4096
             and "BATCH8192" not in self.g.capabilities

@@ -149,6 +149,63 @@ def gender(pid, ratio):
     return "雌性" if (pid & 255) < ratio else "雄性"
 
 
+def gender_choices(ratio):
+    return (gender(0, ratio),) if ratio in (0, 254, 255) else ("雄性", "雌性")
+
+
+def change_gender_pid(
+    pid, otid, target, species, ratio, preserve_parity=False, allow_spinda=False
+):
+    """Search the bounded PID space while retaining nature, shiny and form."""
+    if target not in gender_choices(ratio):
+        raise ValueError("此物种不存在所选性别")
+    if gender(pid, ratio) == target:
+        return pid
+    if species == 308 and not allow_spinda:
+        raise ValueError("晃晃斑修改性别会改变PID花纹，请显式重新生成花纹")
+    shiny = shiny_value(pid, otid) < 8
+    low_bytes = [
+        low
+        for low in range(16 if species == 308 else 0, 256)
+        if gender(low, ratio) == target and (not preserve_parity or low & 1 == pid & 1)
+    ]
+    best = None
+    best_key = None
+    tx = (otid >> 16) ^ (otid & 65535)
+    for byte in low_bytes:
+        lows = range(byte, 65536, 256) if shiny else ((pid & 0xFF00) | byte,)
+        for low in lows:
+            highs = (
+                (tx ^ low ^ value for value in range(8))
+                if shiny
+                else range(((pid % 25 - low) * 16) % 25, 65536, 25)
+            )
+            for high in highs:
+                candidate = high << 16 | low
+                if (
+                    candidate % 25 != pid % 25
+                    or (shiny_value(candidate, otid) < 8) != shiny
+                    or not same_pid_form(candidate, pid, species)
+                ):
+                    continue
+                key = ((candidate ^ pid).bit_count(), candidate)
+                if best_key is None or key < best_key:
+                    best, best_key = candidate, key
+    if best is None:
+        raise ValueError("无法同时保留性格、闪光、特性和形态修改性别；未修改")
+    return best
+
+
+def maximum_pp(move, ups, move_data):
+    ups = integer(ups, 0, 3, "PP提升次数")
+    if not move:
+        return 0
+    metadata = move_data.get(str(move))
+    if not metadata:
+        raise ValueError(f"招式 {move} 不在本地ROM已验证表中")
+    return metadata["pp"] * (5 + ups) // 5
+
+
 def change_unown_letter_pid(pid, otid, letter, ratio=255, preserve_parity=False):
     letter = integer(letter, 0, 27, "未知图腾字形")
     if unown_form(pid) == letter:
@@ -381,6 +438,10 @@ class Pokemon:
         return tuple(self.raw[52:56])
 
     @property
+    def pp_ups(self):
+        return tuple((self.raw[40] >> (2 * i)) & 3 for i in range(4))
+
+    @property
     def evs(self):
         return tuple(self.raw[56:62])
 
@@ -484,6 +545,8 @@ class Pokemon:
         spinda_seed=None,
         minior_color=None,
         nickname=None,
+        pp_ups=None,
+        target_gender=None,
     ):
         data = bytearray(self.raw)
         if nickname is not None:
@@ -604,7 +667,7 @@ class Pokemon:
             data[84] = level
         if held is not None:
             struct.pack_into("<H", data, 34, integer(held, 0, 749, "携带道具"))
-        if moves is not None or pp is not None:
+        if moves is not None or pp is not None or pp_ups is not None:
             if moves is None:
                 moves = self.moves
             if pp is None:
@@ -619,20 +682,32 @@ class Pokemon:
             if not any(moves) and not (self.egg if egg is None else egg):
                 raise ValueError("非蛋宝可梦至少需要一个招式")
             pp_values = []
+            if pp_ups is not None and len(pp_ups) != 4:
+                raise ValueError("PP提升次数必须包含四项")
             for i, move in enumerate(moves):
-                if move != self.moves[i]:
-                    data[40] &= ~(3 << (2 * i))  # A new move does not inherit PP Ups.
+                bonus = (
+                    self.pp_ups[i]
+                    if pp_ups is None
+                    else integer(pp_ups[i], 0, 3, f"招式 {i + 1} PP提升次数")
+                )
+                if move != self.moves[i] and move:
+                    if pp_ups is not None and bonus:
+                        raise ValueError("更换招式须清除此槽PP提升次数，请先设为0")
+                    bonus = 0
                 if move == 0:
-                    data[40] &= ~(3 << (2 * i))
-                    maximum = 0
-                else:
-                    metadata = (move_data or {}).get(str(move))
-                    if not metadata:
-                        raise ValueError(f"招式 {move} 不在本地 ROM 已验证表中")
-                    bonus = (data[40] >> (2 * i)) & 3
-                    maximum = metadata["pp"] * (5 + bonus) // 5
+                    bonus = 0
+                data[40] = (data[40] & ~(3 << (2 * i))) | bonus << (2 * i)
+                maximum = maximum_pp(move, bonus, move_data or {})
+                value = pp[i]
+                if (
+                    move
+                    and pp_ups is not None
+                    and bonus < self.pp_ups[i]
+                    and str(value) == str(self.pp[i])
+                ):
+                    value = min(self.pp[i], maximum)
                 pp_values.append(
-                    0 if not move else integer(pp[i], 0, maximum, f"招式 {i + 1} PP")
+                    0 if not move else integer(value, 0, maximum, f"招式 {i + 1} PP")
                 )
             struct.pack_into("<4H4B", data, 44, *moves, *pp_values)
         if ivs is not None:
@@ -697,6 +772,20 @@ class Pokemon:
         if minior_color is not None:
             pid = change_minior_color_pid(
                 struct.unpack_from("<I", data, 0)[0], otid, minior_color
+            )
+            struct.pack_into("<I", data, 0, pid)
+        if target_gender is not None:
+            if gender_ratio is None or not abilities:
+                raise ValueError("缺少已核对的性别/特性信息")
+            pid = change_gender_pid(
+                struct.unpack_from("<I", data, 0)[0],
+                otid,
+                target_gender,
+                species,
+                gender_ratio,
+                bool(abilities[1])
+                and not (bool(data[75] & 128) and bool(abilities[2])),
+                spinda_seed is not None,
             )
             struct.pack_into("<I", data, 0, pid)
         updated = Pokemon(bytes(data))

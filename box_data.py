@@ -14,6 +14,7 @@ from pokemon_data import (
     MINIOR_SPECIES,
     TOXTRICITY_SPECIES,
     change_ability_pid,
+    change_gender_pid,
     change_minior_color_pid,
     change_nature_pid,
     change_shiny_pid,
@@ -21,6 +22,7 @@ from pokemon_data import (
     experience_for_level,
     gender,
     integer,
+    maximum_pp,
     regenerate_spinda_pid,
     shiny_value,
     six,
@@ -94,6 +96,10 @@ class BoxPokemon:
     def moves(self):
         packed = int.from_bytes(self.raw[39:44], "little")
         return tuple((packed >> (10 * i)) & 1023 for i in range(4))
+
+    @property
+    def pp_ups(self):
+        return tuple((self.raw[36] >> (2 * i)) & 3 for i in range(4))
 
     @property
     def ivs(self):
@@ -175,6 +181,13 @@ class BoxPokemon:
             ivs=self.ivs,
             evs=self.evs,
             moves=self.moves,
+            pp_ups=self.pp_ups,
+            maximum_pp=[
+                maximum_pp(move, ups, profile["moves"])
+                for move, ups in zip(self.moves, self.pp_ups)
+            ]
+            if not any(m and str(m) not in profile["moves"] for m in self.moves)
+            else [],
             held=self.held,
             egg=self.egg,
             experience=self.experience,
@@ -204,6 +217,8 @@ class BoxPokemon:
         nickname=None,
         held=None,
         ability_slot=None,
+        pp_ups=None,
+        target_gender=None,
     ):
         """Change only directly verified fields; retain every other packed byte."""
         if not self.species:
@@ -213,6 +228,19 @@ class BoxPokemon:
         if ability_slot is not None:
             ability_slot = integer(ability_slot, 0, 2, "特性槽位")
         data = bytearray(self.raw)
+        if pp_ups is not None:
+            if len(pp_ups) != 4:
+                raise ValueError("PP提升次数必须包含四项")
+            values = [
+                integer(value, 0, 3, f"招式 {i + 1} PP提升次数")
+                for i, value in enumerate(pp_ups)
+            ]
+            for move, ups in zip(self.moves, values):
+                maximum_pp(move, ups, profile["moves"])
+            data[36] = sum(
+                (ups if move else 0) << (2 * i)
+                for i, (move, ups) in enumerate(zip(self.moves, values))
+            )
         if held is not None:
             held = integer(held, 0, 749, "携带道具")
             item = profile["items"].get(str(held))
@@ -365,6 +393,21 @@ class BoxPokemon:
             color = integer(minior_color, 0, 6, "小陨星核心颜色")
             pid = change_minior_color_pid(pid, otid, color)
             struct.pack_into("<H", data, 28, MINIOR_CORES[color])
+        if target_gender is not None:
+            species = struct.unpack_from("<H", data, 28)[0]
+            metadata = profile["species"].get(str(species))
+            if metadata is None:
+                raise ValueError("缺少已核对的性别/特性信息")
+            pid = change_gender_pid(
+                pid,
+                otid,
+                target_gender,
+                species,
+                metadata["gender_ratio"],
+                bool(metadata["abilities"][1])
+                and not (bool(data[57] & 128) and bool(metadata["abilities"][2])),
+                spinda_seed is not None,
+            )
         struct.pack_into("<I", data, 0, pid)
         result = BoxPokemon(bytes(data))
         report = result.describe(profile)

@@ -148,7 +148,7 @@ class BoxSortLockTests(unittest.TestCase):
             memory, trainer, addresses = self.setup_release(folder)
             memory.put(addresses[0], record(160, 1) + record(1, 2))
             memory.capabilities = Memory.capabilities - {"BOXBATCH"}
-            with self.assertRaisesRegex(ValueError, "0.2.13"):
+            with self.assertRaisesRegex(ValueError, "BOXBATCH"):
                 trainer.commit_box_sort(trainer.prepare_box_sort())
             self.assertEqual(memory.writes, 0)
             self.assertFalse(list(Path(folder).glob("*.json")))

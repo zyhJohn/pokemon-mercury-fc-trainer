@@ -15,6 +15,44 @@ from tests.test_pokemon_data import sample
 
 
 class AppTests(unittest.TestCase):
+    def test_pp_ups_and_gender_are_drafts_with_updated_limits(self):
+        from pokemon_data import gender
+
+        self.app.max_pp_ups()
+        self.assertEqual([var.get() for var in self.app.pp_up_vars], ["3"] * 4)
+        self.app.fill_pp()
+        self.assertEqual(
+            [var.get() for var in self.app.pp_vars],
+            [
+                str(self.app.profile["moves"][str(move)]["pp"] * 8 // 5)
+                for move in sample().moves
+            ],
+        )
+        self.app.target_gender.set("雌性")
+        self.app.preview()
+        updated = Pokemon(self.app.prepare_mon()[0][0][2])
+        self.assertEqual(gender(updated.pid, 31), "雌性")
+        self.assertEqual(updated.pp_ups, (3, 3, 3, 3))
+        self.assertIn("上限 16", self.app.pp_max_vars[0].get())
+        self.assertEqual(self.mem.writes, 0)
+        self.assertNotEqual(self.app.party_form_values(), self.app.party_form_original)
+        self.app.move_vars[0].set("33 - 撞击")
+        self.assertEqual(self.app.pp_up_vars[0].get(), "0")
+        self.app.move_vars[0].set("0 - 无")
+        self.assertEqual(self.app.pp_vars[0].get(), "0")
+
+    def test_gender_choices_follow_fixed_species_and_preserve_refresh_draft(self):
+        self.app.species.set("201 - 未知图腾")
+        self.assertEqual(tuple(self.app.gender_cb["values"]), ("保持当前", "无性别"))
+        self.app.species.set("160 - 大力鳄")
+        self.app.target_gender.set("雌性")
+        self.app.pp_up_vars[0].set("2")
+        self.app.run = lambda label, job, done: done(job())
+        self.app.refresh(after=lambda: None)
+        self.assertEqual(self.app.target_gender.get(), "雌性")
+        self.assertEqual(self.app.pp_up_vars[0].get(), "2")
+        self.assertEqual(self.mem.writes, 0)
+
     def test_resizing_basic_form_handles_labels_with_default_empty_wraplength(self):
         self.app.nb.select(self.app.tab_party)
         self.app.party_pages.select(self.app.tab_party_basic)
