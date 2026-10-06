@@ -1,0 +1,426 @@
+{
+  "schema": 1,
+  "sources": {
+    "mercury_home": {
+      "url": "https://sum-light.github.io/azoth-wiki/distribution/",
+      "sha256": "83f86ba1fe7e551c150fa1992118c1a94ba184213e6d34bf412d4e69c86b06cb",
+      "count": 4
+    }
+  },
+  "rows": [
+    {
+      "id": "mercury-home-165",
+      "title": "梦想成为假面骑士的芭瓢虫　芭瓢虫 Lv.5 ♀",
+      "source_group": "水银 HOME",
+      "source_url": "https://sum-light.github.io/azoth-wiki/distribution/",
+      "compatibility": "verified",
+      "reason": "官网 PMH1 密钥是本改版原生 58 字节 PC 记录；两版配置解析无结构错误，物种、等级、特性、招式及 OT 与卡片一致。",
+      "distribution_date": null,
+      "source_fields": {
+        "species_name": "芭瓢虫",
+        "metadata_text": "特性：大力士（梦特） · 性格：慎重 · 个体：6V · 球种：究极球 · 初训家：埋葬",
+        "moves_text": "撞击、超音波",
+        "manual_key": "PMH1.MAAAADHUAAABJAprAmj_AAAAAAAJKw_t_wAAAKUAAABkAAAAADIZIcAAAAAAAAAAAAAAAAAA____vw",
+        "claim_url": "https://sum-light.github.io/azoth-wiki/home/app.html?key=PMH1.MAAAADHUAAABJAprAmj_AAAAAAAJKw_t_wAAAKUAAABkAAAAADIZIcAAAAAAAAAAAAAAAAAA____vw"
+      },
+      "template": {
+        "native_format": "mercury_fc_box58",
+        "native_pc_hex": "3000000031d4000001240a6b0268ff0000000000092b0fedff000000a50000006400000000321921c000000000000000000000000000ffffffbf",
+        "sha256": "183bddac03ade1d14792a47b3800172346bc108a5d5a996498c415755a7ba7b2",
+        "species": 165,
+        "level": 5,
+        "moves": [
+          33,
+          48,
+          0,
+          0
+        ],
+        "pid": 48,
+        "otid": 54321,
+        "nickname": "芭瓢虫",
+        "ot_name": "埋葬",
+        "ball": 25,
+        "held": 0,
+        "ivs": [
+          31,
+          31,
+          31,
+          31,
+          31,
+          31
+        ]
+      }
+    },
+    {
+      "id": "mercury-home-496",
+      "title": "竹兰的圆陆鲨　圆陆鲨 Lv.5 ♂",
+      "source_group": "水银 HOME",
+      "source_url": "https://sum-light.github.io/azoth-wiki/distribution/",
+      "compatibility": "verified",
+      "reason": "官网 PMH1 密钥是本改版原生 58 字节 PC 记录；两版配置解析无结构错误，物种、等级、特性、招式及 OT 与卡片一致。",
+      "distribution_date": null,
+      "source_fields": {
+        "species_name": "圆陆鲨",
+        "metadata_text": "特性：粗糙皮肤（梦特） · 性格：固执 · 个体：6V · 球种：高级球 · 初训家：竹兰",
+        "moves_text": "龙之舞、咬住、抓、拍击",
+        "manual_key": "PMH1.gAAAAAEAAAAPvgjuHeD_AAAAAAAQwggx_wAAAPABAACGAAAAADIBXbGgQAAAAAAAAAAAAAAA____vw",
+        "claim_url": "https://sum-light.github.io/azoth-wiki/home/app.html?key=PMH1.gAAAAAEAAAAPvgjuHeD_AAAAAAAQwggx_wAAAPABAACGAAAAADIBXbGgQAAAAAAAAAAAAAAA____vw"
+      },
+      "template": {
+        "native_format": "mercury_fc_box58",
+        "native_pc_hex": "80000000010000000fbe08ee1de0ff000000000010c20831ff000000f0010000860000000032015db1a0400000000000000000000000ffffffbf",
+        "sha256": "1ead7463ec5ac2557c1b4bd4fda58984957f51d1023b3b0d8110ec0fffdda765",
+        "species": 496,
+        "level": 5,
+        "moves": [
+          349,
+          44,
+          10,
+          1
+        ],
+        "pid": 128,
+        "otid": 1,
+        "nickname": "圆陆鲨",
+        "ot_name": "竹兰",
+        "ball": 1,
+        "held": 0,
+        "ivs": [
+          31,
+          31,
+          31,
+          31,
+          31,
+          31
+        ]
+      }
+    },
+    {
+      "id": "mercury-home-1411",
+      "title": "壮壮妈　呆火鳄 Lv.5 ♀",
+      "source_group": "水银 HOME",
+      "source_url": "https://sum-light.github.io/azoth-wiki/distribution/",
+      "compatibility": "verified",
+      "reason": "官网 PMH1 密钥是本改版原生 58 字节 PC 记录；两版配置解析无结构错误，物种、等级、特性、招式及 OT 与卡片一致。",
+      "distribution_date": null,
+      "source_fields": {
+        "species_name": "呆火鳄",
+        "metadata_text": "特性：猛火 · 性格：内敛 · 个体：6V · 球种：梦境球 · 初训家：埋葬",
+        "moves_text": "撞击、瞪眼、火花",
+        "manual_key": "PMH1.HAIAADHUAAAC1AV9HfH_AAAAAAAJKw_t_wAAAIMFAACGAAAAADIaIaxAAwAAAAAAAAAAAAAA____Pw",
+        "claim_url": "https://sum-light.github.io/azoth-wiki/home/app.html?key=PMH1.HAIAADHUAAAC1AV9HfH_AAAAAAAJKw_t_wAAAIMFAACGAAAAADIaIaxAAwAAAAAAAAAAAAAA____Pw"
+      },
+      "template": {
+        "native_format": "mercury_fc_box58",
+        "native_pc_hex": "1c02000031d4000002d4057d1df1ff0000000000092b0fedff000000830500008600000000321a21ac40030000000000000000000000ffffff3f",
+        "sha256": "c932a81176fb4810c3bc187aedfdf6fbd922878de0ee337e38eede6f33e3c27b",
+        "species": 1411,
+        "level": 5,
+        "moves": [
+          33,
+          43,
+          52,
+          0
+        ],
+        "pid": 540,
+        "otid": 54321,
+        "nickname": "呆火鳄",
+        "ot_name": "埋葬",
+        "ball": 26,
+        "held": 0,
+        "ivs": [
+          31,
+          31,
+          31,
+          31,
+          31,
+          31
+        ]
+      }
+    },
+    {
+      "id": "mercury-home-1408",
+      "title": "Lv.5 新叶喵　新叶喵 Lv.5 ♂",
+      "source_group": "水银 HOME",
+      "source_url": "https://sum-light.github.io/azoth-wiki/distribution/",
+      "compatibility": "verified",
+      "reason": "官网 PMH1 密钥是本改版原生 58 字节 PC 记录；两版配置解析无结构错误，物种、等级、特性、招式及 OT 与卡片一致。",
+      "distribution_date": null,
+      "source_fields": {
+        "species_name": "新叶喵",
+        "metadata_text": "特性：变换自如（梦特） · 性格：固执 · 个体：6V · 球种：月亮球 · 初训家：埋葬",
+        "moves_text": "抓、摇尾巴、树叶",
+        "manual_key": "PMH1.TgAAADHUAAAOTQ8GFDX_AAAAAAAJKw_t_wAAAIAFAACGAAAAADIXCpwwJQAAAAAAAAAAAAAA____vw",
+        "claim_url": "https://sum-light.github.io/azoth-wiki/home/app.html?key=PMH1.TgAAADHUAAAOTQ8GFDX_AAAAAAAJKw_t_wAAAIAFAACGAAAAADIXCpwwJQAAAAAAAAAAAAAA____vw"
+      },
+      "template": {
+        "native_format": "mercury_fc_box58",
+        "native_pc_hex": "4e00000031d400000e4d0f061435ff0000000000092b0fedff00000080050000860000000032170a9c30250000000000000000000000ffffffbf",
+        "sha256": "2ebabb0836188e14e533ce788549a6ce389b28c7e0075b8342e2aa1ae90da56d",
+        "species": 1408,
+        "level": 5,
+        "moves": [
+          10,
+          39,
+          595,
+          0
+        ],
+        "pid": 78,
+        "otid": 54321,
+        "nickname": "新叶喵",
+        "ot_name": "埋葬",
+        "ball": 23,
+        "held": 0,
+        "ivs": [
+          31,
+          31,
+          31,
+          31,
+          31,
+          31
+        ]
+      }
+    },
+    {
+      "id": "gen3-rsefl-10-aniv-celebi-0bf5",
+      "title": "10 ANIV 时拉比（火红/叶绿适用个体）",
+      "source_group": "火红叶绿适配",
+      "source_url": "https://github.com/projectpokemon/EventsGallery/blob/master/Released/Gen%203/ENG/10th%20Anniversary%20Celebration/Journey%20Across%20America/Celebi/RSEFL%20-%2010%20ANIV%20Celebi%20%280BF5%29%20%28ENG%29.pk3",
+      "compatibility": "verified",
+      "reason": "第三世代个体数据已转换为本版58字节盒子记录，两版配置均通过结构验证；原版游戏版本、当前PP及队伍即时能力值不存入本版PC，预览显示来源。此模板不等于原版神秘卡片或官方来源合法性。",
+      "distribution_date": null,
+      "source_fields": {
+        "source_format": "gen3_pk3",
+        "source_games": "RSE/FRLG",
+        "source_game_version_code": 2,
+        "source_species_internal": 251,
+        "source_national_dex": 251,
+        "source_move_ids": [
+          246,
+          248,
+          226,
+          195
+        ],
+        "source_held_id": 0,
+        "language": 2,
+        "pid": 2015898558,
+        "otid": 10,
+        "nickname": "CELEBI",
+        "ot_name": "10 ANIV",
+        "level": 70,
+        "moves": [
+          246,
+          248,
+          226,
+          195
+        ],
+        "ball": 4,
+        "met_location": 255,
+        "met_level": 70,
+        "ivs": [
+          2,
+          15,
+          12,
+          30,
+          10,
+          17
+        ],
+        "evs": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "source_sha256": "3126e7129dca3ddfe47eb840d3a3d46c716554f6370e2d6c4021ea676ebdcc9b",
+        "source_size": 80,
+        "conversion_losses": [
+          "原版游戏版本",
+          "PC不保存的当前PP与队伍即时能力值"
+        ]
+      },
+      "template": {
+        "native_format": "adapted_gen3_pk3_to_mercury_fc_box58",
+        "native_pc_hex": "be2b28780a000000bdbfc6bfbcc3ffffffff027aa2a100bbc8c3d000fb00000080430500006404f6e023ce3000000000000000ff4600e231af22",
+        "sha256": "4481b441293d2b82763ca3cdb94fbec498f5328c13a638547c8f0186371c0e7b",
+        "species": 251,
+        "pid": 2015898558,
+        "otid": 10,
+        "nickname": "CELEBI",
+        "ot_name": "10 ANIV",
+        "moves": [
+          246,
+          248,
+          226,
+          195
+        ],
+        "pp_ups": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ivs": [
+          2,
+          15,
+          12,
+          30,
+          10,
+          17
+        ],
+        "evs": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": 0,
+        "friendship": 100,
+        "ball": 4,
+        "met_location": 255,
+        "met_level": 70,
+        "ot_gender": 0,
+        "egg": false,
+        "experience": 344960,
+        "level": 70,
+        "ability_slot": 0
+      }
+    },
+    {
+      "id": "gen3-rs-berry-glitch-zigzagoon-0009",
+      "title": "红宝石/蓝宝石 异色蛇纹熊（0009）",
+      "source_group": "其他版本适配",
+      "source_url": "https://github.com/projectpokemon/EventsGallery/blob/master/Released/Gen%203/ENG/Berry%20Glitch%20Shiny%20Zigzagoon/RS%20-%20Berry%20Glitch%20Shiny%20Zigzagoon%20%280009%29%20%28ENG%29.pk3",
+      "compatibility": "verified",
+      "reason": "第三世代个体数据已转换为本版58字节盒子记录，两版配置均通过结构验证；原版游戏版本、当前PP及队伍即时能力值不存入本版PC，预览显示来源。此模板不等于原版神秘卡片或官方来源合法性。",
+      "distribution_date": null,
+      "source_fields": {
+        "source_format": "gen3_pk3",
+        "source_games": "RS",
+        "source_game_version_code": 1,
+        "source_species_internal": 288,
+        "source_national_dex": 263,
+        "source_move_ids": [
+          33,
+          45,
+          39,
+          0
+        ],
+        "source_held_id": 168,
+        "language": 2,
+        "pid": 1341733268,
+        "otid": 30317,
+        "nickname": "ZIGZAGOON",
+        "ot_name": "RUBY",
+        "level": 5,
+        "moves": [
+          33,
+          45,
+          39,
+          0
+        ],
+        "ball": 4,
+        "met_location": 255,
+        "met_level": 5,
+        "ivs": [
+          11,
+          31,
+          3,
+          13,
+          23,
+          21
+        ],
+        "evs": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "source_sha256": "8c4fa3185c867fad392dd2608618c4a2312ec569b51e544ba629723e3549f64e",
+        "source_size": 100,
+        "conversion_losses": [
+          "原版游戏版本",
+          "PC不保存的当前PP与队伍即时能力值"
+        ]
+      },
+      "template": {
+        "native_format": "adapted_gen3_pk3_to_mercury_fc_box58",
+        "native_pc_hex": "9439f94f6d760000d4c3c1d4bbc1c9c9c8ff020acccfbcd3ffffff002001a8007d00000000460421b470020000000000000000ff0580eb8f762b",
+        "sha256": "a3e12bb015739bd4109ad80e3e16c198a89cb840f3d25462c9d0958dfd1af122",
+        "species": 288,
+        "pid": 1341733268,
+        "otid": 30317,
+        "nickname": "ZIGZAGOON",
+        "ot_name": "RUBY",
+        "moves": [
+          33,
+          45,
+          39,
+          0
+        ],
+        "pp_ups": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ivs": [
+          11,
+          31,
+          3,
+          13,
+          23,
+          21
+        ],
+        "evs": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": 168,
+        "friendship": 70,
+        "ball": 4,
+        "met_location": 255,
+        "met_level": 5,
+        "ot_gender": 1,
+        "egg": false,
+        "experience": 125,
+        "level": 5,
+        "ability_slot": 0
+      }
+    },
+    {
+      "id": "gen3-frlg-pokepark-cacnea-f6925c85",
+      "title": "火红/叶绿 ポケパーク 刺球仙人掌（资料待核）",
+      "source_group": "火红叶绿待核",
+      "source_url": "https://github.com/projectpokemon/EventsGallery/blob/master/Released/Gen%203/JPN/%E3%83%9D%E3%82%B1%E3%83%91%E3%83%BC%E3%82%AF/Eggs%202005/JoySpot/FRLG%20-%20%E3%83%9D%E3%82%B1%E3%83%91%E3%83%BC%E3%82%AF%20Cacnea%20%28F6925C85%29%20%28JPN%29.pk3",
+      "compatibility": "pending",
+      "reason": "原版日文个体的昵称含本版姓名编码尚未核验的假名，且其来源/奖章打包位非零；不替换文字或丢弃来源位来制造可投放模板。",
+      "distribution_date": null,
+      "source_fields": {
+        "source_format": "gen3_pk3",
+        "source_games": "FRLG",
+        "source_sha256": "b1e5ab448c072d8ec7368fb0c69a0d8d97811ae41594139264b6d9d0dfb57a6a",
+        "source_size": 100,
+        "source_species_internal": 344,
+        "source_moves": [
+          40,
+          43,
+          71,
+          227
+        ],
+        "language": 1,
+        "nickname_raw_hex": "5b9a6851ff3100032431",
+        "ribbon_word": 2147483648
+      },
+      "template": null
+    }
+  ]
+}

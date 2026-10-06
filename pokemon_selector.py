@@ -4,13 +4,15 @@ from tkinter import ttk
 
 
 class PokemonSelector(ttk.Frame):
-    def __init__(self, parent, capacity, columns, label, width=13):
+    def __init__(self, parent, capacity, columns, label, width=13, multi_select=False):
         super().__init__(parent)
         self.capacity = capacity
         self.columns = columns
         self.label = label
         self.records = {}
         self.selected = ()
+        self.multi_select = multi_select
+        self.last_toggle = False
         self.cards = []
         for slot in range(capacity):
             card = ttk.Button(
@@ -28,6 +30,9 @@ class PokemonSelector(ttk.Frame):
                 pady=3,
             )
             card.state(["disabled"])
+            if multi_select:
+                card.bind("<Button-1>", lambda event, n=slot: self._click(event, n))
+                card.bind("<Shift-space>", lambda event, n=slot: self._toggle_key(n))
             for key, step in [
                 ("Left", -1),
                 ("Right", 1),
@@ -45,6 +50,27 @@ class PokemonSelector(ttk.Frame):
         if "disabled" in self.cards[slot].state() or str(slot) not in self.records:
             return
         self.selection_set(str(slot))
+
+    def _click(self, event, slot):
+        if event.state & 0x0001:
+            self.toggle(str(slot))
+            self.cards[slot].focus_set()
+            return "break"
+
+    def _toggle_key(self, slot):
+        self.toggle(str(slot))
+        return "break"
+
+    def toggle(self, ident):
+        ident = str(ident)
+        if ident not in self.records:
+            return
+        selected = list(self.selected)
+        if ident in selected:
+            selected.remove(ident)
+        else:
+            selected.append(ident)
+        self.selection_set_many(selected, toggle=True)
 
     def move(self, slot, delta):
         target = slot + delta
@@ -91,12 +117,17 @@ class PokemonSelector(ttk.Frame):
         return self.selected
 
     def selection_set(self, ident):
-        ident = str(ident)
-        if ident not in self.records:
-            return
-        changed = self.selected != (ident,)
-        self.selected = (ident,)
+        self.selection_set_many((ident,))
+
+    def selection_set_many(self, idents, *, toggle=False, notify=True):
+        idents = tuple(dict.fromkeys(str(ident) for ident in idents if str(ident) in self.records))
+        if not self.multi_select:
+            idents = idents[:1]
+        changed = self.selected != idents
+        self.last_toggle = toggle
+        self.selected = idents
+        selected = set(idents)
         for slot, card in enumerate(self.cards):
-            card.state(["pressed" if str(slot) == ident else "!pressed"])
-        if changed:
+            card.state(["pressed" if str(slot) in selected else "!pressed"])
+        if changed and notify:
             self.event_generate("<<TreeviewSelect>>", when="tail")

@@ -45,6 +45,11 @@ def main():
         "catalog.json",
         "rom_profile.json",
         "rom_profile_v12.json",
+        "sidequests.json",
+        "sidequests_layout.json",
+        "game_fields_layout.json",
+        "distributions.json",
+        "pokemon_creation_layout.json",
     ]:
         command += ["--add-data", str(ROOT / file) + ";."]
     command.append(str(ROOT / "trainer_gui.py"))
@@ -66,6 +71,8 @@ def main():
         "next-stage-plan.md",
         "cross-machine-handoff.md",
         "requirements-audit-2026-10-05.md",
+        "requirements-audit-2026-10-06.md",
+        "distribution-compatibility.md",
     ]:
         source = ROOT / "docs" / name
         if source.exists():

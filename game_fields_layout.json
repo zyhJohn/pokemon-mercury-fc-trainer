@@ -1,0 +1,45 @@
+{
+  "box_names": {
+    "record_bytes": 9,
+    "payload_bytes": 8,
+    "terminator": 255,
+    "save_section": 13,
+    "save_section_offset": 865,
+    "save_section_source_pointer": 50353176,
+    "verified_releases": {
+      "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821": {
+        "getter": 164973736,
+        "pointer_table": 165507600
+      },
+      "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896": {
+        "getter": 164989544,
+        "pointer_table": 165538764
+      }
+    }
+  },
+  "repel_steps": {
+    "variable_id": 16416,
+    "address": 33711468,
+    "width": 2,
+    "edit_min": 0,
+    "edit_max": 250,
+    "save_section": 2,
+    "save_section_offset": 80,
+    "save_section_source_pointer": 50353088,
+    "decrement_entry": 134754488,
+    "item_step_getter": 134850888,
+    "verified_items": {
+      "83": 200,
+      "84": 250,
+      "86": 100
+    },
+    "verified_releases": {
+      "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821": {
+        "decrement_hook": 164940009
+      },
+      "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896": {
+        "decrement_hook": 164952937
+      }
+    }
+  }
+}

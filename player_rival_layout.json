@@ -1,0 +1,34 @@
+{
+  "releases": {
+    "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821": "1.0",
+    "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896": "1.2"
+  },
+  "rival_name": {
+    "saveblock1_pointer": "0x03005008",
+    "offset": "0x3A4C",
+    "field_bytes": 8,
+    "maximum_content_bytes": 7,
+    "terminator": "0xFF",
+    "encoding": "name_codec.py verified Chinese glyph IDs and Latin subset",
+    "placeholder_id": 6,
+    "placeholder_reader": "0x080091E0",
+    "dialogue_expander": "0x08008FCC",
+    "trainer_name_branches": ["0x080D8134", "0x08115200"],
+    "trainer_table": "0x0823EAC8",
+    "trainer_classes_using_rival_name": [81, 89, 90],
+    "observed_flash_section_id": 4,
+    "observed_flash_section_offset": "0xA7C",
+    "flash_match_scope": "Both copies in each available save matched the isolated state with 64 neighboring bytes; modified-name save/reload was not tested",
+    "live_edit_enabled": false,
+    "remaining_evidence": ["other script and menu copies", "game save/reload", "backup and conditional restore"]
+  },
+  "player_gender": {
+    "saveblock2_pointer": "0x0300500C",
+    "saved_offset": "0x08",
+    "avatar_cache": "0x02037078",
+    "cache_gender_offset": "0x07",
+    "avatar_graphics_reader": "0x0805C808",
+    "live_edit_enabled": false,
+    "remaining_evidence": ["avatar and sprite rebuild", "map transitions", "walking, biking and surfing", "story and rival team selection", "save/reload"]
+  }
+}

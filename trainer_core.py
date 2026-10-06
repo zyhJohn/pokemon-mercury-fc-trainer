@@ -1,6 +1,7 @@
 """Verified ROM profile, immutable read snapshots, durable backups and transactions."""
 
 import json
+import hashlib
 import os
 import struct
 from datetime import datetime, timedelta
@@ -8,6 +9,12 @@ from pathlib import Path
 from uuid import uuid4
 
 from box_data import BoxPokemon
+from distribution_catalog import load_distributions, usable_rows
+from game_fields import (
+    box_name_address,
+    decode_box_name,
+    encode_box_name,
+)
 from clock_data import (
     decode_daily_event,
     decode_game_clock,
@@ -28,10 +35,20 @@ from pokemon_data import (
     resolve_toxtricity_form,
     toxtricity_species,
 )
+from pokemon_creation import box_to_party_pokemon, create_box_pokemon
 
 PARTY = 0x02024284
 PARTY_COUNT = 0x02024029
 SAVE_POINTER = 0x03005008
+
+_NATIVE_GIFT_HASHES = {
+    "mercury-home-165": "183bddac03ade1d14792a47b3800172346bc108a5d5a996498c415755a7ba7b2",
+    "mercury-home-496": "1ead7463ec5ac2557c1b4bd4fda58984957f51d1023b3b0d8110ec0fffdda765",
+    "mercury-home-1411": "c932a81176fb4810c3bc187aedfdf6fbd922878de0ee337e38eede6f33e3c27b",
+    "mercury-home-1408": "2ebabb0836188e14e533ce788549a6ce389b28c7e0075b8342e2aa1ae90da56d",
+    "gen3-rsefl-10-aniv-celebi-0bf5": "4481b441293d2b82763ca3cdb94fbec498f5328c13a638547c8f0186371c0e7b",
+    "gen3-rs-berry-glitch-zigzagoon-0009": "a3e12bb015739bd4109ad80e3e16c198a89cb840f3d25462c9d0958dfd1af122",
+}
 
 
 class Trainer:
@@ -41,6 +58,9 @@ class Trainer:
         self.backup_dir = Path(backup_dir)
         self.verified = False
         self.locked_boxes = set()
+        # A reference belongs to this connection's Trainer, even when a later
+        # connection reads the same ROM and identical PC bytes.
+        self.connection_generation = uuid4().hex
 
     def verify(self):
         self.verified = False
@@ -327,6 +347,350 @@ class Trainer:
             ):
                 if address < base + 1740 and address + len(before) > base:
                     self.check_box_unlocked(index)
+            if len(before) == 9:
+                for index in range(25):
+                    if address == box_name_address(self.profile["rom_sha256"], index):
+                        self.check_box_unlocked(index)
+
+    def snapshot_box_name(self, box_index):
+        self.verify()
+        index = integer(box_index, 0, 24, "盒子位置")
+        address = box_name_address(self.profile["rom_sha256"], index)
+        pointer_address = 0x03005418
+        table = {
+            "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821": 0x09DD7210,
+            "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896": 0x09DDEBCC,
+        }[self.profile["rom_sha256"]]
+        table_address = table + 4 * index
+        table_raw = self.g.read(table_address, 4)
+        pointer_raw = self.g.read(pointer_address, 4)
+        if (
+            int.from_bytes(table_raw, "little") != address
+            or int.from_bytes(pointer_raw, "little") + 0x361 != 0x020315F5
+        ):
+            raise ValueError("盒名指针与已核验布局不匹配")
+        raw = self.g.read(address, 9)
+        name = decode_box_name(raw)
+        if self.g.read(address, 9) != raw:
+            raise ValueError("读取时盒名已变化，请重新读取")
+        return {
+            "index": index,
+            "address": address,
+            "raw": raw,
+            "name": name,
+            "pointer_address": pointer_address,
+            "pointer_raw": pointer_raw,
+            "table_address": table_address,
+            "table_raw": table_raw,
+        }
+
+    def prepare_box_name(self, box_index, name):
+        self.check_box_unlocked(integer(box_index, 0, 24, "盒子位置"))
+        snapshot = self.snapshot_box_name(box_index)
+        return {
+            **snapshot,
+            "after": encode_box_name(name),
+            "rom_sha256": self.profile["rom_sha256"],
+            "connection_generation": self.connection_generation,
+        }
+
+    def commit_box_name(self, prepared):
+        if (
+            prepared.get("connection_generation") != self.connection_generation
+            or prepared.get("rom_sha256") != self.profile["rom_sha256"]
+        ):
+            raise ValueError("盒名预览来自旧连接或另一ROM，请重新预览")
+        index = integer(prepared["index"], 0, 24, "盒子位置")
+        self.check_box_unlocked(index)
+        if prepared["address"] != box_name_address(self.profile["rom_sha256"], index):
+            raise ValueError("盒名预览地址不一致")
+        current = self.snapshot_box_name(index)
+        if any(
+            prepared[key] != current[key]
+            for key in ("pointer_address", "pointer_raw", "table_address", "table_raw")
+        ):
+            raise ValueError("盒名布局指针已变化，请重新预览")
+        decode_box_name(prepared["raw"])
+        decode_box_name(prepared["after"])
+        snap = self.snapshot()
+        snap["box_name_guards"] = [
+            (prepared["pointer_address"], prepared["pointer_raw"], prepared["pointer_raw"]),
+            (prepared["table_address"], prepared["table_raw"], prepared["table_raw"]),
+        ]
+        return self.commit(
+            snap,
+            [(prepared["address"], prepared["raw"], prepared["after"])],
+            f"第 {index + 1} 盒改名",
+        )
+
+    def _gift_template(self, distribution_id):
+        catalog = load_distributions()
+        row = next(
+            (r for r in usable_rows(catalog, self.profile) if r["id"] == distribution_id),
+            None,
+        )
+        if row is None:
+            raise ValueError("该配信尚未核验适用于当前ROM，不能投放")
+        template = row["template"]
+        if (
+            template.get("native_format") not in (
+                "mercury_fc_box58", "adapted_gen3_pk3_to_mercury_fc_box58"
+            )
+            or template.get("sha256") != _NATIVE_GIFT_HASHES.get(distribution_id)
+        ):
+            raise ValueError("配信模板不在已核验的原生记录白名单")
+        record = bytes.fromhex(template["native_pc_hex"])
+        if hashlib.sha256(record).hexdigest() != template["sha256"]:
+            raise ValueError("配信模板字节哈希不匹配")
+        pokemon = BoxPokemon(record)
+        if pokemon.describe(self.profile)["errors"]:
+            raise ValueError("配信模板与当前ROM个体结构不匹配")
+        digest = hashlib.sha256(
+            json.dumps(row, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+        return row, record, pokemon, digest
+
+    def prepare_gift_box(self, distribution_id, box, slot=None, draft=None):
+        if draft not in (None, {}):
+            raise ValueError("原生配信模板只能完整原样投放，不能修改字段")
+        row, record, pokemon, digest = self._gift_template(distribution_id)
+        index = integer(box, 0, 24, "目标盒子")
+        self.check_box_unlocked(index)
+        snapshot = self.snapshot_box(index)
+        if slot is None:
+            slot = next(
+                (
+                    i for i, mon in enumerate(snapshot["pokemon"])
+                    if mon.raw == b"\0" * 58
+                ),
+                None,
+            )
+            if slot is None:
+                raise ValueError("目标盒子已满，请选择有空位的盒子")
+        else:
+            slot = integer(slot, 0, 29, "目标槽位")
+        if snapshot["pokemon"][slot].raw != b"\0" * 58:
+            raise ValueError("礼物目标槽必须完整全零，不能覆盖已有个体")
+        address = snapshot["address"] + slot * 58
+        return {
+            "distribution_id": distribution_id,
+            "template": row,
+            "template_digest": digest,
+            "record": record,
+            "pokemon": pokemon,
+            "destination": (index, slot),
+            "patches": [(address, b"\0" * 58, record)],
+            "rom_sha256": self.profile["rom_sha256"],
+            "connection_generation": self.connection_generation,
+        }
+
+    def commit_gift_box(self, prepared):
+        if (
+            prepared.get("rom_sha256") != self.profile["rom_sha256"]
+            or prepared.get("connection_generation") != self.connection_generation
+        ):
+            raise ValueError("礼物预览来自旧连接或另一ROM，请重新预览")
+        distribution_id = prepared["distribution_id"]
+        row, record, _, digest = self._gift_template(distribution_id)
+        if prepared["template_digest"] != digest or prepared["template"] != row:
+            raise ValueError("配信模板已变化，请重新预览")
+        index, slot = prepared["destination"]
+        index = integer(index, 0, 24, "目标盒子")
+        slot = integer(slot, 0, 29, "目标槽位")
+        self.check_box_unlocked(index)
+        patch = (
+            self.profile["storage"]["box_addresses"][index] + slot * 58,
+            b"\0" * 58,
+            record,
+        )
+        if prepared["record"] != record or prepared["patches"] != [patch]:
+            raise ValueError("礼物预览记录已变化，请重新预览")
+        return self.commit(self.snapshot(), [patch], f"配信投放 {distribution_id}")
+
+    def prepare_create_box(self, box, draft, slot=None):
+        if not isinstance(draft, dict) or "raw" in draft or "native_pc_hex" in draft:
+            raise ValueError("空槽创建须使用已核验的字段创建器，不能输入原始记录")
+        try:
+            pokemon = create_box_pokemon(self.profile, **draft)
+        except TypeError as exc:
+            raise ValueError("创建草稿字段缺失或不受支持") from exc
+        index = integer(box, 0, 24, "目标盒子")
+        self.check_box_unlocked(index)
+        snapshot = self.snapshot_box(index)
+        if slot is None:
+            slot = next(
+                (i for i, mon in enumerate(snapshot["pokemon"])
+                 if mon.raw == b"\0" * 58),
+                None,
+            )
+            if slot is None:
+                raise ValueError("目标盒子已满，请选择有空位的盒子")
+        else:
+            slot = integer(slot, 0, 29, "目标槽位")
+        if snapshot["pokemon"][slot].raw != b"\0" * 58:
+            raise ValueError("创建目标槽必须完整全零，不能覆盖已有个体")
+        canonical = json.dumps(draft, sort_keys=True, ensure_ascii=False)
+        digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        address = snapshot["address"] + slot * 58
+        return {
+            "template": "verified-pc-creator-v1",
+            "draft": json.loads(canonical),
+            "draft_digest": digest,
+            "record": pokemon.raw,
+            "pokemon": pokemon,
+            "destination": (index, slot),
+            "patches": [(address, b"\0" * 58, pokemon.raw)],
+            "rom_sha256": self.profile["rom_sha256"],
+            "connection_generation": self.connection_generation,
+        }
+
+    def commit_create_box(self, prepared):
+        if (
+            prepared.get("rom_sha256") != self.profile["rom_sha256"]
+            or prepared.get("connection_generation") != self.connection_generation
+        ):
+            raise ValueError("创建预览来自旧连接或另一ROM，请重新预览")
+        if prepared.get("template") != "verified-pc-creator-v1":
+            raise ValueError("空槽创建模板身份不匹配")
+        draft = prepared["draft"]
+        if not isinstance(draft, dict):
+            raise ValueError("创建草稿格式错误")
+        canonical = json.dumps(draft, sort_keys=True, ensure_ascii=False)
+        if hashlib.sha256(canonical.encode("utf-8")).hexdigest() != prepared["draft_digest"]:
+            raise ValueError("创建草稿已变化，请重新预览")
+        pokemon = create_box_pokemon(self.profile, **draft)
+        index, slot = prepared["destination"]
+        index = integer(index, 0, 24, "目标盒子")
+        slot = integer(slot, 0, 29, "目标槽位")
+        self.check_box_unlocked(index)
+        patch = (
+            self.profile["storage"]["box_addresses"][index] + slot * 58,
+            b"\0" * 58,
+            pokemon.raw,
+        )
+        if prepared["record"] != pokemon.raw or prepared["patches"] != [patch]:
+            raise ValueError("创建预览记录已变化，请重新预览")
+        return self.commit(self.snapshot(), [patch], "PC 空槽创建")
+
+    def _prepare_party_insertion(self, pc_record, replacement_slot):
+        party_pokemon = box_to_party_pokemon(self.profile, pc_record)
+        snap = self.snapshot()
+        count = len(snap["party"])
+        if count < 6:
+            if replacement_slot is not None:
+                raise ValueError("队伍尚有空位时只能追加，不能顶替现有成员")
+            slot = count
+            before = self.g.read(PARTY + slot * 100, 100)
+            if before != b"\0" * 100:
+                raise ValueError("队伍末尾空位并非全零，请先在游戏内核对")
+            if self.g.read(PARTY + slot * 100, 100) != before:
+                raise ValueError("读取时队伍空槽已变化，请重新预览")
+            patches = [
+                (PARTY + slot * 100, before, party_pokemon.raw),
+                (PARTY_COUNT, bytes([count]), bytes([count + 1])),
+            ]
+            replacing = False
+        else:
+            if replacement_slot is None:
+                raise ValueError("队伍已满，必须明确选择一个顶替槽位")
+            slot = integer(replacement_slot, 0, 5, "顶替槽位")
+            before = snap["party"][slot].raw
+            patches = [(PARTY + slot * 100, before, party_pokemon.raw)]
+            replacing = True
+        return {
+            "pc_record": pc_record,
+            "record": party_pokemon.raw,
+            "pokemon": BoxPokemon(pc_record),
+            "party_pokemon": party_pokemon,
+            "destination": ("party", slot),
+            "replacing": replacing,
+            "replaced": snap["party"][slot] if replacing else None,
+            "party_count": count,
+            "patches": patches,
+            "rom_sha256": self.profile["rom_sha256"],
+            "connection_generation": self.connection_generation,
+        }
+
+    def _commit_party_insertion(self, prepared, expected_pc_record, label):
+        if (
+            prepared.get("rom_sha256") != self.profile["rom_sha256"]
+            or prepared.get("connection_generation") != self.connection_generation
+        ):
+            raise ValueError("队伍投放预览来自旧连接或另一ROM，请重新预览")
+        party_pokemon = box_to_party_pokemon(self.profile, expected_pc_record)
+        count = integer(prepared["party_count"], 0, 6, "预览队伍数量")
+        if not isinstance(prepared["destination"], (tuple, list)) or len(prepared["destination"]) != 2 or prepared["destination"][0] != "party":
+            raise ValueError("队伍目标格式错误")
+        slot = integer(prepared["destination"][1], 0, 5, "目标队伍槽")
+        snap = self.snapshot()
+        if len(snap["party"]) != count:
+            raise ValueError("预览后队伍数量已变化，请重新预览")
+        if count < 6:
+            if prepared["replacing"] or slot != count:
+                raise ValueError("队伍空位目标与预览不一致")
+            expected = [
+                (PARTY + slot * 100, b"\0" * 100, party_pokemon.raw),
+                (PARTY_COUNT, bytes([count]), bytes([count + 1])),
+            ]
+        else:
+            if not prepared["replacing"]:
+                raise ValueError("满队必须明确顶替成员")
+            expected = [(PARTY + slot * 100, snap["party"][slot].raw, party_pokemon.raw)]
+        if (
+            prepared["pc_record"] != expected_pc_record
+            or prepared["record"] != party_pokemon.raw
+            or prepared["patches"] != expected
+            or (
+                prepared["replaced"].raw if prepared["replaced"] is not None else None
+            ) != (snap["party"][slot].raw if count == 6 else None)
+        ):
+            raise ValueError("队伍投放目标或原值已变化，请重新预览")
+        return self.commit(snap, expected, label)
+
+    def prepare_gift_party(self, distribution_id, replacement_slot=None, draft=None):
+        if draft not in (None, {}):
+            raise ValueError("原生配信模板只能完整原样投放，不能修改字段")
+        row, record, _, digest = self._gift_template(distribution_id)
+        return {
+            **self._prepare_party_insertion(record, replacement_slot),
+            "distribution_id": distribution_id,
+            "template": row,
+            "template_digest": digest,
+        }
+
+    def commit_gift_party(self, prepared):
+        distribution_id = prepared["distribution_id"]
+        row, record, _, digest = self._gift_template(distribution_id)
+        if prepared["template_digest"] != digest or prepared["template"] != row:
+            raise ValueError("配信模板已变化，请重新预览")
+        return self._commit_party_insertion(prepared, record, f"队伍配信投放 {distribution_id}")
+
+    def prepare_create_party(self, draft, replacement_slot=None):
+        if not isinstance(draft, dict) or "raw" in draft or "native_pc_hex" in draft:
+            raise ValueError("队伍创建须使用已核验字段创建器，不能输入原始记录")
+        try:
+            pc = create_box_pokemon(self.profile, **draft)
+        except TypeError as exc:
+            raise ValueError("创建草稿字段缺失或不受支持") from exc
+        canonical = json.dumps(draft, sort_keys=True, ensure_ascii=False)
+        return {
+            **self._prepare_party_insertion(pc.raw, replacement_slot),
+            "template": "verified-party-creator-v1",
+            "draft": json.loads(canonical),
+            "draft_digest": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+        }
+
+    def commit_create_party(self, prepared):
+        if prepared.get("template") != "verified-party-creator-v1":
+            raise ValueError("队伍创建模板身份不匹配")
+        draft = prepared["draft"]
+        if not isinstance(draft, dict):
+            raise ValueError("创建草稿格式错误")
+        canonical = json.dumps(draft, sort_keys=True, ensure_ascii=False)
+        if hashlib.sha256(canonical.encode("utf-8")).hexdigest() != prepared["draft_digest"]:
+            raise ValueError("创建草稿已变化，请重新预览")
+        pc = create_box_pokemon(self.profile, **draft)
+        return self._commit_party_insertion(prepared, pc.raw, "队伍空位创建或显式顶替")
 
     def prepare_box_sort(self):
         """Stable global internal-species sort; opaque records stay intact."""
@@ -384,6 +748,7 @@ class Trainer:
             "slot": slot,
             "raw": raw,
             "rom_sha256": self.profile["rom_sha256"],
+            "connection_generation": self.connection_generation,
         }
 
     def prepare_box_batch(self, references, operation, target_start=None):
@@ -399,6 +764,8 @@ class Trainer:
             return boxes[index]
 
         for reference in references:
+            if reference.get("connection_generation") != self.connection_generation:
+                raise ValueError("暂存引用来自旧连接，请重新选择")
             index = integer(reference["box"], 0, 24, "盒子位置")
             slot = integer(reference["slot"], 0, 29, "盒子位置")
             self.check_box_unlocked(index)
@@ -456,6 +823,7 @@ class Trainer:
                 destinations.append((index, slot))
         return {
             "operation": operation,
+            "connection_generation": self.connection_generation,
             "references": refs,
             "destinations": tuple(destinations),
             "locked": frozenset(self.locked_boxes),
@@ -466,6 +834,8 @@ class Trainer:
         }
 
     def commit_box_batch(self, prepared):
+        if prepared.get("connection_generation") != self.connection_generation:
+            raise ValueError("批量预览来自旧连接，请重新选择并预览")
         if prepared["locked"] != frozenset(self.locked_boxes):
             raise ValueError("预览后盒锁已变化，请重新预览")
         self.check_box_patches_unlocked(prepared["patches"])
@@ -788,6 +1158,11 @@ class Trainer:
     def commit(self, snap, patches, label):
         self.check_box_patches_unlocked(patches)
         self.verify()
+        if any(
+            address == PARTY_COUNT and before == after
+            for address, before, after in patches
+        ):
+            raise ValueError("队伍数量不能作为无变化补丁提交")
         if not {"BATCH", "ROMCRC", "CRCBATCH"} <= self.g.capabilities:
             raise ValueError("请重新加载新版 mercury_bridge.lua 后再写入")
         if (
@@ -805,6 +1180,37 @@ class Trainer:
         changes = [p for p in patches if p[1] != p[2]]
         if not changes:
             return {"changed": False, "backup": None}
+        count_changes = [p for p in changes if p[0] == PARTY_COUNT]
+        if count_changes:
+            if len(count_changes) != 1:
+                raise ValueError("队伍数量补丁重复")
+            _, old_count, new_count = count_changes[0]
+            current_count = len(snap["party"])
+            if (
+                len(old_count) != 1
+                or len(new_count) != 1
+                or old_count[0] != current_count
+                or not 0 <= new_count[0] <= 6
+                or abs(new_count[0] - current_count) != 1
+            ):
+                raise ValueError("队伍数量变化必须为相邻且有效的一个成员")
+            edge_slot = min(current_count, new_count[0])
+            edge_patches = [p for p in changes if p[0] == PARTY + edge_slot * 100]
+            if not any(
+                address == PARTY + edge_slot * 100
+                and len(before) == len(after) == 100
+                and before != after
+                for address, before, after in edge_patches
+            ):
+                raise ValueError("队伍数量变化必须与对应完整成员同事务")
+            if current_count < new_count[0] and any(
+                before != b"\0" * 100 for _, before, _ in edge_patches
+            ):
+                raise ValueError("队伍新增成员的目标槽必须全零")
+            if current_count > new_count[0] and any(
+                after != b"\0" * 100 for _, _, after in edge_patches
+            ):
+                raise ValueError("队伍数量减少时必须清空末位完整成员")
         # Compare count and pointer inside the emulator callback along with edits.
         guards = [
             (
@@ -812,8 +1218,11 @@ class Trainer:
                 struct.pack("<I", snap["saveblock"]),
                 struct.pack("<I", snap["saveblock"]),
             ),
-            (PARTY_COUNT, bytes([len(snap["party"])]), bytes([len(snap["party"])])),
         ]
+        if not count_changes:
+            guards.append(
+                (PARTY_COUNT, bytes([len(snap["party"])]), bytes([len(snap["party"])]))
+            )
         if "daily_time" in snap:
             # Guard the calendar date, not ticking seconds. The target was
             # previewed as yesterday; a day change requires a fresh preview.
@@ -846,6 +1255,14 @@ class Trainer:
                 )
             )
         box_edit = any(self.is_box_patch(a, len(before)) for a, before, _ in changes)
+        box_name_edit = any(
+            len(before) == 9
+            and any(
+                a == box_name_address(self.profile["rom_sha256"], index)
+                for index in range(25)
+            )
+            for a, before, _ in changes
+        )
         economy = self.profile["economy"]
         money_edit = any(a == snap["saveblock"] + 0x290 for a, _, _ in changes)
         value_edit = money_edit or any(
@@ -883,6 +1300,8 @@ class Trainer:
             or value_edit
             or bag_sort
             or box_edit
+            or box_name_edit
+            or count_changes
             or any(
                 a < PARTY + 600 and a + len(before) > PARTY for a, before, _ in changes
             )
@@ -904,6 +1323,7 @@ class Trainer:
                 for s in self.profile["storage"]["signatures"]
             ]
         guards += snap.get("box_batch_guards", [])
+        guards += snap.get("box_name_guards", [])
         # Also reject a ROM swap between Python validation and the callback.
         guards += [
             (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
@@ -994,8 +1414,14 @@ class Trainer:
                 raise ValueError("备份字节长度不一致")
             valid = (
                 len(before) == 100
-                and PARTY <= address < PARTY + len(snap["party"]) * 100
+                and PARTY <= address < PARTY + 6 * 100
                 and (address - PARTY) % 100 == 0
+            )
+            valid = valid or (
+                address == PARTY_COUNT
+                and len(before) == len(after) == 1
+                and 0 <= before[0] <= 6
+                and 0 <= after[0] <= 6
             )
             valid = valid or (len(before) == 6 and address == snap["saveblock"] + 0x290)
             if len(before) in (4, 6) and address == snap["saveblock"] + 0x290:
@@ -1015,6 +1441,28 @@ class Trainer:
                 for key in ("coins", "beauty_points", "bracer_points")
             )
             valid = valid or self.is_box_patch(address, len(before))
+            valid = valid or (
+                len(before) == 9
+                and any(
+                    address == box_name_address(self.profile["rom_sha256"], index)
+                    for index in range(25)
+                )
+            )
+            if valid and len(before) == 9:
+                decode_box_name(before)
+                decode_box_name(after)
+                index = next(
+                    index
+                    for index in range(25)
+                    if address == box_name_address(self.profile["rom_sha256"], index)
+                )
+                name_snap = self.snapshot_box_name(index)
+                snap.setdefault("box_name_guards", []).extend(
+                    [
+                        (name_snap["pointer_address"], name_snap["pointer_raw"], name_snap["pointer_raw"]),
+                        (name_snap["table_address"], name_snap["table_raw"], name_snap["table_raw"]),
+                    ]
+                )
             valid = valid or any(
                 len(before) == 4
                 and p["address"] <= address < p["address"] + p["capacity"] * 4
@@ -1055,4 +1503,27 @@ class Trainer:
         )
         if not patches or len(patches) > limit:
             raise ValueError("备份修改记录数量异常")
+        count_patches = [p for p in patches if p[0] == PARTY_COUNT]
+        party_patches = [
+            p for p in patches
+            if len(p[1]) == 100 and PARTY <= p[0] < PARTY + 600
+        ]
+        if count_patches:
+            if len(count_patches) != 1:
+                raise ValueError("备份中队伍数量补丁重复")
+            _, count_before, count_after = count_patches[0]
+            if (
+                count_before == count_after
+                or count_before[0] != len(snap["party"])
+                or abs(count_before[0] - count_after[0]) != 1
+                or len(party_patches) != 1
+                or party_patches[0][0]
+                != PARTY + min(count_before[0], count_after[0]) * 100
+            ):
+                raise ValueError("备份中的队伍数量与末位成员不匹配")
+        elif any(
+            address >= PARTY + len(snap["party"]) * 100
+            for address, _, _ in party_patches
+        ):
+            raise ValueError("备份中的队伍槽不在当前队伍范围")
         return self.commit(snap, patches, "恢复备份 " + Path(path).name)

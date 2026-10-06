@@ -9,7 +9,7 @@ import tkinter as tk
 import webbrowser
 from datetime import datetime, timedelta
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from box_data import BoxPokemon
 from box_preferences import BoxPreferences
@@ -44,6 +44,10 @@ from trainer_core import Trainer
 from rom_versions import load_profile
 from version import APP_VERSION
 from wiki_catalog import load_catalog, search_rows
+from sidequest_data import load_catalog as load_sidequests
+from sidequest_page import SidequestPage
+from distribution_catalog import load_distributions
+from gift_page import GiftPage
 
 
 def resource_path(name):
@@ -70,6 +74,8 @@ class App:
         self.results = queue.Queue()
         self.current_slot = None
         self.box_snapshot = None
+        self.box_staged_refs = {}
+        self.box_selected_refs = {}
         self.trainer_snapshot = None
         self.time_snapshot = None
         self.rtc_snapshot = None
@@ -482,6 +488,11 @@ class App:
         self.button(ed, "清空选中", lambda: self.write_item(True), side="left", padx=5)
         self._build_boxes()
         self._build_catalog()
+        self.quest_page = SidequestPage(
+            self, load_sidequests(resource_path("sidequests.json")),
+            resource_path("sidequests_layout.json"),
+        )
+        self.gift_page = GiftPage(self, load_distributions(resource_path("distributions.json")))
         self._build_details()
         self._build_trainer()
         self.nb.insert(0, self.tab_party)
@@ -1338,6 +1349,7 @@ class App:
             width=6,
         ).pack(side="left")
         self.button(row, "读取盒子", self.read_box, side="left", padx=8)
+        self.button(row, "盒子改名", self.rename_box, side="left", padx=3)
         ttk.Label(row, text="移到第").pack(side="left", padx=(10, 2))
         self.box_move_target = tk.StringVar(value="2")
         ttk.Combobox(
@@ -1377,12 +1389,26 @@ class App:
         ttk.Label(tab, textvariable=self.box_lock_detail, wraplength=850).pack(
             anchor="w"
         )
-        ttk.Label(
-            tab,
-            text="选择左侧格子，在右侧编辑能力、形态和来源资料。盒内能力值由游戏在取出时计算。",
-        ).pack(anchor="w", pady=8)
+        ttk.Label(tab, text="左侧暂存保留原槽；右侧普通点击单选，Shift 点击逐只增减。切换盒子仍保留跨盒选择；操作前会核对原槽。", wraplength=950).pack(anchor="w", pady=8)
         box = ttk.Frame(tab)
         box.pack(fill="both", expand=True)
+        stage = ttk.Frame(box)
+        stage.pack(side="left", fill="y", padx=(0, 8))
+        ttk.Label(stage, text="引用暂存（原槽保持）").pack(anchor="w")
+        self.box_stage_tree = ttk.Treeview(stage, columns=("source", "name"), show="headings", height=15, selectmode="none")
+        self.box_stage_tree.heading("source", text="原槽")
+        self.box_stage_tree.heading("name", text="成员")
+        self.box_stage_tree.column("source", width=80, anchor="center")
+        self.box_stage_tree.column("name", width=105)
+        self.box_stage_tree.pack(fill="both", expand=True)
+        self.box_stage_tree.bind("<Button-1>", self.box_stage_click)
+        self.box_stage_tree.bind("<Button-3>", self.box_stage_context_menu)
+        self.box_stage_tree.bind("<space>", self.box_stage_key)
+        stage_buttons = ttk.Frame(stage)
+        stage_buttons.pack(fill="x", pady=4)
+        self.button(stage_buttons, "暂存右侧选中", self.stage_box_selection, side="left")
+        self.button(stage_buttons, "移除暂存选中", self.remove_box_stage_selection, side="left", padx=3)
+        self.box_stage_selected = []
         self.box_tree = PokemonSelector(
             box,
             30,
@@ -1391,6 +1417,7 @@ class App:
                 f"{values[0]}. {values[1]}{' ★' if values[3] == '是' else ''}\n等级 {values[2]}"
             ),
             width=10,
+            multi_select=True,
         )
         self.box_tree.pack(side="left", fill="both", expand=True)
         self.box_editor_host = ttk.Frame(box, padding=(12, 0, 0, 0))
@@ -1402,6 +1429,45 @@ class App:
         ttk.Label(tab, textvariable=self.box_detail, wraplength=900).pack(
             anchor="w", pady=10
         )
+
+    def rename_box(self):
+        trainer = self.trainer
+        if trainer is None or self.busy:
+            return
+        index = int(self.box_number.get()) - 1
+        if not self.discard_box_changes():
+            return
+
+        def choose(snapshot):
+            if self.trainer is not trainer or int(self.box_number.get()) - 1 != index:
+                return
+            name = simpledialog.askstring(
+                "盒子改名", f"第 {index + 1} 盒名称（最多8字节；汉字占2字节）",
+                initialvalue=snapshot["name"], parent=self.root,
+            )
+            if name is None:
+                return
+
+            def confirm(prepared):
+                if self.trainer is not trainer or int(self.box_number.get()) - 1 != index:
+                    return
+                if not messagebox.askokcancel(
+                    "盒名修改预览", f"第 {index + 1} 盒：{prepared['name']} → {name}\n确认后备份并写入。",
+                    parent=self.root,
+                ):
+                    return
+
+                def done(result):
+                    self.status.set(
+                        f"第 {index + 1} 盒已更名为 {name}，原名已备份并读回核对。"
+                        if result["changed"] else "盒名没有变化。"
+                    )
+
+                self.run("写入盒名并读回核对…", lambda: trainer.commit_box_name(prepared), done)
+
+            self.run("检查盒名编码与原值…", lambda: trainer.prepare_box_name(index, name), confirm)
+
+        self.run("读取盒名…", lambda: trainer.snapshot_box_name(index), choose)
 
     def choose_box_save(self):
         if self.busy or self.trainer is None:
@@ -1438,21 +1504,13 @@ class App:
             f"关联存档：{Path(path).name if path else '尚未选择'}；锁定盒：{boxes}。本地盒锁不影响游戏自身操作。"
         )
         self.update_box_egg_button()
+        self.gift_page.update_actions()
 
     def update_box_egg_button(self):
-        selected = self.box_tree.selection()
-        mon = (
-            self.box_snapshot["pokemon"][int(selected[0])]
-            if self.box_snapshot and selected
-            else None
-        )
-        enabled = (
-            mon
-            and mon.species
-            and mon.egg
-            and self.trainer
-            and self.box_snapshot["index"] not in self.trainer.locked_boxes
-            and not self.busy
+        refs = self.box_operation_references() if self.trainer else ()
+        enabled = bool(refs) and not self.busy and all(
+            ref["box"] not in self.trainer.locked_boxes and BoxPokemon(ref["raw"]).egg
+            for ref in refs
         )
         self.box_egg_ready_button.configure(state="normal" if enabled else "disabled")
 
@@ -1529,67 +1587,146 @@ class App:
         if self.busy or self.box_snapshot is None:
             return "break"
         slot = self.box_tree.cards.index(event.widget)
-        self.box_tree.selection_set(str(slot))
-        self.select_box_mon()
-        if self.box_tree.selection() != (str(slot),):
-            return "break"
-        mon = self.box_snapshot["pokemon"][slot]
-        locked = self.box_snapshot["index"] in self.trainer.locked_boxes
-        menu = tk.Menu(self.root, tearoff=False)
-        menu.add_command(
-            label="编辑",
-            command=self.edit_box_dialog,
-            state="normal" if mon.species and not locked else "disabled",
-        )
-        menu.add_command(
-            label="移动",
-            command=self.move_box_mon,
-            state="normal" if mon.species and not locked else "disabled",
-        )
-        menu.add_command(
-            label="快速生蛋",
-            command=self.ready_box_egg,
-            state="normal" if mon.species and mon.egg and not locked else "disabled",
-        )
+        if str(slot) not in self.box_tree.selection():
+            self.box_tree.selection_set(str(slot))
+            self.select_box_mon()
+        refs = self.box_operation_references()
+        menu = self.make_box_batch_menu(refs)
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
             menu.grab_release()
         return "break"
 
-    def ready_box_egg(self):
-        if (
-            self.busy
-            or self.trainer is None
-            or self.box_snapshot is None
-            or not self.box_tree.selection()
-        ):
-            return
-        trainer, snap = self.trainer, self.box_snapshot
-        slot = int(self.box_tree.selection()[0])
+    def box_ref_key(self, reference):
+        return (reference["box"], reference["slot"])
+
+    def box_operation_references(self):
+        refs = {}
+        for key in self.box_stage_selected:
+            if key in self.box_staged_refs:
+                refs[key] = self.box_staged_refs[key]
+        refs.update(self.box_selected_refs)
+        return tuple(refs.values())
+
+    def box_stage_click(self, event):
+        ident = self.box_stage_tree.identify_row(event.y)
+        if ident:
+            self.select_box_stage(ident, bool(event.state & 0x0001))
+        return "break"
+
+    def box_stage_key(self, event):
+        ident = self.box_stage_tree.focus()
+        if ident:
+            self.select_box_stage(ident, bool(event.state & 0x0001))
+        return "break"
+
+    def select_box_stage(self, ident, toggle=False):
+        key = tuple(map(int, ident.split(":")))
+        if toggle:
+            if key in self.box_stage_selected:
+                self.box_stage_selected.remove(key)
+            else:
+                self.box_stage_selected.append(key)
+        else:
+            self.box_stage_selected = [key]
+        self.box_stage_tree.selection_set(
+            *(f"{box}:{slot}" for box, slot in self.box_stage_selected)
+        )
+        self.box_stage_tree.focus(ident)
+        self.box_stage_tree.focus_set()
+        self.update_box_egg_button()
+
+    def box_stage_context_menu(self, event):
+        if self.busy:
+            return "break"
+        ident = self.box_stage_tree.identify_row(event.y)
+        if not ident:
+            return "break"
+        key = tuple(map(int, ident.split(":")))
+        if key not in self.box_stage_selected:
+            self.select_box_stage(ident)
+        menu = self.make_box_batch_menu(self.box_operation_references())
         try:
-            patches, _ = trainer.prepare_box_egg_ready(snap, slot)
-        except ValueError as exc:
-            messagebox.showinfo("快速生蛋", str(exc), parent=self.root)
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+        return "break"
+
+    def make_box_batch_menu(self, refs):
+        editable = len(refs) == 1 and refs[0]["box"] not in self.trainer.locked_boxes
+        valid = bool(refs) and all(ref["box"] not in self.trainer.locked_boxes for ref in refs)
+        eggs = valid and all(BoxPokemon(ref["raw"]).egg for ref in refs)
+        menu = tk.Menu(self.root, tearoff=False)
+        menu.add_command(
+            label="编辑",
+            command=lambda: self.edit_box_reference(refs[0]),
+            state="normal" if editable else "disabled",
+        )
+        menu.add_command(
+            label="移动",
+            command=self.move_box_mon,
+            state="normal" if valid else "disabled",
+        )
+        menu.add_command(
+            label="快速生蛋",
+            command=self.ready_box_egg,
+            state="normal" if eggs else "disabled",
+        )
+        return menu
+
+    def edit_box_reference(self, reference):
+        if self.busy or self.trainer is None or not self.discard_box_changes():
             return
-        if not self.discard_box_changes() or not messagebox.askokcancel(
-            "快速生蛋",
-            "仅将这个已有蛋的亲密度／孵化周期设为 0，保留蛋状态。\n取出后由游戏走路触发孵化；不会创建新蛋。\n\n确认备份并写入？",
-            parent=self.root,
-        ):
+        trainer = self.trainer
+        def done(snapshot):
+            raw = snapshot["raw"][reference["slot"] * 58:(reference["slot"] + 1) * 58]
+            if raw != reference["raw"] or reference.get("connection_generation") != trainer.connection_generation:
+                messagebox.showerror("引用已失效", "原槽或连接已变化，请重新选择。", parent=self.root)
+                return
+            self.apply_box_snapshot(snapshot)
+            self.box_tree.selection_set(str(reference["slot"]))
+            self.edit_box_dialog()
+        self.run("检查原槽并读取单只编辑…", lambda: trainer.snapshot_box(reference["box"]), done)
+
+    def stage_box_selection(self):
+        if self.busy or self.trainer is None or self.box_snapshot is None:
             return
+        if not self.box_selected_refs:
+            messagebox.showinfo("引用暂存", "请在右侧逐只选择非空成员。", parent=self.root)
+            return
+        refs = tuple(self.box_selected_refs.values())
+        if any(ref["box"] in self.trainer.locked_boxes for ref in refs):
+            messagebox.showerror("引用暂存", "锁定盒中的成员不能暂存。", parent=self.root)
+            return
+        for ref in refs:
+            key = self.box_ref_key(ref)
+            self.box_staged_refs[key] = ref
+            if key not in self.box_stage_selected:
+                self.box_stage_selected.append(key)
+        self.box_selected_refs.clear()
+        self.box_tree.selection_set_many((), notify=False)
+        self.render_box_stage()
+        self.status.set(f"已暂存 {len(self.box_staged_refs)} 个原槽引用；原槽没有移动。")
 
-        def job():
-            result = trainer.commit_box(patches, "PC 已有蛋周期归零")
-            return result, trainer.snapshot_box(snap["index"])
+    def render_box_stage(self):
+        self.box_stage_tree.delete(*self.box_stage_tree.get_children())
+        for (box, slot), ref in self.box_staged_refs.items():
+            mon = BoxPokemon(ref["raw"])
+            name = mon.nickname or self.names["breeds"].get(str(mon.species), str(mon.species))
+            self.box_stage_tree.insert("", "end", iid=f"{box}:{slot}", values=(f"{box + 1}盒{slot + 1}格", name + ("（蛋）" if mon.egg else "")))
+        self.box_stage_selected = [key for key in self.box_stage_selected if key in self.box_staged_refs]
+        self.box_stage_tree.selection_set(*(f"{box}:{slot}" for box, slot in self.box_stage_selected))
 
-        def done(result):
-            self.apply_box_snapshot(result[1])
-            self.status.set(
-                "已有蛋周期已设为 0 并读回；蛋状态保留。请取出后在游戏中触发孵化。"
-            )
+    def remove_box_stage_selection(self):
+        for key in self.box_stage_selected:
+            self.box_staged_refs.pop(key, None)
+        self.box_stage_selected = []
+        self.render_box_stage()
+        self.update_box_egg_button()
 
-        self.run("备份并写入已有蛋周期…", job, done)
+    def ready_box_egg(self):
+        self.run_box_batch("egg")
 
     def shortcut_fill_pp(self):
         if self.busy:
@@ -1650,34 +1787,60 @@ class App:
         )
 
     def move_box_mon(self):
-        selected = self.box_tree.selection()
-        if (
-            self.busy
-            or self.trainer is None
-            or self.box_snapshot is None
-            or not selected
-        ):
+        self.run_box_batch("move")
+
+    def run_box_batch(self, operation):
+        if self.busy or self.trainer is None or not self.discard_box_changes():
             return
-        if not self.discard_box_changes():
+        refs = self.box_operation_references()
+        if not refs:
+            messagebox.showinfo("盒子批量操作", "请在左侧暂存或右侧选择至少一只非空成员。", parent=self.root)
             return
-        trainer, source, slot = self.trainer, self.box_snapshot, int(selected[0])
-        target_index = int(self.box_move_target.get()) - 1
+        trainer = self.trainer
+        target = int(self.box_move_target.get()) - 1 if operation == "move" else None
+        current = self.box_snapshot["index"] if self.box_snapshot else 0
 
-        def job():
-            target = trainer.snapshot_box(target_index)
-            result = trainer.commit_box_move(source, slot, target)
-            return result, trainer.snapshot_box(target_index)
+        def preview(prepared):
+            destinations = prepared["destinations"]
+            if operation == "move":
+                counts = {}
+                for box, _ in destinations:
+                    counts[box] = counts.get(box, 0) + 1
+                span = "、".join(f"第{box + 1}盒 {count} 格" for box, count in sorted(counts.items()))
+                detail = f"从第{target + 1}盒开始向后填未锁盒空槽，不绕回。\n目标范围：{span}。"
+            else:
+                detail = "全部选中成员均为已有蛋；只将周期归零并保留蛋状态。"
+            if not messagebox.askokcancel(
+                "确认盒子批量操作",
+                f"将处理 {len(prepared['references'])} 只。\n{detail}\n\n确认创建一份事务备份并写入？",
+                parent=self.root,
+            ):
+                return
 
-        def done(result):
-            self.apply_box_snapshot(result[1])
-            self.box_tree.selection_set(str(result[0]["target_slot"]))
-            self.select_box_mon()
-            self.request_icons()
-            self.status.set(
-                f"已移动至第{target_index + 1}盒第{result[0]['target_slot'] + 1}格，两槽已备份并读回。请在游戏内保存。"
-            )
+            def job():
+                result = trainer.commit_box_batch(prepared)
+                view = target if operation == "move" else current
+                return result, trainer.snapshot_box(view)
 
-        self.run("检查源/目标槽、备份并移动宝可梦…", job, done)
+            def done(result):
+                self.box_staged_refs.clear()
+                self.box_selected_refs.clear()
+                self.box_stage_selected.clear()
+                self.render_box_stage()
+                self.apply_box_snapshot(result[1])
+                if operation == "move" and destinations:
+                    box, slot = destinations[0]
+                    if box == result[1]["index"]:
+                        self.box_tree.selection_set(str(slot))
+                self.request_icons()
+                self.status.set(
+                    f"{len(prepared['references'])} 只已备份、写入并读回；请在游戏内保存。"
+                    if result[0]["changed"] else "目标数据已相同，无需写入。"
+                )
+
+            self.run("统一比较原槽、备份并提交盒子事务…", job, done)
+
+        self.run("读取25盒相关原槽并生成预览…", lambda: trainer.prepare_box_batch(refs, operation, target), preview)
 
     def apply_box_snapshot(self, snapshot):
         self.clear_box_editor()
@@ -1708,10 +1871,20 @@ class App:
                     ("是" if mon.shiny else "否") if mon.species else "—",
                 ),
             )
+        visible = [str(slot) for box, slot in self.box_selected_refs if box == snapshot["index"]]
+        self.box_tree.selection_set_many(visible, notify=False)
         self.box_detail.set(
             f"第 {snapshot['index'] + 1} 盒：{count} / 30。选择成员查看详情。"
         )
-        self.status.set(f"已读取第 {snapshot['index'] + 1} 盒，尚未写入。")
+        stale = any(
+            ref["raw"] != snapshot["raw"][slot * 58:(slot + 1) * 58]
+            for (box, slot), ref in self.box_selected_refs.items()
+            if box == snapshot["index"]
+        )
+        self.status.set(
+            "选中引用的原槽已变化；批量操作会拒绝旧引用，请重新选择。"
+            if stale else f"已读取第 {snapshot['index'] + 1} 盒，尚未写入。"
+        )
         self.update_box_egg_button()
 
     def clear_box_editor(self):
@@ -2146,9 +2319,28 @@ class App:
         return window
 
     def select_box_mon(self, event=None):
-        self.update_box_egg_button()
         selected = self.box_tree.selection()
-        if self.busy or not selected or self.box_snapshot is None:
+        if self.busy or self.box_snapshot is None:
+            return
+        index = self.box_snapshot["index"]
+        if not self.box_tree.last_toggle:
+            self.box_selected_refs.clear()
+        else:
+            for key in tuple(self.box_selected_refs):
+                if key[0] == index and str(key[1]) not in selected:
+                    del self.box_selected_refs[key]
+        for ident in selected:
+            slot = int(ident)
+            if self.box_snapshot["pokemon"][slot].species and (index, slot) not in self.box_selected_refs:
+                self.box_selected_refs[(index, slot)] = self.trainer.box_reference(self.box_snapshot, slot)
+        self.box_tree.last_toggle = False
+        self.update_box_egg_button()
+        if not selected:
+            self.clear_box_editor()
+            return
+        if len(selected) > 1:
+            self.clear_box_editor()
+            self.box_detail.set(f"右侧当前盒选中 {len(selected)} 只；跨盒引用合计 {len(self.box_selected_refs)} 只。")
             return
         slot = int(selected[0])
         if self.box_editor_slot == slot:
@@ -2450,8 +2642,10 @@ class App:
         ):
             return
         old_mem = self.mem
+        self.quest_page.invalidate()
         self.mem = None
         self.trainer = None
+        self.gift_page.show_detail()
         self.time_snapshot = None
         self.time_detail.set("连接已改变，请重新读取游戏时间。")
         self.daily_repair_ready = None
@@ -2467,6 +2661,10 @@ class App:
         self.player_name.set("")
         self.player_detail.set("连接已改变，请重新读取训练师资料。")
         self.box_snapshot = None
+        self.box_staged_refs.clear()
+        self.box_selected_refs.clear()
+        self.box_stage_selected.clear()
+        self.render_box_stage()
         self.icon_images.clear()
         self.spinda_assets = None
         self.icon_request_pending = False
@@ -2507,6 +2705,7 @@ class App:
         def done(result):
             self.mem, self.trainer, snap = result
             self.profile = self.trainer.profile
+            self.gift_page.show_detail()
             if self.box_save_path.get():
                 try:
                     self.trainer.locked_boxes = self.box_preferences.load(
@@ -2527,6 +2726,12 @@ class App:
 
     def refresh(self, after=None):
         if self.trainer is None:
+            return
+        if after is None and self.nb.select() == str(self.quest_page.tab):
+            self.quest_page.read()
+            return
+        if after is None and self.nb.select() == str(self.gift_page.tab):
+            self.gift_page.show_detail()
             return
         if after is None and self.nb.select() == str(self.tab_boxes):
             self.read_box()

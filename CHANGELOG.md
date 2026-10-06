@@ -1,5 +1,9 @@
 # 发行日志
 
+## 0.2.14 · 2026-10-07
+
+支线96项四页签查询、6份可用神秘礼物及完整PC/队伍投放、双栏引用/Shift批量操作、盒子改名，以及PP提升和宝可梦性别。更新范围、核验与边界见[本版日志](docs/releases/v0.2.14.md)；[下载](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.14)。
+
 2026-10-05补齐已有便携包的GitHub Releases。记录来自包内`build-info.json`、对应Git提交和版本文档；保留原包，不使用当前源码重新编译历史版本。
 
 推荐[最新版v0.2.13](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.13)；[全部Releases](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)。0.2.0～0.2.10支持已核验水银V1.0，0.2.11起增加V1.2。自动化和隔离ROM核验不等于所有游戏内保存重载均通过。

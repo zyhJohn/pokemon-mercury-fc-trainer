@@ -174,7 +174,8 @@ class AppTests(unittest.TestCase):
         self.app.box_editor_values[1].set(False)
         self.app.run = lambda label, job, done: done(job())
         self.app.box_move_target.set("2")
-        self.app.move_box_mon()
+        with patch("trainer_app.messagebox.askokcancel", return_value=True):
+            self.app.move_box_mon()
         self.assertEqual(self.app.box_snapshot["index"], 1)
         self.assertEqual(self.mem.read(source, 58), b"\0" * 58)
         self.assertEqual(self.app.box_snapshot["pokemon"][0].raw, bytes(raw))

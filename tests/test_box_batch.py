@@ -6,6 +6,7 @@ from pathlib import Path
 
 from tests import test_box_sort_lock
 from tests.test_box_sort_lock import record
+from trainer_core import Trainer
 
 
 class BoxBatchTests(unittest.TestCase):
@@ -60,6 +61,26 @@ class BoxBatchTests(unittest.TestCase):
                 trainer.prepare_box_batch([reference], "move", 1)
             self.assertEqual(memory.data, before)
             self.assertEqual(memory.writes, 0)
+
+    def test_reference_and_prepared_batch_expire_with_trainer_connection(self):
+        with tempfile.TemporaryDirectory() as folder:
+            memory, trainer, addresses = self.setup_release(folder)
+            memory.put(addresses[0], record(160, 17))
+            old = trainer.box_reference(trainer.snapshot_box(0), 0)
+            prepared = trainer.prepare_box_batch([old], "move", 1)
+            reconnected = Trainer(memory, trainer.profile, folder)
+            self.assertNotEqual(trainer.connection_generation, reconnected.connection_generation)
+            with self.assertRaisesRegex(ValueError, "旧连接"):
+                reconnected.prepare_box_batch([old], "move", 1)
+            with self.assertRaisesRegex(ValueError, "旧连接"):
+                reconnected.commit_box_batch(prepared)
+            self.assertEqual(memory.writes, 0)
+            fresh = reconnected.box_reference(reconnected.snapshot_box(0), 0)
+            self.assertEqual(fresh["raw"], old["raw"])
+            self.assertEqual(
+                reconnected.prepare_box_batch([fresh], "move", 1)["references"],
+                (fresh,),
+            )
 
     def test_more_than_30_targets_use_following_unlocked_boxes_and_deduplicate(self):
         with tempfile.TemporaryDirectory() as folder:
