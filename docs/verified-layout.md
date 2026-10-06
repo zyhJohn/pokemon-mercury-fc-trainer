@@ -2,6 +2,14 @@
 
 核对日期：2026-10-06。本文件纠正早期工作日志中的推测，历史日志保留供追溯。正文原有地址以V1.0为基准；V1.2迁移见下节及`rom_profile_v12.json`，不得混用代码地址。
 
+## 2026-10-07新增核验
+
+- 支线：各20字节任务表V1.0为08E3AF24起、V1.2为08E3BA50起；扩展旗标900..18FF位于0203B174起。每版独立96项映射及V1.2额外接取规则见sidequests_layout.json，实际FlagGet/日志构表核验见tools/verify_sidequests.py。网页96条不等于100个ROM表项（含保留与同名条目）。
+- 盒名：25条9字节、有效内容8字节，FF终止；ROM指针表09DD7210/09DDEBCC，RAM020315F5起非顺序映射，section13+361。来源指针03005418；事务及恢复沿用盒锁和指针守卫。
+- 喷雾：Var4020、0202656C的u16、section2+50，纯补丁范围0～250；正式UI尚未接。盒名及喷雾实际函数/持久对照见game_fields_layout.json、tools/verify_box_names_repel.py。
+- 创建：原生80→58压缩入口09D54A94/09D58854，1432物种各2种PID奇偶头部码已核；完整58→100转换与每版2768合法样例实际取出逐字节一致。见pokemon_creation_layout.json、tools/verify_creation.py。神秘礼物的6份原生/适配记录也完成双版100字节对照，不声称原版卡片或遭遇来源合法化。
+- 劲敌：SaveBlock1+3A4C，8字节/有效7字节，section4+A7C；对白FD06及两个战斗训练师名称读取来源已实际核验。玩家性别角色缓存与覆盖变量仍有未齐联动，只读证据见player_rival_layout.json、tools/verify_player_rival.py。
+
 ## PP提升与宝可梦自身性别（0.2.14-dev，未发布）
 
 | 对象 | 两版实际结构/规则 | 编辑约定 |

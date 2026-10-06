@@ -209,8 +209,22 @@
       "size": 11333252,
       "notes": "docs/releases/v0.2.13.md",
       "prerelease": false,
-      "latest": true,
+      "latest": false,
       "built_at": "2026-10-05T20:48:36.569031+08:00"
+    },
+    {
+      "version": "0.2.14",
+      "tag": "v0.2.14",
+      "name": "v0.2.14 · 支线查询、神秘礼物与盒子批量操作",
+      "target_commit": "2372c82b2385359cf7cefcebffb9a309f158342e",
+      "source_commit": "2372c82b2385359cf7cefcebffb9a309f158342e",
+      "asset_name": "MercuryTrainer-0.2.14-portable.zip",
+      "sha256": "06ac94cdfe71dfa6d93b66758875d50f66c23f8305827e6b08f32d328cced7cd",
+      "size": 12538587,
+      "notes": "docs/releases/v0.2.14.md",
+      "prerelease": false,
+      "latest": true,
+      "built_at": "2026-10-07T00:47:53.404259+08:00"
     }
   ]
 }

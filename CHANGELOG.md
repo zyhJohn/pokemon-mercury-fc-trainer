@@ -6,10 +6,11 @@
 
 2026-10-05补齐已有便携包的GitHub Releases。记录来自包内`build-info.json`、对应Git提交和版本文档；保留原包，不使用当前源码重新编译历史版本。
 
-推荐[最新版v0.2.13](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.13)；[全部Releases](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)。0.2.0～0.2.10支持已核验水银V1.0，0.2.11起增加V1.2。自动化和隔离ROM核验不等于所有游戏内保存重载均通过。
+推荐[最新版v0.2.14](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.14)；[全部Releases](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)。0.2.0～0.2.10支持已核验水银V1.0，0.2.11起增加V1.2。自动化和隔离ROM核验不等于所有游戏内保存重载均通过。
 
 | 版本 | 原始构建日期（上海） | 更新摘要 | 完整发行日志 | 下载页 |
 | --- | --- | --- | --- | --- |
+| 0.2.14 | 2026-10-07 | 支线、神秘礼物、双栏批量及盒名 | [日志](docs/releases/v0.2.14.md) | [Release](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.14) |
 | 0.2.13 | 2026-10-05 | 全盒排序、本地盒锁与已有蛋周期归零 | [日志](docs/releases/v0.2.13.md) | [Release](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.13) |
 | 0.2.12 | 2026-10-05 | 导航调整与需求/恢复核查 | [日志](docs/releases/v0.2.12.md) | [Release](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.12) |
 | 0.2.11 | 2026-10-05 | 水银 V1.2 支持与单只盒间移动 | [日志](docs/releases/v0.2.11.md) | [Release](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.11) |
