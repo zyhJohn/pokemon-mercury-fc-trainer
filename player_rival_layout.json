@@ -16,11 +16,18 @@
     "trainer_name_branches": ["0x080D8134", "0x08115200"],
     "trainer_table": "0x0823EAC8",
     "trainer_classes_using_rival_name": [81, 89, 90],
+    "field_literal_pairs": ["0x08009188", "0x08054B50", "0x08113470", "0x08115138", "0x08115180", "0x08130458", "0x081317F0", "0x089A0048", "0x08C5F338", "0x08C606B8"],
+    "name_setter": "0x08131754",
+    "default_fill_branches": ["0x089A0018", "0x08C5F308", "0x08C60688"],
+    "runtime_guard": "Exact supported ROM identity; re-read aligned SaveBlock1 pointer at 0x03005008 for each operation, require pointer+0x3A4C plus 8 bytes inside EWRAM, decode a nonempty FF-terminated old record, and compare pointer plus all 8 old bytes immediately before write. Reject changed pointer or record. Retain before/after in one write transaction with backup/readback/conditional restore.",
+    "authority_scope": "All ten contiguous SaveBlock1 pointer/+3A4C ROM literal pairs in each exact release refer to this field. Isolated dialogue and two battle readers follow the pointer; the ROM setter 0x08131754 can later replace a manual name, while three extra routines only fill an empty first byte. Exhaustive indirect script/cache coverage remains unproven.",
     "observed_flash_section_id": 4,
     "observed_flash_section_offset": "0xA7C",
-    "flash_match_scope": "Both copies in each available save matched the isolated state with 64 neighboring bytes; modified-name save/reload was not tested",
-    "live_edit_enabled": false,
-    "remaining_evidence": ["other script and menu copies", "game save/reload", "backup and conditional restore"]
+    "flash_match_scope": "Both checksum-valid copies in each available save matched the state with 64 neighboring bytes. The state and save files were captured at different times; modified-name save/reload was not tested.",
+    "live_edit_enabled": true,
+    "source_only_not_released": true,
+    "automated_transaction_evidence": "2026-10-08 both-release memory and Lua/TCP tests passed: old pointer/value refusal, backup, readback, conditional restore, and combined player/rival commit; no live mGBA connection",
+    "remaining_evidence": ["exhaustive indirect script and cache coverage; ROM setter may later overwrite manual name", "human in-game dialogue, battle, menu and changed-name save/reload"]
   },
   "player_gender": {
     "saveblock2_pointer": "0x0300500C",

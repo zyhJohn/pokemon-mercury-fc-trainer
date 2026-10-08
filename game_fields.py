@@ -69,19 +69,41 @@ def prepare_box_name_patch(memory, rom_sha256: str, index: int, name: str) -> Fi
 
 
 def read_repel_steps(memory, rom_sha256: str) -> tuple[int, bytes]:
-    if rom_sha256 not in _REPEL["verified_releases"]:
-        raise ValueError("未知ROM：喷雾步数字段未核验")
-    raw = memory.read(_REPEL["address"], _REPEL["width"])
+    layout = repel_layout(memory, rom_sha256)
+    address = layout[0]
+    raw = memory.read(address, _REPEL["width"])
     if len(raw) != 2:
         raise ValueError("喷雾变量长度异常")
+    if repel_layout(memory, rom_sha256) != layout or memory.read(address, 2) != raw:
+        raise ValueError("读取时喷雾变量或保存结构指针已变化")
     return int.from_bytes(raw, "little"), raw
+
+
+def repel_layout(memory, rom_sha256: str) -> tuple[int, bytes, bytes]:
+    """Resolve Var 0x4020 from live SaveBlock1 and section-2 pointers."""
+    if rom_sha256 not in _REPEL["verified_releases"]:
+        raise ValueError("未知ROM：喷雾步数字段未核验")
+    save1_raw = memory.read(_REPEL["saveblock1_pointer"], 4)
+    save1 = int.from_bytes(save1_raw, "little")
+    address = save1 + _REPEL["saveblock1_offset"]
+    if save1 % 4 or not 0x02000000 <= save1 or address + 2 > 0x02040000:
+        raise ValueError("喷雾 SaveBlock1 指针无效")
+    source_raw = memory.read(_REPEL["save_section_source_pointer"], 4)
+    source = int.from_bytes(source_raw, "little")
+    if (source != save1 + _REPEL["source_offset"]
+            or source + _REPEL["save_section_offset"] != address):
+        raise ValueError("喷雾存档节源指针与 SaveBlock1 不一致")
+    return address, save1_raw, source_raw
 
 
 def prepare_repel_steps_patch(memory, rom_sha256: str, steps: int) -> FieldPatch:
     """Prepare a conservative 0..250 patch; never touches item quantities."""
     if type(steps) is not int or not _REPEL["edit_min"] <= steps <= _REPEL["edit_max"]:
         raise ValueError("喷雾剩余步数须为0～250")
+    layout = repel_layout(memory, rom_sha256)
     current, before = read_repel_steps(memory, rom_sha256)
+    if repel_layout(memory, rom_sha256) != layout:
+        raise ValueError("准备喷雾补丁时保存结构指针已变化")
     if current > _REPEL["edit_max"]:
         raise ValueError("当前喷雾步数超出已核验范围，拒绝覆盖")
-    return FieldPatch(_REPEL["address"], before, steps.to_bytes(2, "little"))
+    return FieldPatch(layout[0], before, steps.to_bytes(2, "little"))

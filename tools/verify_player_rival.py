@@ -21,6 +21,16 @@ PLACEHOLDER_RIVAL = 6
 TRAINER_TABLE = 0x0823EAC8
 RIVAL_TRAINER_CLASSES = (0x51, 0x59, 0x5A)
 FLASH_SECTION_4_SIZE = 0xD98
+FIELD_LITERAL_PAIRS = (
+    0x08009188, 0x08054B50, 0x08113470,
+    0x08115138, 0x08115180, 0x08130458,
+    0x081317F0, 0x089A0048, 0x08C5F338, 0x08C606B8,
+)
+DEFAULT_FILL_BRANCHES = (
+    (0x089A0018, 0x089A002A),
+    (0x08C5F308, 0x08C5F31A),
+    (0x08C60688, 0x08C6069A),
+)
 
 
 def thumb_bl_callers(rom, target):
@@ -149,6 +159,49 @@ def verify(rom, state, profile, save=None):
         raise ValueError("样本劲敌姓名包含未知编码，不能推断字段容量")
     if engine.call(0x080091E0, PLACEHOLDER_RIVAL) != address:
         raise ValueError("实际 ROM 占位符并未返回候选劲敌字段")
+    # All contiguous pointer/offset literals found in these exact ROMs refer
+    # to one SB1 field. They include readers, a setter, and default fillers.
+    for pair in FIELD_LITERAL_PAIRS:
+        if rom[pair - 0x08000000 : pair - 0x08000000 + 8] != struct.pack("<II", 0x03005008, RIVAL_OFFSET):
+            raise ValueError(f"劲敌字段直接读取签名变化：{pair:08X}")
+    if rom.count(struct.pack("<II", 0x03005008, RIVAL_OFFSET)) != len(FIELD_LITERAL_PAIRS):
+        raise ValueError("劲敌字段直接指针/偏移引用数发生变化")
+    relocated = RomCPU(rom, state)
+    shifted_save1 = save1 + 0x4000
+    shifted_address = shifted_save1 + RIVAL_OFFSET
+    relocated.write(shifted_address, encode_name("小智A12", RIVAL_SIZE))
+    relocated.write(0x03005008, struct.pack("<I", shifted_save1))
+    if relocated.call(0x080091E0, PLACEHOLDER_RIVAL) != shifted_address:
+        raise ValueError("劲敌占位符未随SaveBlock1指针重定位")
+    relocated_battles = verify_battle_name_branch(relocated, rom, shifted_address)
+    if relocated_battles != verify_battle_name_branch(engine, rom, address):
+        raise ValueError("重定位后的战斗类别路径变化")
+    setter_values = []
+    for choice, expected in enumerate((
+        bytes.fromhex("0e2c0906ffffffff"),
+        bytes.fromhex("0e2c0f48ffffffff"),
+        bytes.fromhex("0e2c0512ffffffff"),
+    )):
+        isolated = RomCPU(rom, state)
+        isolated.call(0x08131754, 1, choice)
+        if isolated.read(address, RIVAL_SIZE) != expected:
+            raise ValueError(f"劲敌姓名setter选项{choice}未写入同一字段")
+        setter_values.append(expected.hex())
+    fallback_cases = []
+    for start, stop in DEFAULT_FILL_BRANCHES:
+        for old_record, should_fill in ((b"\xbb\xff" + b"\0" * 6, False),
+                                        (b"\xff" + b"\0" * 7, True)):
+            isolated = RomCPU(rom, state)
+            isolated.write(address, old_record)
+            isolated.cpu.emu_start(start | 1, stop, count=1000)
+            if isolated.cpu.reg_read(UC_ARM_REG_PC) != stop:
+                raise ValueError("劲敌默认名填充代码未到达预期出口")
+            actual = isolated.read(address, RIVAL_SIZE)
+            if should_fill and actual != bytes.fromhex("0e2c0906ff000000"):
+                raise ValueError("空劲敌姓名未按ROM默认表填充")
+            if not should_fill and actual != old_record:
+                raise ValueError("有效劲敌姓名被默认填充例程覆盖")
+        fallback_cases.append(f"{start:08X}")
     battle_matrix = verify_battle_name_branch(engine, rom, address)
     gender_matrix = verify_gender_cache(engine, rom, save2)
     saved_locations = find_saved_rival_field(save, engine, address) if save is not None else None
@@ -179,11 +232,16 @@ def verify(rom, state, profile, save=None):
         "dialogue_routine": "08008FCC",
         "placeholder_cases": cases,
         "placeholder_callers": [f"{x:08X}" for x in thumb_bl_callers(rom, 0x080091E0)],
+        "field_literal_pairs": [f"{x:08X}" for x in FIELD_LITERAL_PAIRS],
+        "name_setter": "08131754",
+        "name_setter_choice_records": setter_values,
+        "default_fill_branches": fallback_cases,
+        "saveblock1_relocation_verified": True,
         "battle_class_matrix": battle_matrix,
         "gender_matrix": gender_matrix,
         "persistent_sample_matches": saved_locations,
         "passed": True,
-        "scope": "Isolated ROM routines and sample state: dialogue and two trainer-name class branches verified. Optional Flash match is observational; changed-name save/reload, other menus, sprite rebuild and gender-story coupling remain unverified.",
+        "scope": "Isolated ROM routines and sample state: dialogue, two trainer-name class branches, SB1 relocation, ten contiguous field literals, one menu/story setter and three empty-name default fillers checked. The setter can later overwrite a manual name. Flash copies matched across samples captured at different times; changed-name save/reload and exhaustive script/menu/cache coverage remain unverified.",
     }
 
 

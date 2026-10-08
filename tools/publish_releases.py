@@ -18,11 +18,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def audit(directories):
+def audit(directories, tags=None):
     registry = json.loads((ROOT / "docs/releases/assets.json").read_text("utf-8"))
     releases = registry["releases"]
     assert len({r["tag"] for r in releases}) == len(releases)
     assert sum(bool(r["latest"]) for r in releases) == 1
+    if tags:
+        requested = set(tags)
+        missing = requested - {r["tag"] for r in releases}
+        if missing:
+            raise RuntimeError("Unknown release tag: " + ", ".join(sorted(missing)))
+        releases = [r for r in releases if r["tag"] in requested]
     artifacts = []
     for release in releases:
         local_name = release["asset_name"] if release["version"] else "MercuryTrainer-portable.zip"
@@ -151,20 +157,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive-dir", action="append", type=Path, required=True)
     parser.add_argument("--proxy", default="http://127.0.0.1:7078")
+    parser.add_argument("--tag", action="append", help="Audit/publish only these registered tags (repeatable)")
     parser.add_argument("--publish", action="store_true", help="Create and publish GitHub Releases")
     args = parser.parse_args()
-    repository, artifacts = audit(args.archive_dir)
+    repository, artifacts = audit(args.archive_dir, args.tag)
     if not args.publish:
         print(f"Local audit passed: {len(artifacts)} original archives; no remote changes")
         return
     api = GitHub(repository, args.proxy)
     for info, data, notes in artifacts:
         api.publish(info, data, notes)
-    latest = api.request("GET", "/releases/latest")
-    expected = next(info["tag"] for info, _, _ in artifacts if info["latest"])
-    if latest["tag_name"] != expected:
-        raise RuntimeError("GitHub latest release differs from registry")
-    print(f"ALL {len(artifacts)} RELEASES VERIFIED; LATEST {expected}")
+    expected = next((info["tag"] for info, _, _ in artifacts if info["latest"]), None)
+    if expected:
+        latest = api.request("GET", "/releases/latest")
+        if latest["tag_name"] != expected:
+            raise RuntimeError("GitHub latest release differs from registry")
+    print(f"ALL {len(artifacts)} SELECTED RELEASES VERIFIED")
 
 
 if __name__ == "__main__":

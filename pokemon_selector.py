@@ -10,6 +10,7 @@ class PokemonSelector(ttk.Frame):
         self.columns = columns
         self.label = label
         self.records = {}
+        self.empty_commands = {}
         self.selected = ()
         self.multi_select = multi_select
         self.last_toggle = False
@@ -47,9 +48,28 @@ class PokemonSelector(ttk.Frame):
             self.rowconfigure(row, weight=1)
 
     def choose(self, slot):
-        if "disabled" in self.cards[slot].state() or str(slot) not in self.records:
+        if "disabled" in self.cards[slot].state():
+            return
+        if str(slot) not in self.records:
+            command = self.empty_commands.get(slot)
+            if command is not None:
+                command()
             return
         self.selection_set(str(slot))
+
+    def enable_empty(self, slot, command, *, label="新建"):
+        if not 0 <= slot < self.capacity or str(slot) in self.records:
+            raise ValueError("空槽入口无效")
+        self.empty_commands[slot] = command
+        self.cards[slot].configure(text=f"{slot + 1}\n（{label}）", image="")
+        self.cards[slot].state(["!disabled"])
+
+    def label_empty(self, slot, label):
+        if not 0 <= slot < self.capacity or str(slot) in self.records:
+            raise ValueError("空槽入口无效")
+        self.empty_commands.pop(slot, None)
+        self.cards[slot].configure(text=f"{slot + 1}\n（{label}）", image="")
+        self.cards[slot].state(["disabled"])
 
     def _click(self, event, slot):
         if event.state & 0x0001:
@@ -89,6 +109,10 @@ class PokemonSelector(ttk.Frame):
         return tuple(self.records)
 
     def delete(self, *items):
+        for slot in self.empty_commands:
+            self.cards[slot].configure(text=f"{slot + 1}\n（空槽）", image="")
+            self.cards[slot].state(["disabled", "!pressed"])
+        self.empty_commands.clear()
         for ident in items:
             self.records.pop(str(ident), None)
             card = self.cards[int(ident)]
@@ -101,6 +125,7 @@ class PokemonSelector(ttk.Frame):
         if not 0 <= slot < self.capacity:
             raise ValueError("选择槽超出范围")
         self.records[str(iid)] = {"values": values, "image": image}
+        self.empty_commands.pop(slot, None)
         self.cards[slot].configure(text=self.label(values), image=image)
         self.cards[slot].state(["!disabled"])
 

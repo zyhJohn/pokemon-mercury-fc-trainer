@@ -19,13 +19,18 @@
   },
   "repel_steps": {
     "variable_id": 16416,
+    "saveblock1_pointer": 50352136,
+    "saveblock1_offset": 4160,
     "address": 33711468,
+    "address_scope": "Observed in both supplied states only; live address is read SaveBlock1 pointer + 0x1040 and must equal section-2 source pointer + 0x50",
+    "runtime_guard": "Exact supported ROM identity; read aligned SaveBlock1 pointer 0x03005008 and section-2 source pointer 0x030053C0 afresh, require source=SaveBlock1+0xFF0 and target=SaveBlock1+0x1040=source+0x50 inside EWRAM. Compare both pointers and the two old value bytes at commit. Reject old values above 250 and restore conditionally from a pre-write backup.",
     "width": 2,
     "edit_min": 0,
     "edit_max": 250,
     "save_section": 2,
     "save_section_offset": 80,
     "save_section_source_pointer": 50353088,
+    "source_offset": 4080,
     "decrement_entry": 134754488,
     "item_step_getter": 134850888,
     "verified_items": {
@@ -40,6 +45,8 @@
       "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896": {
         "decrement_hook": 164952937
       }
-    }
+    },
+    "automated_transaction_evidence": "2026-10-08 both-release memory and Lua/TCP tests passed: dynamic address, stale pointer/value refusal, backup, readback, and conditional restore; no live mGBA connection",
+    "human_validation_remaining": ["in-game expiry message and reuse behavior", "changed-value game save/reload"]
   }
 }

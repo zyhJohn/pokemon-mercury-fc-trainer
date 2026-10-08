@@ -48,6 +48,9 @@ from sidequest_data import load_catalog as load_sidequests
 from sidequest_page import SidequestPage
 from distribution_catalog import load_distributions
 from gift_page import GiftPage
+from field_page import RepelWindow
+from daycare_page import DaycareWindow
+from creation_page import CreationPage
 
 
 def resource_path(name):
@@ -77,6 +80,9 @@ class App:
         self.box_staged_refs = {}
         self.box_selected_refs = {}
         self.trainer_snapshot = None
+        self.rival_snapshot = None
+        self.profile_preview = None
+        self.profile_preview_inputs = None
         self.time_snapshot = None
         self.rtc_snapshot = None
         self.rtc_profile = self.profile
@@ -106,6 +112,8 @@ class App:
         )
         self.box_preferences = BoxPreferences(base / "box-locks.json")
         self.box_save_path = tk.StringVar()
+        self.repel_window = RepelWindow(self)
+        self.daycare_window = DaycareWindow(self)
         self._build()
         self.timer = root.after(50, self._poll)
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -178,12 +186,9 @@ class App:
             anchor="w",
             pady=4,
         )
-        ttk.Button(
-            shortcuts, text="培育屋生成待领取蛋（待核验）", state="disabled"
-        ).pack(anchor="w", pady=4)
-        ttk.Button(shortcuts, text="喷雾剩余步数（待核验）", state="disabled").pack(
-            anchor="w", pady=4
-        )
+        self.button(shortcuts, "培育屋待领取蛋", self.daycare_window.open,
+                    anchor="w", pady=4)
+        self.button(shortcuts, "喷雾剩余步数", self.repel_window.open, anchor="w", pady=4)
         ttk.Button(shortcuts, text="持续金手指（待核验）", state="disabled").pack(
             anchor="w", pady=4
         )
@@ -493,6 +498,7 @@ class App:
             resource_path("sidequests_layout.json"),
         )
         self.gift_page = GiftPage(self, load_distributions(resource_path("distributions.json")))
+        self.creation_page = CreationPage(self, self.nb)
         self._build_details()
         self._build_trainer()
         self.nb.insert(0, self.tab_party)
@@ -1118,7 +1124,9 @@ class App:
         self.player_tid = tk.StringVar()
         self.player_sid = tk.StringVar()
         self.player_name = tk.StringVar()
+        self.rival_name = tk.StringVar()
         self.original_player_name = ""
+        self.original_rival_name = ""
         self.player_detail = tk.StringVar(
             value="连接后点击读取。支持中文/中英混合姓名；主角性别目前只读。"
         )
@@ -1129,6 +1137,7 @@ class App:
             ("姓名（最多3汉字或7字节）", self.player_name),
             ("玩家 TID（0～65535）", self.player_tid),
             ("玩家 SID（0～65535）", self.player_sid),
+            ("劲敌姓名（最多7内容字节）", self.rival_name),
         ]:
             row = ttk.Frame(tab)
             row.pack(anchor="w", pady=6)
@@ -1136,11 +1145,17 @@ class App:
             ttk.Entry(row, textvariable=var, width=18).pack(side="left")
         ttk.Label(
             tab,
-            text="修改玩家姓名 / ID，不自动改变队伍或 PC 的原训练师资料。\n现有宝可梦可能因此被视为外来宝可梦；修改前后请核对训练师卡。",
+            text="玩家与劲敌姓名均支持中文（每个汉字占2字节）；主角性别仍只读。劲敌姓名后续可能被剧情改写。\n修改玩家姓名 / ID 不改变队伍或 PC 的原训练师资料；现有宝可梦可能因此被视为外来宝可梦。",
             wraplength=900,
         ).pack(anchor="w", pady=8)
         self.button(tab, "读取训练师资料", self.read_trainer, anchor="w", pady=6)
-        self.button(tab, "写入训练师资料", self.write_trainer_ids, anchor="w", pady=6)
+        self.button(tab, "统一预览玩家与劲敌资料", self.preview_trainer_profile, anchor="w", pady=6)
+        self.profile_commit_button = self.button(tab, "一次写入已预览资料", self.write_trainer_ids, anchor="w", pady=6)
+        self.profile_commit_button.configure(state="disabled")
+        self.profile_preview_detail = tk.StringVar(value="请读取资料，修改后统一预览。")
+        ttk.Label(tab, textvariable=self.profile_preview_detail, wraplength=900).pack(anchor="w", pady=6)
+        for var in (self.player_name, self.player_tid, self.player_sid, self.rival_name):
+            var.trace_add("write", lambda *_: self.invalidate_profile_preview())
 
     def apply_trainer_snapshot(self, snap):
         self.trainer_snapshot = snap
@@ -1154,24 +1169,46 @@ class App:
             f"完整 ID：{snap['sid'] * 65536 + snap['tid']:08X}；主角性别原始值：{snap['gender']}\n姓名原始编码：{snap['name_raw']}；汉字占2字节，英文/数字占1字节，总计最多7字节。"
         )
 
+    def apply_rival_snapshot(self, snap):
+        self.rival_snapshot = snap
+        self.original_rival_name = snap["name"] if snap["name"] is not None else "（未知编码，原样保留）"
+        self.rival_name.set(self.original_rival_name)
+        self.invalidate_profile_preview()
+
+    def invalidate_profile_preview(self):
+        self.profile_preview = None
+        self.profile_preview_inputs = None
+        if hasattr(self, "profile_commit_button"):
+            self.profile_commit_button.configure(state="disabled")
+        if hasattr(self, "profile_preview_detail"):
+            self.profile_preview_detail.set("资料已变化，请重新统一预览。")
+
     def read_trainer(self):
         if (
             not self.busy
             and self.trainer is not None
             and self.discard_trainer_changes()
         ):
-            self.run(
-                "读取训练师资料…",
-                self.trainer.snapshot_trainer,
-                self.apply_trainer_snapshot,
-            )
+            trainer = self.trainer
+
+            def job():
+                return trainer.snapshot_trainer(), trainer.snapshot_rival()
+
+            def done(result):
+                if self.trainer is trainer:
+                    self.apply_trainer_snapshot(result[0])
+                    self.apply_rival_snapshot(result[1])
+
+            self.run("读取玩家与劲敌资料…", job, done)
 
     def discard_trainer_changes(self):
         snap = self.trainer_snapshot
         return (
             snap is None
-            or (self.player_name.get(), self.player_tid.get(), self.player_sid.get())
-            == (self.original_player_name, str(snap["tid"]), str(snap["sid"]))
+            or ((self.player_name.get(), self.player_tid.get(), self.player_sid.get())
+                == (self.original_player_name, str(snap["tid"]), str(snap["sid"]))
+                and (self.rival_snapshot is None
+                     or self.rival_name.get() == self.original_rival_name))
             or messagebox.askyesno(
                 "尚未写入",
                 "训练师资料的修改尚未写入。放弃修改并继续？",
@@ -1308,31 +1345,71 @@ class App:
             f"左：当前 {original.pid:08X}；右：预览 {updated.pid:08X}。{'花纹将改变，尚未写入。' if original.pid != updated.pid else '花纹保持。'}"
         )
 
-    def write_trainer_ids(self):
-        if self.busy or self.trainer is None or self.trainer_snapshot is None:
+    def _profile_inputs(self):
+        return (self.player_tid.get(), self.player_sid.get(), self.player_name.get(),
+                self.rival_name.get())
+
+    def preview_trainer_profile(self):
+        if (self.busy or self.trainer is None or self.trainer_snapshot is None
+                or self.rival_snapshot is None):
             return
         trainer = self.trainer
-        snap = self.trainer_snapshot
-        tid, sid = self.player_tid.get(), self.player_sid.get()
-        name = (
-            None
-            if self.player_name.get() == self.original_player_name
-            else self.player_name.get()
-        )
+        inputs = self._profile_inputs()
+        self.invalidate_profile_preview()
+        tid, sid, player, rival = inputs
+        player_arg = None if player == self.original_player_name else player
+        rival_arg = None if rival == self.original_rival_name else rival
+
+        def done(prepared):
+            if self.trainer is not trainer or self._profile_inputs() != inputs:
+                self.invalidate_profile_preview()
+                self.status.set("连接或资料输入已改变，请重新预览。")
+                return
+            self.profile_preview = prepared
+            self.profile_preview_inputs = inputs
+            old_player, old_rival = prepared["player"], prepared["rival"]
+            lines = [
+                f"玩家：{old_player['name'] or '未知编码（保留原字节）'} → {player}",
+                f"TID：{old_player['tid']} → {tid}；SID：{old_player['sid']} → {sid}",
+                f"劲敌：{old_rival['name'] or '未知编码（保留原字节）'} → {rival}",
+                "一次事务检查旧值并写入；玩家资料不会改写宝可梦原训练师资料。",
+            ]
+            self.profile_preview_detail.set("\n".join(lines))
+            self.profile_commit_button.configure(state="normal")
+
+        self.run("准备玩家与劲敌资料统一预览…",
+                 lambda: trainer.prepare_player_rival(tid, sid, player_arg, rival_arg), done)
+
+    def write_trainer_ids(self):
+        if self.busy or self.trainer is None or self.profile_preview is None:
+            return
+        trainer = self.trainer
+        prepared = self.profile_preview
+        inputs = self._profile_inputs()
+        if (self.trainer_snapshot is None or self.rival_snapshot is None
+                or inputs != self.profile_preview_inputs):
+            self.invalidate_profile_preview()
+            return
+        if not messagebox.askokcancel("统一资料写入预览",
+                                     self.profile_preview_detail.get() + "\n确认写入？",
+                                     parent=self.root):
+            return
+        self.invalidate_profile_preview()
 
         def job():
-            result = trainer.commit_trainer_profile(snap, tid, sid, name)
-            return result, trainer.snapshot_trainer()
+            result = trainer.commit_player_rival(prepared)
+            return result, trainer.snapshot_trainer(), trainer.snapshot_rival()
 
         def done(result):
+            if self.trainer is not trainer:
+                return
             self.apply_trainer_snapshot(result[1])
-            self.status.set(
-                "训练师资料已写入并读回核对，原值已备份。"
-                if result[0]["changed"]
-                else "没有变化，无需写入。"
-            )
+            self.apply_rival_snapshot(result[2])
+            backup = result[0].get("backup")
+            self.status.set(f"玩家与劲敌资料已读回核对；备份：{backup}" if backup
+                            else "没有变化，无需写入。")
 
-        self.run("校验并写入训练师资料…", job, done)
+        self.run("统一写入玩家与劲敌资料并读回核对…", job, done)
 
     def _build_boxes(self):
         tab = ttk.Frame(self.nb, padding=10)
@@ -1349,6 +1426,10 @@ class App:
             width=6,
         ).pack(side="left")
         self.button(row, "读取盒子", self.read_box, side="left", padx=8)
+        self.box_create_button = self.button(
+            row, "在选中空槽新建", self.create_selected_box_slot, side="left", padx=3
+        )
+        self.box_create_button.configure(state="disabled")
         self.button(row, "盒子改名", self.rename_box, side="left", padx=3)
         ttk.Label(row, text="移到第").pack(side="left", padx=(10, 2))
         self.box_move_target = tk.StringVar(value="2")
@@ -1504,6 +1585,7 @@ class App:
             f"关联存档：{Path(path).name if path else '尚未选择'}；锁定盒：{boxes}。本地盒锁不影响游戏自身操作。"
         )
         self.update_box_egg_button()
+        self.update_box_create_button()
         self.gift_page.update_actions()
 
     def update_box_egg_button(self):
@@ -1590,6 +1672,18 @@ class App:
         if str(slot) not in self.box_tree.selection():
             self.box_tree.selection_set(str(slot))
             self.select_box_mon()
+        if not self.box_snapshot["pokemon"][slot].species:
+            menu = tk.Menu(self.root, tearoff=0)
+            menu.add_command(
+                label="在此新建",
+                command=lambda: self.open_box_create_slot(slot),
+                state="normal" if self._box_slot_can_create(slot) else "disabled",
+            )
+            try:
+                menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                menu.grab_release()
+            return "break"
         refs = self.box_operation_references()
         menu = self.make_box_batch_menu(refs)
         try:
@@ -1886,6 +1980,38 @@ class App:
             if stale else f"已读取第 {snapshot['index'] + 1} 盒，尚未写入。"
         )
         self.update_box_egg_button()
+        self.update_box_create_button()
+
+    def _box_slot_can_create(self, slot):
+        snap = self.box_snapshot
+        return bool(
+            self.trainer is not None and snap is not None and not self.busy
+            and 0 <= slot < 30 and snap["index"] not in self.trainer.locked_boxes
+            and not snap["pokemon"][slot].species
+            and snap["raw"][slot * 58:(slot + 1) * 58] == bytes(58)
+        )
+
+    def update_box_create_button(self):
+        if not hasattr(self, "box_create_button"):
+            return
+        selected = self.box_tree.selection()
+        enabled = len(selected) == 1 and self._box_slot_can_create(int(selected[0]))
+        self.box_create_button.configure(state="normal" if enabled else "disabled")
+
+    def create_selected_box_slot(self):
+        selected = self.box_tree.selection()
+        if len(selected) == 1:
+            self.open_box_create_slot(int(selected[0]))
+
+    def open_box_create_slot(self, slot):
+        if not self._box_slot_can_create(slot):
+            self.status.set("所选盒槽不是可新建的全零空槽，或当前盒已锁定。")
+            return
+        if not self.discard_box_changes():
+            return
+        self.creation_page.open_for_target(
+            "pc_empty", box=self.box_snapshot["index"], slot=slot
+        )
 
     def clear_box_editor(self):
         if self.box_editor is not None and self.box_editor.winfo_exists():
@@ -2335,6 +2461,7 @@ class App:
                 self.box_selected_refs[(index, slot)] = self.trainer.box_reference(self.box_snapshot, slot)
         self.box_tree.last_toggle = False
         self.update_box_egg_button()
+        self.update_box_create_button()
         if not selected:
             self.clear_box_editor()
             return
@@ -2352,7 +2479,11 @@ class App:
         mon = self.box_snapshot["pokemon"][int(selected[0])]
         info = mon.describe(self.profile)
         if not mon.species:
-            self.box_detail.set("空槽")
+            self.box_detail.set(
+                "空槽"
+                if self._box_slot_can_create(slot)
+                else "空槽不可新建：盒子已锁定或槽位残留数据。"
+            )
             return
         self.edit_box_dialog(self.box_editor_host)
         nature = self.names.get("pers", {}).get(str(mon.pid % 25), str(mon.pid % 25))
@@ -2583,6 +2714,7 @@ class App:
         self.busy = True
         self.status.set(label)
         self.freeze_inputs()
+        self.creation_page.freeze()
         for b in self.buttons:
             b.configure(state="disabled")
 
@@ -2606,6 +2738,10 @@ class App:
             self.thaw_inputs()
             for b in self.buttons:
                 b.configure(state="normal")
+            self.creation_page.thaw()
+            self.profile_commit_button.configure(
+                state="normal" if self.profile_preview is not None else "disabled"
+            )
             if error:
                 self.last_error = error
                 self.status.set("操作未完成：" + error.splitlines()[0])
@@ -2622,6 +2758,7 @@ class App:
             self.close()
             return
         self.update_box_egg_button()
+        self.update_box_create_button()
         if self.icon_request_pending and not self.busy and self.trainer is not None:
             self.icon_request_pending = False
             self.load_icons()
@@ -2643,6 +2780,10 @@ class App:
             return
         old_mem = self.mem
         self.quest_page.invalidate()
+        self.creation_page.invalidate()
+        self.repel_window.invalidate()
+        self.daycare_window.invalidate()
+        self.invalidate_profile_preview()
         self.mem = None
         self.trainer = None
         self.gift_page.show_detail()
@@ -2656,9 +2797,11 @@ class App:
         self.party_form_original = None
         self.clear_box_editor()
         self.trainer_snapshot = None
+        self.rival_snapshot = None
         self.player_tid.set("")
         self.player_sid.set("")
         self.player_name.set("")
+        self.rival_name.set("")
         self.player_detail.set("连接已改变，请重新读取训练师资料。")
         self.box_snapshot = None
         self.box_staged_refs.clear()
@@ -2705,6 +2848,9 @@ class App:
         def done(result):
             self.mem, self.trainer, snap = result
             self.profile = self.trainer.profile
+            self.creation_page.invalidate()
+            self.creation_page.refresh()
+            self.creation_page.thaw()
             self.gift_page.show_detail()
             if self.box_save_path.get():
                 try:
@@ -2738,6 +2884,9 @@ class App:
             return
         if after is None and self.nb.select() == str(self.tab_trainer):
             self.read_trainer()
+            return
+        if after is None and self.nb.select() == str(self.creation_page.tab):
+            self.creation_page.refresh()
             return
         if after is None and not self.discard_party_changes():
             return
@@ -2797,6 +2946,15 @@ class App:
                     mon.level,
                 ),
             )
+        next_slot = len(snap["party"])
+        if next_slot < 6:
+            self.party_tree.enable_empty(
+                next_slot,
+                lambda slot=next_slot: self.open_party_create_slot(slot),
+                label="在此新建",
+            )
+            for slot in range(next_slot + 1, 6):
+                self.party_tree.label_empty(slot, "先填前一位")
         if snap["party"]:
             index = min(self.current_slot or 0, len(snap["party"]) - 1)
             self.party_tree.selection_set(str(index))
@@ -2916,6 +3074,16 @@ class App:
                 parent=self.root,
             )
         )
+
+    def open_party_create_slot(self, slot):
+        if self.busy or self.trainer is None or self.snapshot is None:
+            return
+        if slot != len(self.snapshot["party"]) or not 0 <= slot < 6:
+            self.status.set("队伍只允许在当前数量后的首个空位新建。")
+            return
+        if not self.discard_party_changes():
+            return
+        self.creation_page.open_for_target("party_empty", slot=slot)
 
     def select_mon(self, event=None, force=False):
         if self.busy:
@@ -3408,6 +3576,8 @@ class App:
             self.status.set("正在完成当前操作与备份记录，完成后关闭…")
             return
         self.closed = True
+        self.creation_page.invalidate()
+        self.daycare_window.invalidate()
         self.root.after_cancel(self.timer)
         if self.mem:
             self.mem.close()
@@ -3434,6 +3604,7 @@ class App:
             self.box_snapshot["index"] if self.box_snapshot is not None else None
         )
         had_trainer = self.trainer_snapshot is not None
+        had_rival = self.rival_snapshot is not None
         had_time = self.time_snapshot is not None
 
         def job():
@@ -3442,8 +3613,9 @@ class App:
                 self.trainer.snapshot_box(box_index) if box_index is not None else None
             )
             trainer_snap = self.trainer.snapshot_trainer() if had_trainer else None
+            rival_snap = self.trainer.snapshot_rival() if had_rival else None
             time_snap = self.trainer.snapshot_time() if had_time else None
-            return result, self.trainer.snapshot(pocket), box, trainer_snap, time_snap
+            return result, self.trainer.snapshot(pocket), box, trainer_snap, time_snap, rival_snap
 
         def done(result):
             self.apply_snapshot(result[1])
@@ -3453,6 +3625,11 @@ class App:
                 self.apply_trainer_snapshot(result[3])
             if result[4] is not None:
                 self.apply_time_snapshot(result[4])
+            if result[5] is not None:
+                self.apply_rival_snapshot(result[5])
+            self.repel_window.invalidate()
+            self.daycare_window.invalidate()
+            self.creation_page.invalidate()
             self.status.set("已恢复并读回核对；恢复动作也已保存备份。")
 
         self.run("检查备份与当前游戏数据…", job, done)

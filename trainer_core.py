@@ -10,10 +10,21 @@ from uuid import uuid4
 
 from box_data import BoxPokemon
 from distribution_catalog import load_distributions, usable_rows
+from daycare_data import read_daycare_snapshot, prepare_pending_patch
 from game_fields import (
     box_name_address,
     decode_box_name,
     encode_box_name,
+    read_repel_steps,
+    repel_layout,
+)
+from player_rival import (
+    RIVAL_POINTER,
+    RIVAL_OFFSET,
+    RIVAL_SIZE,
+    decode_rival_name,
+    encode_rival_name,
+    rival_address,
 )
 from clock_data import (
     decode_daily_event,
@@ -61,6 +72,9 @@ class Trainer:
         # A reference belongs to this connection's Trainer, even when a later
         # connection reads the same ROM and identical PC bytes.
         self.connection_generation = uuid4().hex
+        # A daycare pending-egg restore is intentionally scoped to the latest
+        # verified write on this live connection.
+        self._daycare_restore_capability = None
 
     def verify(self):
         self.verified = False
@@ -160,6 +174,217 @@ class Trainer:
             "name": decode_name(raw[:8]),
             "gender": raw[8],
         }
+
+    def snapshot_repel(self):
+        self.verify()
+        sha = self.profile["rom_sha256"]
+        address, save1_raw, source_raw = repel_layout(self.g, sha)
+        steps, raw = read_repel_steps(self.g, sha)
+        if steps > 250:
+            raise ValueError("当前喷雾步数超出已核验范围")
+        if (repel_layout(self.g, sha) != (address, save1_raw, source_raw)
+                or read_repel_steps(self.g, sha)[1] != raw):
+            raise ValueError("读取时喷雾步数或存档节指针已变化")
+        return {"address": address, "steps": steps, "raw": raw,
+                "pointer_address": SAVE_POINTER, "pointer_raw": save1_raw,
+                "source_pointer_address": 0x030053C0, "source_pointer_raw": source_raw,
+                "rom_sha256": sha,
+                "connection_generation": self.connection_generation}
+
+    def snapshot_daycare(self):
+        """Read the verified parents and pending flag without touching game RAM."""
+        self.verify()
+        daycare = read_daycare_snapshot(self.g, self.profile["rom_sha256"])
+        return {
+            "daycare": daycare,
+            "parents": daycare.parents,
+            "eligible": daycare.eligible,
+            "reason": daycare.reason,
+            "pending": daycare.pending,
+            "offspring_token": daycare.offspring_token,
+            "step_counter": daycare.step_counter,
+            "compatibility_score": daycare.compatibility_score,
+            "address": daycare.pending_address,
+            "before": daycare.pending_before,
+            "saveblock1_address": daycare.saveblock1_address,
+            "daycare_raw": daycare.daycare_raw,
+            "rom_sha256": self.profile["rom_sha256"],
+            "connection_generation": self.connection_generation,
+        }
+
+    def prepare_daycare_egg(self):
+        view = self.snapshot_daycare()
+        if self.snapshot()["in_battle"]:
+            raise ValueError("战斗中不能设置培育屋待领取蛋")
+        patch = prepare_pending_patch(view["daycare"])
+        return {**view, "after": patch.after, "new_pending": True}
+
+    def commit_daycare_egg(self, prepared):
+        self._check_field_preview(prepared, "培育屋待领取蛋")
+        current = self.snapshot_daycare()
+        if any(prepared.get(key) != value for key, value in current.items()):
+            raise ValueError("培育屋父母、步数或旗标已变化，请重新预览")
+        patch = prepare_pending_patch(current["daycare"])
+        if (prepared.get("address") != patch.address
+                or prepared.get("before") != patch.before
+                or prepared.get("after") != patch.after
+                or prepared.get("new_pending") is not True):
+            raise ValueError("培育屋待领取蛋预览补丁不一致")
+        snap = self.snapshot()
+        daycare = current["daycare"]
+        if snap["saveblock"] != daycare.saveblock1_address:
+            raise ValueError("培育屋 SaveBlock1 指针已变化，请重新预览")
+        snap["field_edit"] = True
+        snap["field_guards"] = [
+            (SAVE_POINTER, daycare.saveblock1_raw, daycare.saveblock1_raw),
+            (daycare.daycare_address, daycare.daycare_raw, daycare.daycare_raw),
+        ]
+        receipt = uuid4().hex
+        snap["daycare_context"] = {
+            "kind": "pending_egg",
+            "receipt": receipt,
+            "saveblock1_address": daycare.saveblock1_address,
+            "daycare_raw": daycare.daycare_raw.hex(),
+            "pending_address": patch.address,
+            "before": patch.before.hex(),
+            "after": patch.after.hex(),
+        }
+        # A later attempt supersedes the preceding event even if its outcome
+        # becomes uncertain; an old receipt must never clear a new pending egg.
+        self._daycare_restore_capability = None
+        result = self.commit(snap, [(patch.address, patch.before, patch.after)],
+                             "培育屋设置待领取蛋")
+        if result["changed"]:
+            backup = Path(result["backup"])
+            self._daycare_restore_capability = (
+                str(backup.resolve()), hashlib.sha256(backup.read_bytes()).hexdigest(),
+                receipt,
+            )
+        return result
+
+    def prepare_repel_steps(self, steps):
+        steps = integer(steps, 0, 250, "喷雾剩余步数")
+        return {**self.snapshot_repel(), "new_steps": steps,
+                "after": steps.to_bytes(2, "little")}
+
+    def commit_repel_steps(self, prepared):
+        self._check_field_preview(prepared, "喷雾")
+        current = self.snapshot_repel()
+        if any(prepared.get(key) != current[key] for key in current):
+            raise ValueError("喷雾步数或布局已变化，请重新预览")
+        steps = integer(prepared.get("new_steps"), 0, 250, "喷雾剩余步数")
+        if prepared.get("after") != steps.to_bytes(2, "little"):
+            raise ValueError("喷雾预览目标与步数不一致")
+        snap = self.snapshot()
+        snap["field_guards"] = self._pointer_guards(current) + [
+            (current["source_pointer_address"], current["source_pointer_raw"],
+             current["source_pointer_raw"])]
+        snap["field_edit"] = True
+        return self.commit(snap, [(current["address"], current["raw"],
+                                   prepared["after"])], "喷雾剩余步数")
+
+    def snapshot_rival(self):
+        self.verify()
+        sha = self.profile["rom_sha256"]
+        address, pointer_raw = rival_address(self.g, sha)
+        raw = self.g.read(address, RIVAL_SIZE)
+        try:
+            name = decode_rival_name(raw)
+            decode_error = ""
+        except ValueError as exc:
+            name = None
+            decode_error = str(exc)
+        if (rival_address(self.g, sha) != (address, pointer_raw)
+                or self.g.read(address, RIVAL_SIZE) != raw):
+            raise ValueError("读取时劲敌姓名或存档指针已变化")
+        return {"address": address, "raw": raw, "name": name,
+                "decode_error": decode_error,
+                "pointer_address": RIVAL_POINTER, "pointer_raw": pointer_raw,
+                "rom_sha256": sha,
+                "connection_generation": self.connection_generation}
+
+    def prepare_rival_name(self, name):
+        after = encode_rival_name(name)
+        snapshot = self.snapshot_rival()
+        if snapshot["decode_error"]:
+            raise ValueError("当前劲敌姓名异常，拒绝覆盖：" + snapshot["decode_error"])
+        return {**snapshot, "new_name": name, "after": after}
+
+    def commit_rival_name(self, prepared):
+        self._check_field_preview(prepared, "劲敌姓名")
+        current = self.snapshot_rival()
+        if current["decode_error"]:
+            raise ValueError("当前劲敌姓名异常，拒绝覆盖")
+        if any(prepared.get(key) != current[key] for key in current):
+            raise ValueError("劲敌姓名或布局已变化，请重新预览")
+        after = encode_rival_name(prepared.get("new_name"))
+        if prepared.get("after") != after or prepared.get("address") != current["address"]:
+            raise ValueError("劲敌姓名预览目标或地址不一致")
+        snap = self.snapshot()
+        snap["field_guards"] = self._pointer_guards(current)
+        snap["field_edit"] = True
+        return self.commit(snap, [(current["address"], current["raw"], after)],
+                           "劲敌姓名")
+
+    def prepare_player_rival(self, tid, sid, name, rival_name):
+        """Bind both names and player IDs to one connection and old-value view."""
+        player = self.snapshot_trainer()
+        rival = self.snapshot_rival()
+        player_after = player["raw"][:8] if name is None else encode_name(name, 8)
+        ids_after = struct.pack("<HH", integer(tid, 0, 65535, "玩家 TID"),
+                                integer(sid, 0, 65535, "玩家 SID"))
+        rival_after = (rival["raw"] if rival_name is None
+                       else encode_rival_name(rival_name))
+        if rival_name is not None and rival["decode_error"]:
+            raise ValueError("当前劲敌姓名异常，拒绝覆盖：" + rival["decode_error"])
+        return {"player": player, "rival": rival, "tid": tid, "sid": sid,
+                "name": name, "rival_name": rival_name,
+                "player_name_after": player_after,
+                "player_ids_after": ids_after,
+                "rival_after": rival_after,
+                "rom_sha256": self.profile["rom_sha256"],
+                "connection_generation": self.connection_generation}
+
+    def commit_player_rival(self, prepared):
+        self._check_field_preview(prepared, "玩家与劲敌资料")
+        player = prepared.get("player", {})
+        rival = prepared.get("rival", {})
+        current_player = self.snapshot_trainer()
+        current_rival = self.snapshot_rival()
+        if player != current_player or rival != current_rival:
+            raise ValueError("玩家或劲敌资料已变化，请重新预览")
+        name_after = (player["raw"][:8] if prepared.get("name") is None
+                      else encode_name(prepared.get("name"), 8))
+        ids_after = struct.pack("<HH", integer(prepared.get("tid"), 0, 65535, "玩家 TID"),
+                                integer(prepared.get("sid"), 0, 65535, "玩家 SID"))
+        rival_after = (rival["raw"] if prepared.get("rival_name") is None
+                       else encode_rival_name(prepared.get("rival_name")))
+        if prepared.get("rival_name") is not None and rival["decode_error"]:
+            raise ValueError("当前劲敌姓名异常，拒绝覆盖")
+        if (prepared.get("player_name_after") != name_after
+                or prepared.get("player_ids_after") != ids_after
+                or prepared.get("rival_after") != rival_after):
+            raise ValueError("玩家或劲敌预览目标不一致")
+        snap = self.snapshot()
+        snap["trainer"] = current_player
+        snap["field_guards"] = self._pointer_guards(current_rival)
+        snap["field_edit"] = True
+        return self.commit(snap, [
+            (player["address"], player["raw"][:8], name_after),
+            (player["address"] + 10, player["raw"][10:14], ids_after),
+            (rival["address"], rival["raw"], rival_after),
+        ], "玩家与劲敌资料")
+
+    def _check_field_preview(self, prepared, label):
+        if (not isinstance(prepared, dict)
+                or prepared.get("connection_generation") != self.connection_generation
+                or prepared.get("rom_sha256") != self.profile["rom_sha256"]):
+            raise ValueError(f"{label}预览来自旧连接或另一ROM，请重新预览")
+
+    @staticmethod
+    def _pointer_guards(view):
+        return [(view["pointer_address"], view["pointer_raw"],
+                 view["pointer_raw"])]
 
     def snapshot_time(self):
         self.verify()
@@ -1165,10 +1390,10 @@ class Trainer:
             raise ValueError("队伍数量不能作为无变化补丁提交")
         if not {"BATCH", "ROMCRC", "CRCBATCH"} <= self.g.capabilities:
             raise ValueError("请重新加载新版 mercury_bridge.lua 后再写入")
-        if (
-            "time" in snap or "daily_time" in snap
-        ) and "BATCHVERIFY" not in self.g.capabilities:
+        if ("time" in snap or "daily_time" in snap) and "BATCHVERIFY" not in self.g.capabilities:
             raise ValueError("时间相关写入需要重新加载 0.2.10 的 mercury_bridge.lua")
+        if snap.get("field_edit") and "BATCHVERIFY" not in self.g.capabilities:
+            raise ValueError("动态字段写入需要重新加载支持 BATCHVERIFY 的 mercury_bridge.lua")
         if snap.get("time_apply_absolute"):
             # The user's inputs are absolute H:M:S. Capture the latest expected
             # value after slow ROM checks, then compare inside the callback.
@@ -1301,6 +1526,7 @@ class Trainer:
             or bag_sort
             or box_edit
             or box_name_edit
+            or snap.get("field_edit")
             or count_changes
             or any(
                 a < PARTY + 600 and a + len(before) > PARTY for a, before, _ in changes
@@ -1324,11 +1550,21 @@ class Trainer:
             ]
         guards += snap.get("box_batch_guards", [])
         guards += snap.get("box_name_guards", [])
+        guards += snap.get("field_guards", [])
         # Also reject a ROM swap between Python validation and the callback.
         guards += [
             (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
             for s in self.profile["signatures"]
         ]
+        # SaveBlock1 is already guarded by the base transaction; a rival edit
+        # adds the same guard. Reject conflicting views before deduplicating.
+        by_range = {}
+        for address, before, after in guards:
+            key = (address, len(before))
+            if key in by_range and by_range[key] != (before, after):
+                raise ValueError("写入期间布局指针已变化，请重新预览")
+            by_range[key] = (before, after)
+        guards = list(dict.fromkeys(guards))
         large_boxes = any(
             self.is_box_patch(a, len(b)) and len(b) == 1740 for a, b, _ in patches
         )
@@ -1361,6 +1597,8 @@ class Trainer:
                 "save2": snap["money_save2"],
                 "key": snap["money_key_raw"].hex(),
             }
+        if "daycare_context" in snap:
+            record["daycare_context"] = snap["daycare_context"]
 
         def save_record():
             temp = path.with_suffix(".tmp")
@@ -1375,7 +1613,7 @@ class Trainer:
             self.check_box_patches_unlocked(patches)
             if large_boxes:
                 self.g.batch(guards + changes, verify=True, large_boxes=True)
-            elif "time" in snap or "daily_time" in snap:
+            elif "time" in snap or "daily_time" in snap or snap.get("field_edit"):
                 # Time may tick between network requests; read back in the same
                 # emulator callback, while no game frame can advance.
                 self.g.batch(guards + changes, verify=True)
@@ -1396,7 +1634,9 @@ class Trainer:
         return {"changed": True, "backup": str(path)}
 
     def restore(self, path):
-        record = json.loads(Path(path).read_text(encoding="utf-8"))
+        backup_path = Path(path)
+        record_bytes = backup_path.read_bytes()
+        record = json.loads(record_bytes.decode("utf-8"))
         if (
             record.get("schema") != 1
             or record.get("rom_sha256") != self.profile["rom_sha256"]
@@ -1404,7 +1644,58 @@ class Trainer:
             raise ValueError("备份格式或 ROM 版本不匹配")
         if record.get("status") != "verified":
             raise ValueError("此备份的写入未被确认完成，不能自动恢复；请先导出诊断核对")
+        daycare_context = record.get("daycare_context")
+        daycare_restore = None
+        if daycare_context is not None:
+            capability = self._daycare_restore_capability
+            if (capability is None
+                    or capability[0] != str(backup_path.resolve())):
+                raise ValueError("培育屋备份只可在原连接中恢复最近一次已确认写入")
+            self._daycare_restore_capability = None
+            if (capability[1] != hashlib.sha256(record_bytes).hexdigest()
+                    or not isinstance(daycare_context, dict)
+                    or capability[2] != daycare_context.get("receipt")):
+                raise ValueError("培育屋备份只可在原连接中恢复最近一次已确认写入")
+            required = {"kind", "receipt", "saveblock1_address", "daycare_raw",
+                        "pending_address", "before", "after"}
+            if set(daycare_context) != required or daycare_context["kind"] != "pending_egg":
+                raise ValueError("培育屋备份依赖字段异常")
+            try:
+                stored_daycare = bytes.fromhex(daycare_context["daycare_raw"])
+                stored_before = bytes.fromhex(daycare_context["before"])
+                stored_after = bytes.fromhex(daycare_context["after"])
+            except (TypeError, ValueError) as exc:
+                raise ValueError("培育屋备份字节格式异常") from exc
+            if (len(stored_daycare) != 0x11B
+                    or len(stored_before) != 1
+                    or len(stored_after) != 1
+                    or stored_before[0] & 0x40
+                    or stored_after != bytes((stored_before[0] | 0x40,))
+                    or type(daycare_context["saveblock1_address"]) is not int
+                    or type(daycare_context["pending_address"]) is not int
+                    or daycare_context["pending_address"]
+                    != daycare_context["saveblock1_address"] + 0xF2C
+                    or len(record.get("patches", [])) != 1
+                    or record["patches"][0] != {
+                        "address": daycare_context["pending_address"],
+                        "before": daycare_context["before"],
+                        "after": daycare_context["after"],
+                    }):
+                raise ValueError("培育屋备份旗标补丁或地址异常")
+            daycare_restore = self.snapshot_daycare()["daycare"]
+            if (daycare_restore.saveblock1_address != daycare_context["saveblock1_address"]
+                    or daycare_restore.pending_address != daycare_context["pending_address"]
+                    or daycare_restore.daycare_raw != stored_daycare
+                    or daycare_restore.pending_before != stored_after):
+                raise ValueError("培育屋父母、步数、后代标记或待领旗标已变化，拒绝恢复")
         snap = self.snapshot()
+        if daycare_restore is not None:
+            snap["field_edit"] = True
+            snap["field_guards"] = [
+                (SAVE_POINTER, struct.pack("<I", daycare_context["saveblock1_address"]),
+                 struct.pack("<I", daycare_context["saveblock1_address"])),
+                (daycare_restore.daycare_address, stored_daycare, stored_daycare),
+            ]
         patches = []
         for item in record.get("patches", []):
             address = item["address"]
@@ -1422,6 +1713,13 @@ class Trainer:
                 and len(before) == len(after) == 1
                 and 0 <= before[0] <= 6
                 and 0 <= after[0] <= 6
+            )
+            valid = valid or (
+                daycare_restore is not None
+                and address == daycare_restore.pending_address
+                and len(before) == len(after) == 1
+                and before == stored_after
+                and after == stored_before
             )
             valid = valid or (len(before) == 6 and address == snap["saveblock"] + 0x290)
             if len(before) in (4, 6) and address == snap["saveblock"] + 0x290:
@@ -1448,6 +1746,28 @@ class Trainer:
                     for index in range(25)
                 )
             )
+            if not valid and len(before) == 2:
+                repel = self.snapshot_repel()
+                if address == repel["address"]:
+                    if (int.from_bytes(before, "little") > 250
+                            or int.from_bytes(after, "little") > 250):
+                        raise ValueError("喷雾备份数值超出已核验范围")
+                    snap.setdefault("field_guards", []).extend(
+                        self._pointer_guards(repel) + [
+                            (repel["source_pointer_address"],
+                             repel["source_pointer_raw"], repel["source_pointer_raw"])
+                        ]
+                    )
+                    snap["field_edit"] = True
+                    valid = True
+            if not valid and len(before) == RIVAL_SIZE:
+                rival = self.snapshot_rival()
+                if address == rival["address"]:
+                    decode_rival_name(before)
+                    decode_rival_name(after)
+                    snap.setdefault("field_guards", []).extend(self._pointer_guards(rival))
+                    snap["field_edit"] = True
+                    valid = True
             if valid and len(before) == 9:
                 decode_box_name(before)
                 decode_box_name(after)

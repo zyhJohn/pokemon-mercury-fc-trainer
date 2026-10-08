@@ -125,8 +125,26 @@ def verify_repel(rom: bytes, state: bytes, save: bytes) -> dict:
     value, raw = read_repel_steps(memory, sha)
     engine = RomCPU(rom, state)
     actual_pointer = engine.call(0x0806E454, layout["variable_id"])
-    if actual_pointer != layout["address"]:
+    save1_before = engine.read(layout["saveblock1_pointer"], 4)
+    save1 = struct.unpack("<I", save1_before)[0]
+    if actual_pointer != save1 + layout["saveblock1_offset"] or actual_pointer != layout["address"]:
         raise ValueError("喷雾变量ROM解析地址不一致")
+    source_before = engine.read(layout["save_section_source_pointer"], 4)
+    source = struct.unpack("<I", source_before)[0]
+    if source != save1 + layout["source_offset"] or source + layout["save_section_offset"] != actual_pointer:
+        raise ValueError("喷雾变量与section2源指针关系不一致")
+    # The observed address is a sample value. The ROM getter follows SB1+1040.
+    save1_shifted = save1 + 0x1000
+    engine.write(layout["saveblock1_pointer"], struct.pack("<I", save1_shifted))
+    try:
+        if engine.call(0x0806E454, layout["variable_id"]) != save1_shifted + layout["saveblock1_offset"]:
+            raise ValueError("喷雾变量未随SaveBlock1指针重定位")
+        if engine.read(layout["save_section_source_pointer"], 4) != source_before:
+            raise ValueError("仅移动SaveBlock1指针时section2源意外改变")
+        if source + layout["save_section_offset"] == save1_shifted + layout["saveblock1_offset"]:
+            raise ValueError("隔离指针干预未触发section2源关系守卫")
+    finally:
+        engine.write(layout["saveblock1_pointer"], save1_before)
     if engine.call(0x0806E568, layout["variable_id"]) != value:
         raise ValueError("喷雾变量ROM读取值不一致")
     hook = struct.unpack_from("<I", rom, layout["decrement_entry"] - 0x08000000 + 4)[0]
@@ -147,16 +165,32 @@ def verify_repel(rom: bytes, state: bytes, save: bytes) -> dict:
         (250, 249, 0),
     ):
         isolated = RomCPU(rom, state)
-        isolated.call(0x0806E584, layout["variable_id"], steps)
+        patch = prepare_repel_steps_patch(memory, sha, steps)
+        if patch.address != layout["address"] or patch.before != raw or len(patch.after) != 2:
+            raise ValueError("喷雾补丁范围或前值错误")
+        section_ptr = struct.unpack("<I", isolated.read(layout["save_section_source_pointer"], 4))[0]
+        if section_ptr + layout["save_section_offset"] != patch.address:
+            raise ValueError("隔离CPU喷雾存档节源指针不一致")
+        neighbourhood = isolated.read(patch.address - 2, 6)
+        isolated.write(patch.address, patch.after)
+        if isolated.call(0x0806E568, layout["variable_id"]) != steps:
+            raise ValueError("两字节干预后游戏VarGet未读到预期值")
+        if isolated.read(section_ptr + layout["save_section_offset"], 2) != patch.after:
+            raise ValueError("两字节干预后section2源与变量不一致")
+        if isolated.call(0x0806E584, layout["variable_id"], steps) != 1:
+            raise ValueError("ROM VarSet 未接受喷雾变量")
+        if isolated.read(patch.address, 2) != patch.after:
+            raise ValueError("ROM VarSet 与两字节补丁结果不一致")
         result = isolated.call(layout["decrement_entry"])
         after = isolated.call(0x0806E568, layout["variable_id"])
         if (after, result) != (expected, expired):
             raise ValueError(f"喷雾{steps}步递减/到期路径不符")
-        patch = prepare_repel_steps_patch(memory, sha, steps)
-        if patch.address != layout["address"] or patch.before != raw:
-            raise ValueError("喷雾补丁范围或前值错误")
+        if isolated.read(section_ptr + layout["save_section_offset"], 2) != expected.to_bytes(2, "little"):
+            raise ValueError("递减后section2源与变量不一致")
+        if isolated.read(patch.address - 2, 2) != neighbourhood[:2] or isolated.read(patch.address + 2, 2) != neighbourhood[4:]:
+            raise ValueError("喷雾干预更改了相邻变量")
     section_ptr = memory.r32(layout["save_section_source_pointer"])
-    if section_ptr + layout["save_section_offset"] != layout["address"]:
+    if section_ptr != save1 + layout["source_offset"] or section_ptr + layout["save_section_offset"] != layout["address"]:
         raise ValueError("喷雾存档节源地址不一致")
     sectors = []
     for sector in range(min(32, len(save) // 0x1000)):
@@ -172,6 +206,9 @@ def verify_repel(rom: bytes, state: bytes, save: bytes) -> dict:
         "rom_sha256": sha,
         "variable_id": hex(layout["variable_id"]),
         "address": hex(layout["address"]),
+        "saveblock1_pointer": hex(layout["saveblock1_pointer"]),
+        "saveblock1_offset": hex(layout["saveblock1_offset"]),
+        "saveblock1_shift_moves_variable_address": True,
         "width": layout["width"],
         "sample_value": value,
         "edit_range": [layout["edit_min"], layout["edit_max"]],
@@ -183,7 +220,7 @@ def verify_repel(rom: bytes, state: bytes, save: bytes) -> dict:
         "save_section": 2,
         "save_section_offset": hex(layout["save_section_offset"]),
         "matching_save_sectors": [hex(offset) for offset in sectors],
-        "scope": "Actual ROM VarGet/Set, item parameter and step/expiry routines in isolated CPU, plus current state/save correspondence; live messages and save/reload remain untested.",
+        "scope": "Actual ROM variable pointer/Get/Set, item parameter and step/expiry routines after isolated two-byte patches; section-2 source and neighboring bytes checked before/after. State/save samples captured at different times had matching field bytes; live messages and save/reload remain untested.",
     }
 
 

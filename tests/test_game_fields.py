@@ -6,6 +6,7 @@ from game_fields import (
     encode_box_name,
     prepare_box_name_patch,
     prepare_repel_steps_patch,
+    repel_layout,
     read_box_name,
     read_repel_steps,
 )
@@ -18,6 +19,10 @@ class FakeMemory:
         self.raw = raw
 
     def read(self, address, size):
+        if address == 0x03005008 and size == 4:
+            return (self.address - 0x1040).to_bytes(4, "little")
+        if address == 0x030053C0 and size == 4:
+            return (self.address - 0x50).to_bytes(4, "little")
         if address != self.address or size != len(self.raw):
             raise AssertionError("unexpected read")
         return self.raw
@@ -81,6 +86,13 @@ class BoxNameTests(unittest.TestCase):
         unknown = FakeMemory(0x0202656C, b"\xfb\x00")
         with self.assertRaises(ValueError):
             prepare_repel_steps_patch(unknown, self.sha, 0)
+
+    def test_repel_follows_relocated_saveblock_and_section_source(self):
+        memory = FakeMemory(0x0202756C, b"\x64\x00")
+        self.assertEqual(repel_layout(memory, self.sha)[0], 0x0202756C)
+        self.assertEqual(read_repel_steps(memory, self.sha)[0], 100)
+        self.assertEqual(prepare_repel_steps_patch(memory, self.sha, 250).address,
+                         0x0202756C)
 
 
 if __name__ == "__main__":

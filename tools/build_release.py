@@ -48,6 +48,8 @@ def main():
         "sidequests.json",
         "sidequests_layout.json",
         "game_fields_layout.json",
+        "player_rival_layout.json",
+        "daycare_layout.json",
         "distributions.json",
         "pokemon_creation_layout.json",
     ]:
@@ -72,6 +74,13 @@ def main():
         "cross-machine-handoff.md",
         "requirements-audit-2026-10-05.md",
         "requirements-audit-2026-10-06.md",
+        "requirements-audit-2026-10-07.md",
+        "requirements-audit-2026-10-08.md",
+        "field-edit-evidence-2026-10-08.md",
+        "daycare-audit-2026-10-08.md",
+        "encounter-method-audit-2026-10-08.md",
+        "player-avatar-audit-2026-10-08.md",
+        "daily-events-audit-2026-10-08.md",
         "distribution-compatibility.md",
     ]:
         source = ROOT / "docs" / name
