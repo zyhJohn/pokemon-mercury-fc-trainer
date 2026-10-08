@@ -39,7 +39,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_external_adaptations_rebuild_identically_in_both_profiles(self):
         rows = [r for r in self.catalog["rows"] if r["source_group"] in ("火红叶绿适配", "其他版本适配")]
-        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(rows), 3)
         for row in rows:
             self.assertEqual(row["compatibility"], "verified")
             self.assertEqual(row["template"]["native_format"], "adapted_gen3_pk3_to_mercury_fc_box58")
@@ -57,7 +57,7 @@ class DistributionTests(unittest.TestCase):
         self.assertIsNone(pending[0]["template"])
         for profile in self.profiles:
             choices = usable_rows(self.catalog, profile)
-            self.assertEqual(len(choices), 6)
+            self.assertEqual(len(choices), 7)
             self.assertNotIn(pending[0], choices)
 
     def test_reject_modified_template_hash(self):

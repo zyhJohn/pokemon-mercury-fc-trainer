@@ -53,6 +53,7 @@ PARTY_COUNT = 0x02024029
 SAVE_POINTER = 0x03005008
 
 _NATIVE_GIFT_HASHES = {
+    "gen3-rsefl-10-aniv-bulbasaur-11b5": "b4a569af9b5ce409c410823e726f4ad6e4a788acc22da413deda5e92de31cc34",
     "mercury-home-165": "183bddac03ade1d14792a47b3800172346bc108a5d5a996498c415755a7ba7b2",
     "mercury-home-496": "1ead7463ec5ac2557c1b4bd4fda58984957f51d1023b3b0d8110ec0fffdda765",
     "mercury-home-1411": "c932a81176fb4810c3bc187aedfdf6fbd922878de0ee337e38eede6f33e3c27b",

@@ -81,6 +81,10 @@ def main():
         "encounter-method-audit-2026-10-08.md",
         "player-avatar-audit-2026-10-08.md",
         "daily-events-audit-2026-10-08.md",
+        "player-avatar-init-audit-2026-10-08.md",
+        "encounter-postprocess-audit-2026-10-08.md",
+        "weekday-script-audit-2026-10-08.md",
+        "distribution-pending-audit-2026-10-08.md",
         "distribution-compatibility.md",
     ]:
         source = ROOT / "docs" / name

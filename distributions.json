@@ -181,6 +181,127 @@
       }
     },
     {
+      "id": "gen3-rsefl-10-aniv-bulbasaur-11b5",
+      "title": "10 ANIV 妙蛙种子（火红/叶绿适用个体）",
+      "source_group": "火红叶绿适配",
+      "source_url": "https://github.com/projectpokemon/EventsGallery/blob/master/Released/Gen%203/ENG/10th%20Anniversary%20Celebration/Journey%20Across%20America/Top%2020/RSEFL%20-%2010%20ANIV%20Bulbasaur%20%2811B5%29%20%28ENG%29.pk3",
+      "compatibility": "verified",
+      "reason": "第三世代个体数据已转换为本版58字节盒子记录，两版配置均通过结构验证；原版游戏版本、当前PP及队伍即时能力值不存入本版PC，预览显示来源。此模板不等于原版神秘卡片或官方来源合法性。",
+      "distribution_date": null,
+      "source_fields": {
+        "source_format": "gen3_pk3",
+        "source_games": "RSE/FRLG",
+        "source_game_version_code": 2,
+        "source_species_internal": 1,
+        "source_national_dex": 1,
+        "source_move_ids": [
+          230,
+          74,
+          235,
+          76
+        ],
+        "source_held_id": 0,
+        "language": 2,
+        "pid": 2892714678,
+        "otid": 10,
+        "nickname": "BULBASAUR",
+        "ot_name": "10 ANIV",
+        "level": 70,
+        "moves": [
+          230,
+          74,
+          235,
+          76
+        ],
+        "ball": 4,
+        "met_location": 255,
+        "met_level": 70,
+        "ivs": [
+          31,
+          6,
+          1,
+          24,
+          21,
+          26
+        ],
+        "evs": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "source_sha256": "9206d065784efdbe538ffdd44950342f1f1e9eea3baeb26a09b9f4d5236a492d",
+        "source_size": 80,
+        "source_current_pp": [
+          20,
+          40,
+          5,
+          10
+        ],
+        "converted_current_pp": [
+          20,
+          20,
+          5,
+          10
+        ],
+        "conversion_losses": [
+          "原版游戏版本",
+          "PC不保存的当前PP与队伍即时能力值",
+          "当前PP源[20, 40, 5, 10]→本版取出[20, 20, 5, 10]"
+        ]
+      },
+      "template": {
+        "native_format": "adapted_gen3_pk3_to_mercury_fc_box58",
+        "native_pc_hex": "b6526bac0a000000bccfc6bcbbcdbbcfccff026aa2a100bbc8c3d0000100000080430500004604e628b10e1300000000000000ff4680df045c35",
+        "sha256": "b4a569af9b5ce409c410823e726f4ad6e4a788acc22da413deda5e92de31cc34",
+        "species": 1,
+        "pid": 2892714678,
+        "otid": 10,
+        "nickname": "BULBASAUR",
+        "ot_name": "10 ANIV",
+        "moves": [
+          230,
+          74,
+          235,
+          76
+        ],
+        "pp_ups": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ivs": [
+          31,
+          6,
+          1,
+          24,
+          21,
+          26
+        ],
+        "evs": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": 0,
+        "friendship": 70,
+        "ball": 4,
+        "met_location": 255,
+        "met_level": 70,
+        "ot_gender": 1,
+        "egg": false,
+        "experience": 344960,
+        "level": 70,
+        "ability_slot": 0
+      }
+    },
+    {
       "id": "gen3-rsefl-10-aniv-celebi-0bf5",
       "title": "10 ANIV 时拉比（火红/叶绿适用个体）",
       "source_group": "火红叶绿适配",
@@ -402,7 +523,7 @@
       "source_group": "火红叶绿待核",
       "source_url": "https://github.com/projectpokemon/EventsGallery/blob/master/Released/Gen%203/JPN/%E3%83%9D%E3%82%B1%E3%83%91%E3%83%BC%E3%82%AF/Eggs%202005/JoySpot/FRLG%20-%20%E3%83%9D%E3%82%B1%E3%83%91%E3%83%BC%E3%82%AF%20Cacnea%20%28F6925C85%29%20%28JPN%29.pk3",
       "compatibility": "pending",
-      "reason": "原版日文个体的昵称含本版姓名编码尚未核验的假名，且其来源/奖章打包位非零；不替换文字或丢弃来源位来制造可投放模板。",
+      "reason": "原版日文昵称尚无本版无损编码证据，且PK3命运邂逅标志（+76 bit31）为1，本版PC格式未证能保留；不改名或丢弃该标志来制造可投放模板。",
       "distribution_date": null,
       "source_fields": {
         "source_format": "gen3_pk3",
@@ -418,7 +539,8 @@
         ],
         "language": 1,
         "nickname_raw_hex": "5b9a6851ff3100032431",
-        "ribbon_word": 2147483648
+        "ribbon_word": 2147483648,
+        "fateful_encounter": true
       },
       "template": null
     }

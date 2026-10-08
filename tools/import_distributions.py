@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from box_data import BoxPokemon
 from name_codec import decode_name
-from pokemon_creation import create_box_pokemon
+from pokemon_creation import box_to_party_pokemon, create_box_pokemon
 from pokemon_data import experience_for_level
 
 WIKI_URL = "https://sum-light.github.io/azoth-wiki/distribution/"
@@ -27,6 +27,17 @@ OUTPUT = ROOT / "distributions.json"
 GALLERY = "https://github.com/projectpokemon/EventsGallery/blob/master/"
 GALLERY_RAW = "https://raw.githubusercontent.com/projectpokemon/EventsGallery/master/"
 EXTERNAL = (
+    {
+        "id": "gen3-rsefl-10-aniv-bulbasaur-11b5",
+        "title": "10 ANIV 妙蛙种子（火红/叶绿适用个体）",
+        "group": "火红叶绿适配",
+        "path": "Released/Gen 3/ENG/10th Anniversary Celebration/Journey Across America/Top 20/RSEFL - 10 ANIV Bulbasaur (11B5) (ENG).pk3",
+        "sha256": "9206d065784efdbe538ffdd44950342f1f1e9eea3baeb26a09b9f4d5236a492d",
+        "source_dex": 1,
+        "source_species": 1,
+        "source_moves": (230, 74, 235, 76),
+        "source_held": 0,
+    },
     {
         "id": "gen3-rsefl-10-aniv-celebi-0bf5",
         "title": "10 ANIV 时拉比（火红/叶绿适用个体）",
@@ -265,6 +276,11 @@ def parse_pk3(raw, event, profiles, index):
     if results[0] != results[1]:
         raise ValueError("V1.0/V1.2 转换结果不一致")
     native = results[0]
+    source_pp = list(raw[52:56])
+    converted_pp = list(box_to_party_pokemon(profiles[0], native).raw[52:56])
+    losses = ["原版游戏版本", "PC不保存的当前PP与队伍即时能力值"]
+    if source_pp != converted_pp:
+        losses.append(f"当前PP源{source_pp}→本版取出{converted_pp}")
     source_url = GALLERY + quote(event["path"], safe="/")
     return {
         "id": event["id"],
@@ -296,7 +312,9 @@ def parse_pk3(raw, event, profiles, index):
             "evs": fields["evs"],
             "source_sha256": hashlib.sha256(raw).hexdigest(),
             "source_size": len(raw),
-            "conversion_losses": ["原版游戏版本", "PC不保存的当前PP与队伍即时能力值"],
+            "source_current_pp": source_pp,
+            "converted_current_pp": converted_pp,
+            "conversion_losses": losses,
         },
         "template": {
             "native_format": "adapted_gen3_pk3_to_mercury_fc_box58",
@@ -328,7 +346,7 @@ def import_external(profiles, index):
         "source_group": "火红叶绿待核",
         "source_url": GALLERY + quote(event["path"], safe="/"),
         "compatibility": "pending",
-        "reason": "原版日文个体的昵称含本版姓名编码尚未核验的假名，且其来源/奖章打包位非零；不替换文字或丢弃来源位来制造可投放模板。",
+        "reason": "原版日文昵称尚无本版无损编码证据，且PK3命运邂逅标志（+76 bit31）为1，本版PC格式未证能保留；不改名或丢弃该标志来制造可投放模板。",
         "distribution_date": None,
         "source_fields": {
             "source_format": "gen3_pk3",
@@ -340,6 +358,7 @@ def import_external(profiles, index):
             "language": raw[18],
             "nickname_raw_hex": raw[8:18].hex(),
             "ribbon_word": struct.unpack_from("<I", raw, 76)[0],
+            "fateful_encounter": bool(struct.unpack_from("<I", raw, 76)[0] & 0x80000000),
         },
         "template": None,
     })

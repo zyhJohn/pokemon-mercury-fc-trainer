@@ -54,9 +54,9 @@ class GiftTransactionTests(unittest.TestCase):
                 self.assertEqual(self.client.read(addresses[24], 58), b"\0" * 58)
                 self.sent.clear()
 
-    def test_all_six_curated_templates_prepare_on_both_rom_versions(self):
+    def test_all_curated_templates_prepare_on_both_rom_versions(self):
         rows = [r for r in load_distributions()["rows"] if r["compatibility"] == "verified"]
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 7)
         for crc in ("b4af11c8", "4755f497"):
             with self.subTest(crc=crc):
                 self.use_version(crc)
@@ -64,6 +64,31 @@ class GiftTransactionTests(unittest.TestCase):
                     prepared = self.trainer.prepare_gift_box(row["id"], 0)
                     self.assertEqual(prepared["template"]["id"], row["id"])
                     self.assertEqual(len(prepared["record"]), 58)
+
+    def test_adapted_bulbasaur_pc_and_party_roundtrip_with_declared_pp_change(self):
+        gift_id = "gen3-rsefl-10-aniv-bulbasaur-11b5"
+        row = next(r for r in load_distributions()["rows"] if r["id"] == gift_id)
+        expected = bytes.fromhex(row["template"]["native_pc_hex"])
+        self.assertEqual(row["source_fields"]["source_current_pp"], [20, 40, 5, 10])
+        self.assertEqual(row["source_fields"]["converted_current_pp"], [20, 20, 5, 10])
+        for crc in ("b4af11c8", "4755f497"):
+            with self.subTest(crc=crc):
+                addresses = self.use_version(crc)
+                prepared = self.trainer.prepare_gift_box(gift_id, 0, slot=7)
+                result = self.trainer.commit_gift_box(prepared)
+                self.assertEqual(self.client.read(addresses[0] + 7 * 58, 58), expected)
+                self.trainer.restore(result["backup"])
+                self.assertEqual(self.client.read(addresses[0] + 7 * 58, 58), bytes(58))
+                self.memory.put(PARTY_COUNT, b"\0")
+                self.memory.put(PARTY, bytes(600))
+                prepared = self.trainer.prepare_gift_party(gift_id)
+                self.assertEqual(prepared["party_pokemon"].pp, (20, 20, 5, 10))
+                result = self.trainer.commit_gift_party(prepared)
+                self.assertEqual(self.client.read(PARTY_COUNT, 1), b"\1")
+                self.assertEqual(self.client.read(PARTY, 100), prepared["record"])
+                self.trainer.restore(result["backup"])
+                self.assertEqual(self.client.read(PARTY_COUNT, 1), b"\0")
+                self.assertEqual(self.client.read(PARTY, 100), bytes(100))
 
     def test_gift_rejects_occupied_locked_stale_or_forged_preview(self):
         addresses = self.use_version("4755f497")
