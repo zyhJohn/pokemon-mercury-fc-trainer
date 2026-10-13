@@ -45,7 +45,7 @@ class PPGenderTests(unittest.TestCase):
             source.edit(pp_ups=[4] * 4, move_data=profile["moves"])
 
     def test_pc_pp_ups_change_one_byte_and_keep_move_packing(self):
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             profile = load_profile(crc=crc)
             raw = bytearray(packed_box())
             raw[39:44] = sum(
@@ -100,7 +100,7 @@ class PPGenderTests(unittest.TestCase):
         self.assertGreaterEqual(result & 255, 16)
 
     def test_both_profiles_gender_pp_write_restore_and_stale_protection(self):
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             profile = load_profile(crc=crc)
             memory = Memory()
             install_profile(memory, profile)

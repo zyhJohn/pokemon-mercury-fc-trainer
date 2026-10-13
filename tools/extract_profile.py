@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from name_codec import decode_name
-from rom_versions import release, V12_ADDRESSES
+from rom_versions import release, ADDRESS_MAPS
 
 SIGNATURES = [
     (0x80000AC, 4),
@@ -69,7 +69,7 @@ SIGNATURES = [
 
 def extract(rom, catalog):
     sha, (version, _, _) = release(rom)
-    relocations = V12_ADDRESSES if version == "1.2" else {}
+    relocations = ADDRESS_MAPS[version]
 
     def resolve_address(a):
         return relocations.get(a, a)
@@ -84,7 +84,7 @@ def extract(rom, catalog):
     moves = struct.unpack_from("<I", rom, 0x1CC)[0]
     profile = {
         "name": f"Mercury FC {version} / verified "
-        + ("2026-10-05" if version == "1.2" else "2026-10-02"),
+        + {"1.0": "2026-10-02", "1.2": "2026-10-05", "1.33": "2026-10-13"}[version],
         "rom_sha256": sha,
         "rom_crc32": f"{zlib.crc32(rom) & 0xFFFFFFFF:08x}",
         "layout": "fixed-gaem-plaintext",
@@ -382,7 +382,7 @@ def extract(rom, catalog):
             ]
         ],
     }
-    if version == "1.2":
+    if version in ("1.2", "1.33"):
         # The wrapper now supports a ROM-controlled virtual clock. Include its
         # larger body and the physical RTC converter without adding guard count.
         profile["time"]["signatures"][0] = {

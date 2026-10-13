@@ -11,6 +11,7 @@ from uuid import uuid4
 from box_data import BoxPokemon
 from distribution_catalog import load_distributions, usable_rows
 from game_fields import (
+    box_name_pointer_table,
     box_name_address,
     decode_box_name,
     encode_box_name,
@@ -357,10 +358,7 @@ class Trainer:
         index = integer(box_index, 0, 24, "盒子位置")
         address = box_name_address(self.profile["rom_sha256"], index)
         pointer_address = 0x03005418
-        table = {
-            "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821": 0x09DD7210,
-            "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896": 0x09DDEBCC,
-        }[self.profile["rom_sha256"]]
+        table = box_name_pointer_table(self.profile["rom_sha256"])
         table_address = table + 4 * index
         table_raw = self.g.read(table_address, 4)
         pointer_raw = self.g.read(pointer_address, 4)

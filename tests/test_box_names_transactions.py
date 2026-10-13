@@ -15,6 +15,7 @@ class BoxNameTransactionTests(unittest.TestCase):
         table = {
             "b4af11c8": 0x09DD7210,
             "4755f497": 0x09DDEBCC,
+            "518482f7": 0x09DE4AE0,
         }[crc]
         memory.put(0x03005418, (0x02031294).to_bytes(4, "little"))
         for index in range(25):
@@ -23,7 +24,7 @@ class BoxNameTransactionTests(unittest.TestCase):
         return memory, trainer
 
     def test_both_versions_rename_backup_restore_and_guards(self):
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             with self.subTest(crc=crc), tempfile.TemporaryDirectory() as folder:
                 memory, trainer = self.setup_name(folder, crc)
                 prepared = trainer.prepare_box_name(24, "新盒A")

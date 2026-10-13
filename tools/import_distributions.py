@@ -263,7 +263,7 @@ def parse_pk3(raw, event, profiles, index):
             raise ValueError("本版转换后特性或结构发生变化")
         results.append(record.raw)
     if results[0] != results[1]:
-        raise ValueError("V1.0/V1.2 转换结果不一致")
+        raise ValueError("受支持ROM版本的转换结果不一致")
     native = results[0]
     source_url = GALLERY + quote(event["path"], safe="/")
     return {
@@ -348,7 +348,7 @@ def import_external(profiles, index):
 
 def main():
     raw = urlopen(Request(WIKI_URL, headers={"User-Agent": "MercuryFCTrainer/1"}), timeout=30).read()
-    profiles = [json.loads((ROOT / name).read_text(encoding="utf-8")) for name in ("rom_profile.json", "rom_profile_v12.json")]
+    profiles = [json.loads((ROOT / name).read_text(encoding="utf-8")) for name in ("rom_profile.json", "rom_profile_v12.json", "rom_profile_v133.json")]
     index = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
     rows = parse_wiki(raw, profiles, index)
     external = import_external(profiles, index)

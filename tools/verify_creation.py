@@ -18,8 +18,8 @@ from tools.read_state import read_state
 from tools.verify_rom_routines import RomCPU
 
 
-COMPRESS = {"1.0": 0x09D54A94, "1.2": 0x09D58854}
-DECOMPRESS = {"1.0": 0x09D54868, "1.2": 0x09D58628}
+COMPRESS = {"1.0": 0x09D54A94, "1.2": 0x09D58854, "1.33": 0x09D54A94}
+DECOMPRESS = {"1.0": 0x09D54868, "1.2": 0x09D58628, "1.33": 0x09D54868}
 
 
 def version_for(profile):

@@ -7,7 +7,7 @@ from rom_versions import load_profile
 class CreationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.profiles = [load_profile(crc=crc) for crc in ("b4af11c8", "4755f497")]
+        cls.profiles = [load_profile(crc=crc) for crc in ("b4af11c8", "4755f497", "518482f7")]
 
     def make(self, profile, **changes):
         values = dict(

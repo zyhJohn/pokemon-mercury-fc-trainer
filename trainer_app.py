@@ -850,7 +850,7 @@ class App:
                     if self.profile["time"]["daily_event"].get(
                         "future_blocks_refresh", True
                     )
-                    else "；处于未来。V1.2 的跨日判断已改变，可按需预览日期修复。"
+                    else "；处于未来。此版本的跨日判断已改变，可按需预览日期修复。"
                 )
             else:
                 daily_text += "；没有未来日期异常。"
@@ -862,7 +862,7 @@ class App:
             var.set(str(value))
         note = "（游戏已开启上午/下午对调）" if snap["invert_ampm"] else ""
         if snap.get("virtual_clock"):
-            note += "；当前为 V1.2 游戏内虚拟时钟，修改 RTC 文件不会覆盖它"
+            note += "；当前为游戏内虚拟时钟，修改 RTC 文件不会覆盖它"
         if snap["weekday_mismatch"]:
             note += "；游戏星期缓存与日期不一致"
         if snap["rtc_error"]:
@@ -993,7 +993,7 @@ class App:
         if snap["weekday_mismatch"]:
             text += "；RTC 星期字节异常，写入时会按日期校正"
         if "virtual_clock" in self.rtc_profile.get("time", {}):
-            text += "\nV1.2 若启用游戏内虚拟时钟，RTC 文件校准不会覆盖该时钟设置。"
+            text += "\n支持的新版ROM若启用游戏内虚拟时钟，RTC 文件校准不会覆盖该时钟设置。"
         self.rtc_detail.set(text)
         self.rtc_target.set(snap["current"].strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -3467,6 +3467,10 @@ def main():
         root.withdraw()
     app = App(root)
     if smoke:
+        from rom_versions import RELEASES
+
+        for _, crc, _ in RELEASES.values():
+            load_profile(crc=crc, root=resource_path("rom_profile.json").parent)
         root.update_idletasks()
         app.close()
     else:

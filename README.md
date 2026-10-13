@@ -1,16 +1,20 @@
 # 宝可梦水银 FC 修改器
 
-面向《宝可梦水银FC～致150年后的你》Version 1.0 / 1.2 和 mGBA 0.10.5 的本地修改器。按完整ROM身份自动选择已核验配置，通过 Lua 编辑运行中的游戏内存；RTC 日历通过关闭游戏后的 `.sav` 尾部编辑。未知版本拒绝写入。
+面向《宝可梦水银FC～致150年后的你》Version 1.0 / 1.2 / 1.33 和 mGBA 0.10.5 的本地修改器。按完整ROM身份自动选择已核验配置，通过 Lua 编辑运行中的游戏内存；RTC 日历通过关闭游戏后的 `.sav` 尾部编辑。未知版本拒绝写入。
 
 ## 下载与发行日志
 
-推荐使用 [v0.2.14 最新发行版](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.14)，下载附件 `MercuryTrainer-0.2.14-portable.zip` 并完整解压。GitHub 自动生成的 `Source code` 是源码，不是便携程序。
+推荐使用 [v0.2.15 最新发行版](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.15)，下载附件 `MercuryTrainer-0.2.15-portable.zip` 并完整解压。GitHub 自动生成的 `Source code` 是源码，不是便携程序。
 
 - [全部历史发行版](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)：0.2.0～0.2.13 的原始便携包，以及一个未编号早期包的独立归档。
 - [发行日志](CHANGELOG.md)：各版更新、支持范围、源码提交和下载入口；每个 Release 附有更新说明与 ZIP 的 SHA-256。
-- 0.2.0～0.2.10 支持已核验的水银 V1.0；从 0.2.11 起增加 V1.2。未知 ROM 拒绝写入。
+- 0.2.0～0.2.10 支持已核验的水银 V1.0；从 0.2.11 起增加 V1.2，从0.2.15起增加V1.33。未知 ROM 拒绝写入。
 
 历史包保留原始字节，包内 README 记录当时的状态；当前功能以本页和对应发行日志为准。未编号包没有记录源码提交，只用于历史归档，不作为最新版。发布包不含 ROM、存档、模拟器、个人备份或图像缓存。
+
+## 0.2.15：水银FC V1.33适配
+
+新增V1.33独立配置与代码地址，保留V1.0/V1.2支持。新ROM全部20组核心函数、支线96项、PC创建2768合法组合和6份礼物模板、盒名/喷雾研究对照通过；适配PP/性别、批量盒子、盒名及条件恢复，未知版本继续拒绝。下载并完整解压本版后重载mercury_bridge.lua，再连接V1.33；备份不得跨版恢复。详见[适配证据及实机边界](docs/rom-v133-compatibility.md)和[发行日志](docs/releases/v0.2.15.md)。旧版存档仅用作隔离夹具，V1.33实际旧存档加载及写后保存重载仍待实机验收。
 
 ## 0.2.14：支线、配信与盒子批量操作
 
@@ -118,7 +122,7 @@ python tools/build_release.py
 
 历史包补发登记与复核方法见[跨电脑交接中的发行说明](docs/cross-machine-handoff.md#历史便携包与发行日志)。`tools/publish_releases.py` 默认只在本地核对原包；显式添加 `--publish` 才上传并发布，按登记表检查标签和资产哈希，已有同名但不同内容的资产会停止处理。
 
-当前程序版本0.2.13；发布包`build-info.json`记录源码提交、是否存在未提交改动和文件哈希，便于换电脑后核对版本。历史 Releases 的标签对应原包记录的提交；未编号归档另行说明来源限制。V1.2提供游戏内虚拟时钟时，修改RTC尾部不会覆盖它；时间页会提示当前时钟来源。当前修订原型在`docs/prototypes/mercury-editor-review-v2.html`，其中批量盒子/礼物流程仍为演示；空槽创建尚未开放。
+当前程序版本0.2.15；发布包`build-info.json`记录源码提交、是否存在未提交改动和文件哈希，便于换电脑后核对版本。历史 Releases 的标签对应原包记录的提交；未编号归档另行说明来源限制。V1.2/V1.33提供游戏内虚拟时钟时，修改RTC尾部不会覆盖它；时间页会提示当前时钟来源。历史修订原型在`docs/prototypes/mercury-editor-review-v2.html`；正式版已接入双栏批量与礼物投放，通用空槽自定义创建表单仍未开放。
 
 | 文件 | 职责 |
 |---|---|
@@ -132,7 +136,7 @@ python tools/build_release.py
 | `pokemon_selector.py` / `scrolling_form.py` | 图形槽位选择与可滚动数值表单 |
 | `name_codec.py` | 有限姓名字符往返，未知编码原样保留 |
 | `sprite_images.py` / `spinda_images.py` | 从当前ROM解码图像及花纹，不分发游戏图像 |
-| `rom_profile.json` / `rom_profile_v12.json` | 各版本ROM提取的数值表和特征 |
+| `rom_profile.json` / `rom_profile_v12.json` / `rom_profile_v133.json` | 各版本ROM提取的数值表和特征 |
 | `rom_versions.py` | 精确版本身份、配置选择与隔离研究地址映射 |
 | `wiki_catalog.py` / `catalog.json` | 离线资料解析与搜索 |
 | `tools/extract_profile.py` | 从相同 SHA-256 ROM 复现数值表 |
@@ -144,7 +148,7 @@ python tools/build_release.py
 
 原方案包括完善名称与搜索、扩展背包/宝可梦编辑、IV/EV 与训练师编辑实测、增加招式/PP 和盒子编辑、减少帧间写入风险、完善打包与逆向文档。本轮优先完成闪光/IV/EV、特性与招式、口袋校正和备份事务；后续顺序：
 
-最新需求及验收顺序见 [下一阶段路线](docs/next-stage-plan.md)。原16项为5项实现、3项部分完成、8项待实施；追加3项盒子需求后共19项：7项实现、3项部分完成、9项待实施，详见[需求及恢复核查](docs/requirements-audit-2026-10-05.md)。正常已确认事务仅在当前值匹配时条件恢复；未确认写入不能自动逆写，内存事务备份不等于完整存档。换电脑先读 [跨电脑交接](docs/cross-machine-handoff.md) 和 [开发状态](docs/development-status.md)。
+最新需求及验收顺序见 [下一阶段路线](docs/next-stage-plan.md)。19项最新完成与部分完成范围见[需求及恢复核查](docs/requirements-audit-2026-10-07.md)；本轮只适配V1.33，没有开放原先待核验字段。正常已确认事务仅在当前值匹配时条件恢复；未确认写入不能自动逆写，内存事务备份不等于完整存档。换电脑先读 [跨电脑交接](docs/cross-machine-handoff.md) 和 [开发状态](docs/development-status.md)。
 
 `docs/逆向后记/` 保留旧记录，包含已被推翻的假设；以 [已验证布局](docs/verified-layout.md) 为当前实现依据。旧版 README 归档为 `docs/逆向后记/README-旧版实现.md`。
 

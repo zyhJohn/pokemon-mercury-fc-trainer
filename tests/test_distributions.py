@@ -21,7 +21,7 @@ class DistributionTests(unittest.TestCase):
         cls.catalog = load_distributions()
         cls.profiles = [
             json.loads((ROOT / filename).read_text(encoding="utf-8"))
-            for filename in ("rom_profile.json", "rom_profile_v12.json")
+            for filename in ("rom_profile.json", "rom_profile_v12.json", "rom_profile_v133.json")
         ]
 
     def test_native_home_keys_match_complete_records(self):

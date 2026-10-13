@@ -29,7 +29,7 @@ class GiftTransactionTests(unittest.TestCase):
         return profile["storage"]["box_addresses"]
 
     def test_official_gift_each_version_one_backup_and_conditional_restore(self):
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             with self.subTest(crc=crc):
                 addresses = self.use_version(crc)
                 gift_id = "mercury-home-165"
@@ -57,7 +57,7 @@ class GiftTransactionTests(unittest.TestCase):
     def test_all_six_curated_templates_prepare_on_both_rom_versions(self):
         rows = [r for r in load_distributions()["rows"] if r["compatibility"] == "verified"]
         self.assertEqual(len(rows), 6)
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             with self.subTest(crc=crc):
                 self.use_version(crc)
                 for row in rows:
@@ -97,7 +97,7 @@ class GiftTransactionTests(unittest.TestCase):
             "ot_name": "TEST",
             "moves": [33, 0, 0, 0],
         }
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             with self.subTest(crc=crc):
                 addresses = self.use_version(crc)
                 with self.assertRaisesRegex(ValueError, "原始记录"):
@@ -132,7 +132,7 @@ class GiftTransactionTests(unittest.TestCase):
         self.assertEqual(self.client.read(PARTY, 100), b"\0" * 100)
 
     def test_party_gift_append_and_explicit_full_replacement_both_versions(self):
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             with self.subTest(crc=crc):
                 self.use_version(crc)
                 self.memory.put(PARTY_COUNT, b"\0")

@@ -7,7 +7,7 @@ from pathlib import Path
 from box_data import BoxPokemon
 
 CATALOG_PATH = Path(__file__).with_name("distributions.json")
-PROFILES = ("rom_profile.json", "rom_profile_v12.json")
+PROFILES = ("rom_profile.json", "rom_profile_v12.json", "rom_profile_v133.json")
 
 
 def load_distributions(path=CATALOG_PATH):

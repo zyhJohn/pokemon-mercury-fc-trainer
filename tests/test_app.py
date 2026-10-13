@@ -88,10 +88,16 @@ class AppTests(unittest.TestCase):
         self.assertTrue(list(Path(self.temp.name).glob("*.json")))
 
     def test_connect_automatically_selects_v12_and_keeps_offline_rtc_profile(self):
+        self.check_connected_release("4755f497", "1.2")
+
+    def test_connect_automatically_selects_v133_and_keeps_offline_rtc_profile(self):
+        self.check_connected_release("518482f7", "1.33")
+
+    def check_connected_release(self, crc, version):
         from rom_versions import load_profile
         from tests.test_rom_versions import install_profile
 
-        profile = load_profile(crc="4755f497")
+        profile = load_profile(crc=crc)
         memory = Memory()
         install_profile(memory, profile)
         memory.put(SAVE_POINTER, struct.pack("<I", 0x0202552C))
@@ -103,8 +109,8 @@ class AppTests(unittest.TestCase):
         old_rtc = self.app.rtc_profile
         with patch("trainer_app.MemClient", return_value=memory):
             self.app.connect()
-        self.assertEqual(self.app.profile["rom_crc32"], "4755f497")
-        self.assertIn("1.2", self.root.title())
+        self.assertEqual(self.app.profile["rom_crc32"], crc)
+        self.assertIn(version, self.root.title())
         self.assertIs(self.app.rtc_profile, old_rtc)
         self.assertTrue(self.app.icon_request_pending)
         self.assertEqual(memory.writes, 0)

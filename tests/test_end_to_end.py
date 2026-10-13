@@ -23,7 +23,7 @@ class EndToEndTests(unittest.TestCase):
         from tests.test_box import packed_box
         from box_data import BoxPokemon
 
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             profile = load_profile(crc=crc)
             install_profile(self.memory, profile)
             trainer = Trainer(self.client, profile, self.temp.name)
@@ -94,19 +94,24 @@ class EndToEndTests(unittest.TestCase):
             self.trainer.commit_box_sort(prepared)
         self.assertEqual(self.memory.data, before)
 
-    def test_v12_party_pc_values_and_sort_use_new_guards_over_lua_tcp(self):
+    def test_new_versions_party_pc_values_and_sort_use_new_guards_over_lua_tcp(self):
+        for crc in ("4755f497", "518482f7"):
+            with self.subTest(crc=crc):
+                self.exercise_release_fields(crc)
+
+    def exercise_release_fields(self, crc):
         from rom_versions import load_profile
         from tests.test_rom_versions import install_profile
         from tests.test_box import packed_box
 
-        self.profile = load_profile(crc="4755f497")
+        self.profile = load_profile(crc=crc)
         install_profile(self.memory, self.profile)
         self.trainer = Trainer(self.client, self.profile, self.temp.name)
         snapshot = self.trainer.snapshot()
         patches, _ = self.trainer.edit_pokemon(
             snapshot, 0, shiny=True, egg=True, ivs=[31] * 6
         )
-        result = self.trainer.commit(snapshot, patches, "V1.2 party")
+        result = self.trainer.commit(snapshot, patches, "supported release party")
         self.assertTrue(Pokemon(self.client.read(PARTY, 100)).egg)
         self.trainer.restore(result["backup"])
         self.assertEqual(self.client.read(PARTY, 100), sample().raw)
@@ -115,7 +120,7 @@ class EndToEndTests(unittest.TestCase):
         result = self.trainer.commit(
             snapshot,
             self.trainer.edit_values(snapshot, 100, 735, 5, 220),
-            "V1.2 values",
+            "supported release values",
         )
         self.assertEqual(self.trainer.snapshot()["coins"], 735)
         self.trainer.restore(result["backup"])
@@ -125,7 +130,7 @@ class EndToEndTests(unittest.TestCase):
         self.memory.put(pocket["address"], raw)
         snapshot = self.trainer.snapshot()
         result = self.trainer.commit(
-            snapshot, self.trainer.sort_bag(snapshot), "V1.2 sort"
+            snapshot, self.trainer.sort_bag(snapshot), "supported release sort"
         )
         self.assertEqual(
             self.client.read(pocket["address"], 4), struct.pack("<HH", 4, 164)
@@ -140,7 +145,7 @@ class EndToEndTests(unittest.TestCase):
         self.memory.put(address, raw)
         snapshot = self.trainer.snapshot_box(24)
         patches, _ = self.trainer.edit_box(snapshot, 0, egg=True)
-        result = self.trainer.commit_box(patches, "V1.2 PC egg")
+        result = self.trainer.commit_box(patches, "supported release PC egg")
         self.trainer.restore(result["backup"])
         self.assertEqual(self.client.read(address, 58), raw)
 

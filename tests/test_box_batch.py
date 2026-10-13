@@ -14,7 +14,7 @@ class BoxBatchTests(unittest.TestCase):
         return test_box_sort_lock.BoxSortLockTests().setup_release(folder, crc)
 
     def test_750_reference_reverse_move_is_one_backup_and_recoverable(self):
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             with tempfile.TemporaryDirectory() as folder:
                 memory, trainer, addresses = self.setup_release(folder, crc)
                 original = [

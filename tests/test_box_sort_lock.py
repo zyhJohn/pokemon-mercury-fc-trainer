@@ -37,7 +37,7 @@ class BoxSortLockTests(unittest.TestCase):
         )
 
     def test_full_750_global_stable_sort_and_whole_restore_both_versions(self):
-        for crc in ("b4af11c8", "4755f497"):
+        for crc in ("b4af11c8", "4755f497", "518482f7"):
             with self.subTest(crc=crc), tempfile.TemporaryDirectory() as folder:
                 memory, trainer, addresses = self.setup_release(folder, crc)
                 originals = []

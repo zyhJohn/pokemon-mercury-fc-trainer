@@ -32,7 +32,7 @@ def _source80(
     ot_gender, egg, ability_slot, experience,
 ):
     if profile.get("rom_sha256") not in _layout()["rom_sha256"]:
-        raise ValueError("创建仅支持已核对的水银 FC V1.0/V1.2 ROM 配置")
+        raise ValueError("创建仅支持已核对的水银 FC V1.0/V1.2/V1.33 ROM 配置")
     species = integer(species, 1, 65535, "内部物种编号")
     metadata = profile["species"].get(str(species))
     if metadata is None:
@@ -154,7 +154,7 @@ def create_box_pokemon(
 def box_to_party_pokemon(profile, record):
     """Derive the game withdrawal's complete 100 bytes from a valid PC record."""
     if profile.get("rom_sha256") not in _layout()["rom_sha256"]:
-        raise ValueError("队伍转换仅支持已核对的水银 FC V1.0/V1.2 ROM 配置")
+        raise ValueError("队伍转换仅支持已核对的水银 FC V1.0/V1.2/V1.33 ROM 配置")
     pc = record if isinstance(record, BoxPokemon) else BoxPokemon(record)
     if pc.species == 0:
         raise ValueError("全零或无物种PC空槽不能转换为队伍个体")

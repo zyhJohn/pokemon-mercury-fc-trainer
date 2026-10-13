@@ -1,4 +1,4 @@
-"""Compare PP limits, packed PP Ups and gender edits with both supported ROMs.
+"""Compare PP limits, packed PP Ups and gender edits with each supported ROM.
 
 Runs only an isolated CPU. The state is a fixture, not live-save migration proof.
 """

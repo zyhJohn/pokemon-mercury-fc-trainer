@@ -27,6 +27,13 @@ class FieldPatch:
     after: bytes
 
 
+def box_name_pointer_table(rom_sha256: str) -> int:
+    release = _LAYOUT["verified_releases"].get(rom_sha256)
+    if release is None:
+        raise ValueError("盒名仅支持已核验的ROM")
+    return release["pointer_table"]
+
+
 def box_name_address(rom_sha256: str, index: int) -> int:
     """Return the ROM's box-index mapping, for a supported exact ROM SHA."""
     if rom_sha256 not in _LAYOUT["verified_releases"]:
