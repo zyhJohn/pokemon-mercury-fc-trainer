@@ -223,8 +223,22 @@
       "size": 12538587,
       "notes": "docs/releases/v0.2.14.md",
       "prerelease": false,
-      "latest": true,
+      "latest": false,
       "built_at": "2026-10-07T00:47:53.404259+08:00"
+    },
+    {
+      "version": "0.2.15",
+      "tag": "v0.2.15",
+      "name": "v0.2.15 · 水银FC V1.33适配",
+      "target_commit": "a9ed2c8d192053d9e857dcee22c1b493746faf0e",
+      "source_commit": "a9ed2c8d192053d9e857dcee22c1b493746faf0e",
+      "asset_name": "MercuryTrainer-0.2.15-portable.zip",
+      "sha256": "1bb048207ef443072f496277db94991bcc7016de01b16d2064ad5e43729ad93a",
+      "size": 11856093,
+      "notes": "docs/releases/v0.2.15.md",
+      "prerelease": false,
+      "latest": true,
+      "built_at": "2026-10-14T00:01:43.108181+08:00"
     }
   ]
 }

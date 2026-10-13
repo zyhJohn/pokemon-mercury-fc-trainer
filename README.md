@@ -6,7 +6,7 @@
 
 推荐使用 [v0.2.15 最新发行版](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases/tag/v0.2.15)，下载附件 `MercuryTrainer-0.2.15-portable.zip` 并完整解压。GitHub 自动生成的 `Source code` 是源码，不是便携程序。
 
-- [全部历史发行版](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)：0.2.0～0.2.13 的原始便携包，以及一个未编号早期包的独立归档。
+- [全部历史发行版](https://github.com/zyhJohn/pokemon-mercury-fc-trainer/releases)：0.2.0起各版便携包，以及一个未编号早期包的独立归档。
 - [发行日志](CHANGELOG.md)：各版更新、支持范围、源码提交和下载入口；每个 Release 附有更新说明与 ZIP 的 SHA-256。
 - 0.2.0～0.2.10 支持已核验的水银 V1.0；从 0.2.11 起增加 V1.2，从0.2.15起增加V1.33。未知 ROM 拒绝写入。
 
