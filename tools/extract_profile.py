@@ -67,7 +67,7 @@ SIGNATURES = [
 ]
 
 
-def extract(rom, catalog):
+def extract(rom, catalog, *, read_observer=None):
     sha, (version, _, _) = release(rom)
     relocations = ADDRESS_MAPS[version]
 
@@ -78,10 +78,12 @@ def extract(rom, catalog):
         a = resolve_address(a)
         if not 0x08000000 <= a <= 0x08000000 + len(rom) - n:
             raise ValueError("ROM 表地址或长度超出范围")
+        if read_observer is not None:
+            read_observer(a, n)
         return rom[a - 0x08000000 : a - 0x08000000 + n]
 
-    base = struct.unpack_from("<I", rom, 0x1BC)[0]
-    moves = struct.unpack_from("<I", rom, 0x1CC)[0]
+    base = struct.unpack("<I", read(0x080001BC, 4))[0]
+    moves = struct.unpack("<I", read(0x080001CC, 4))[0]
     profile = {
         "name": f"Mercury FC {version} / verified "
         + {"1.0": "2026-10-02", "1.2": "2026-10-05", "1.33": "2026-10-13"}[version],
@@ -418,13 +420,27 @@ def main():
     parser.add_argument("rom", type=Path)
     parser.add_argument("--catalog", type=Path, default=Path("catalog.json"))
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--compatibility-manifest", type=Path,
+                        help="生成或更新此精确基线的兼容范围摘要（不包含ROM内容）")
     args = parser.parse_args()
-    result = extract(
-        args.rom.read_bytes(), json.loads(args.catalog.read_text(encoding="utf-8"))
-    )
+    rom = args.rom.read_bytes()
+    catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
+    result = extract(rom, catalog)
     args.output.write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    if args.compatibility_manifest:
+        from rom_compatibility import SCHEMA, build_manifest_entry
+        if args.compatibility_manifest.exists():
+            manifest = json.loads(args.compatibility_manifest.read_text(encoding="utf-8"))
+            if manifest.get("schema") != SCHEMA:
+                raise ValueError("兼容契约格式不正确")
+        else:
+            manifest = {"schema": SCHEMA, "releases": {}}
+        manifest["releases"][result["rom_sha256"]] = build_manifest_entry(rom, result, catalog)
+        args.compatibility_manifest.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
     print("Profile regenerated from verified ROM")
 
 

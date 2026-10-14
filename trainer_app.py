@@ -41,7 +41,7 @@ from scrolling_form import ScrollingForm
 from spinda_images import read_spinda_assets, spinda_png
 from sprite_images import icon_species, read_icons
 from trainer_core import Trainer
-from rom_versions import load_profile
+from rom_versions import load_profile, rom_identity
 from version import APP_VERSION
 from wiki_catalog import load_catalog, search_rows
 from sidequest_data import load_catalog as load_sidequests
@@ -70,6 +70,7 @@ class App:
         self.closed = False
         self.close_requested = False
         self.last_error = ""
+        self.connection_diagnostic = None
         self.snapshot_at = None
         self.results = queue.Queue()
         self.current_slot = None
@@ -1480,7 +1481,7 @@ class App:
         if not path:
             return
         try:
-            locked = self.box_preferences.load(self.profile["rom_sha256"], path)
+            locked = self.box_preferences.load(rom_identity(self.profile), path)
         except (OSError, ValueError) as exc:
             messagebox.showerror("未关联盒锁", str(exc), parent=self.root)
             return
@@ -1536,7 +1537,7 @@ class App:
             locked.discard(index)
         try:
             self.box_preferences.save(
-                self.profile["rom_sha256"], self.box_save_path.get(), locked
+                rom_identity(self.profile), self.box_save_path.get(), locked
             )
         except (OSError, ValueError) as exc:
             messagebox.showerror("盒锁未保存", str(exc), parent=self.root)
@@ -2642,6 +2643,17 @@ class App:
         ):
             return
         old_mem = self.mem
+        diagnostic = {
+            "started_at": datetime.now().astimezone().isoformat(),
+            "stage": "disconnect_previous",
+            "outcome": "pending",
+            "port": None,
+            "capabilities": [],
+            "rom_crc32": None,
+            "error": "",
+        }
+        self.connection_diagnostic = diagnostic
+        self.root.title(f"水银 FC 修改器 · {APP_VERSION} · 未连接")
         self.quest_page.invalidate()
         self.mem = None
         self.trainer = None
@@ -2673,34 +2685,63 @@ class App:
         self.box_detail.set("请连接后重新读取盒子。")
 
         def job():
-            if old_mem:
-                old_mem.close()
-            mem = MemClient()
+            mem = None
             try:
+                if old_mem:
+                    old_mem.close()
+                diagnostic["stage"] = "bridge_connect"
+                mem = MemClient()
+                diagnostic["port"] = getattr(mem, "port", None)
                 mem.connect()
+                diagnostic["port"] = getattr(mem, "port", None)
+                diagnostic["capabilities"] = sorted(mem.capabilities)
                 base = (
                     Path(sys.executable).parent
                     if getattr(sys, "frozen", False)
                     else Path(__file__).resolve().parent
                 )
+                diagnostic["stage"] = "bridge_capabilities"
                 if "ROMCRC" not in mem.capabilities:
                     raise ValueError(
                         "请重新加载 mercury_bridge.lua，以完整 ROM CRC32 识别版本"
                     )
-                profile = load_profile(
-                    crc=mem.command("ROMCRC").decode("ascii").lower(),
-                    root=resource_path("rom_profile.json").parent,
+                diagnostic["stage"] = "rom_crc32"
+                diagnostic["rom_crc32"] = (
+                    mem.command("ROMCRC").decode("ascii").strip().lower()
                 )
+                diagnostic["stage"] = "profile_selection"
+                profile = load_profile(
+                    crc=diagnostic["rom_crc32"],
+                    root=resource_path("rom_profile.json").parent,
+                    memory=mem,
+                )
+                diagnostic["rom_identity"] = rom_identity(profile)
+                diagnostic["compatibility"] = profile.get("compatibility")
+                diagnostic["stage"] = "trainer_verify"
                 trainer = Trainer(mem, profile, base / "backups")
                 trainer.verify()
+                diagnostic["stage"] = "snapshot"
                 snap = trainer.snapshot()
                 if self.closed:
                     mem.close()
                     raise IOError("窗口已关闭")
+                diagnostic["stage"] = "complete"
+                diagnostic["outcome"] = "success"
                 return mem, trainer, snap
-            except Exception:
-                mem.close()
+            except Exception as exc:
+                if mem is not None and diagnostic["stage"] == "bridge_connect":
+                    diagnostic["port"] = getattr(mem, "port", None)
+                    diagnostic["capabilities"] = sorted(mem.capabilities)
+                diagnostic["outcome"] = "failed"
+                diagnostic["error"] = str(exc) or type(exc).__name__
+                report = getattr(exc, "compatibility_report", None)
+                if report is not None:
+                    diagnostic["compatibility"] = report
+                if mem is not None:
+                    mem.close()
                 raise
+            finally:
+                diagnostic["finished_at"] = datetime.now().astimezone().isoformat()
 
         def done(result):
             self.mem, self.trainer, snap = result
@@ -2709,15 +2750,16 @@ class App:
             if self.box_save_path.get():
                 try:
                     self.trainer.locked_boxes = self.box_preferences.load(
-                        self.profile["rom_sha256"], self.box_save_path.get()
+                        rom_identity(self.profile), self.box_save_path.get()
                     )
                 except (ValueError, OSError) as exc:
                     self.box_save_path.set("")
                     messagebox.showerror("未加载盒锁", str(exc), parent=self.root)
             self.update_box_lock()
-            self.root.title(
-                f"水银 FC 修改器 · {APP_VERSION} · {self.profile['name'].split(' / ')[0]}"
-            )
+            label = self.profile["name"].split(" / ")[0]
+            if self.profile.get("compatibility"):
+                label = f"兼容基线：{label} · ROM CRC32 {self.profile['rom_crc32']}"
+            self.root.title(f"水银 FC 修改器 · {APP_VERSION} · {label}")
             self.pocket.set("道具")
             self.apply_snapshot(snap)
             self.request_icons()
@@ -3344,16 +3386,30 @@ class App:
         if not path:
             return
         snap = self.snapshot
+        diagnostic = self.connection_diagnostic or {}
+        active_profile = (
+            self.profile if self.mem is not None and self.trainer is not None else None
+        )
         data = {
             "schema": 1,
             "exported_at": datetime.now().astimezone().isoformat(),
             "snapshot_at": self.snapshot_at,
             "last_error": self.last_error,
             "status": self.status.get(),
-            "bridge_capabilities": sorted(self.mem.capabilities) if self.mem else [],
-            "connection_port": getattr(self.mem, "port", None),
-            "rom_profile": self.profile["name"],
-            "layout": self.profile["layout"],
+            "bridge_capabilities": diagnostic.get(
+                "capabilities", sorted(self.mem.capabilities) if self.mem else []
+            ),
+            "connection_port": diagnostic.get("port", getattr(self.mem, "port", None)),
+            "rom_crc32": diagnostic.get(
+                "rom_crc32", active_profile.get("rom_crc32") if active_profile else None
+            ),
+            "connection_diagnostic": diagnostic or None,
+            "rom_profile": active_profile["name"] if active_profile else None,
+            "layout": active_profile["layout"] if active_profile else None,
+            "rom_identity": rom_identity(active_profile) if active_profile else None,
+            "compatibility": diagnostic.get(
+                "compatibility", active_profile.get("compatibility") if active_profile else None
+            ),
         }
         if snap is not None:
             data.update(
@@ -3471,6 +3527,9 @@ def main():
 
         for _, crc, _ in RELEASES.values():
             load_profile(crc=crc, root=resource_path("rom_profile.json").parent)
+        from rom_compatibility import validate_contracts
+
+        validate_contracts(resource_path("rom_profile.json").parent)
         root.update_idletasks()
         app.close()
     else:

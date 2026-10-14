@@ -1,4 +1,4 @@
-"""Exact supported releases; never infer compatibility from a game title."""
+"""Audited layout baselines; compatibility is checked independently of labels."""
 
 import hashlib
 import json
@@ -224,15 +224,32 @@ def release(rom):
     return sha, RELEASES[sha]
 
 
-def load_profile(rom=None, *, crc=None, root=None):
+def rom_identity(profile):
+    """Actual ROM identity; layout SHA remains available to existing modules."""
+    return profile.get("rom_identity") or profile["rom_sha256"]
+
+
+def runtime_compatibility_check(memory, profile, *, full=True):
+    from rom_compatibility import runtime_compatibility_check as check
+    return check(memory, profile, full=full)
+
+
+def load_profile(rom=None, *, crc=None, root=None, memory=None):
     """Local ROM uses SHA-256; a verified Lua bridge uses its complete CRC32."""
     root = Path(root) if root is not None else Path(__file__).resolve().parent
     if rom is not None:
-        sha, info = release(rom)
+        sha = hashlib.sha256(rom).hexdigest()
+        info = RELEASES.get(sha)
+        if info is None:
+            from rom_compatibility import compatible_profile
+            return compatible_profile(rom=rom, root=root)
     else:
+        from rom_compatibility import normalize_crc
+        crc = normalize_crc(crc)
         matches = [(sha, info) for sha, info in RELEASES.items() if info[1] == crc]
         if len(matches) != 1:
-            raise ValueError("当前 ROM 版本尚未验证，未开放编辑（支持 V1.0 / V1.2 / V1.33）")
+            from rom_compatibility import compatible_profile
+            return compatible_profile(crc=crc, memory=memory, root=root)
         sha, info = matches[0]
     profile = json.loads((root / info[2]).read_text(encoding="utf-8"))
     if profile["rom_sha256"] != sha or profile["rom_crc32"] != info[1]:

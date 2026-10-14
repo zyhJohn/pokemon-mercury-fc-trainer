@@ -336,6 +336,7 @@ class AppTests(unittest.TestCase):
         content = bytes(raw) + b"\0" * 58 * 29
         self.app.apply_box_snapshot(
             {
+                **self.app.trainer._rom_context(),
                 "index": 0,
                 "address": self.app.profile["storage"]["box_addresses"][0],
                 "raw": content,
@@ -391,6 +392,7 @@ class AppTests(unittest.TestCase):
         content = bytes(raw) + b"\0" * 58 * 29
         self.app.apply_box_snapshot(
             {
+                **self.app.trainer._rom_context(),
                 "index": 0,
                 "address": self.app.profile["storage"]["box_addresses"][0],
                 "raw": content,
@@ -456,6 +458,7 @@ class AppTests(unittest.TestCase):
         content = bytes(raw) + b"\0" * 58 * 29
         self.app.apply_box_snapshot(
             {
+                **self.app.trainer._rom_context(),
                 "index": 0,
                 "address": self.app.profile["storage"]["box_addresses"][0],
                 "raw": content,
@@ -675,6 +678,7 @@ class AppTests(unittest.TestCase):
         raw = packed_box() * 2 + b"\0" * 58 * 28
         self.app.apply_box_snapshot(
             {
+                **self.app.trainer._rom_context(),
                 "index": 24,
                 "address": self.app.profile["storage"]["box_addresses"][24],
                 "raw": raw,

@@ -3,6 +3,7 @@
 local PORT, MAX_LINE = 8888, 270000
 local server, client = nil, nil
 local input, output = "", ""
+local outputLimit = 32768
 local function hex(bytes)
     return (bytes:gsub(".", function(c) return string.format("%02x", string.byte(c)) end))
 end
@@ -55,7 +56,7 @@ end
 local function handle(line)
     if #line > MAX_LINE then return "ERR limit" end
     if line == "PING" then return "PONG" end
-    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192 BATCHVERIFY BOXBATCH" end
+    if line == "CAPS" then return "MERCURY/3 BATCH ROMCRC CRCBATCH BATCH8192 BATCHVERIFY BOXBATCH ROMREAD" end
     if line == "ROMCRC" then return hex(emu:checksum()) end
     local cmd, rest = line:match("^(%S+)%s+(.*)$")
     if cmd == "BATCHCRC" or cmd == "BATCHVERIFYCRC" or cmd == "BOXBATCHCRC" then
@@ -65,11 +66,13 @@ local function handle(line)
         if hex(emu:checksum()) ~= expected:lower() then return "ERR rom" end
         return batch(patches, cmd ~= "BATCHCRC", cmd == "BOXBATCHCRC")
     end
-    if cmd == "READ" then
+    if cmd == "READ" or cmd == "READROM" then
         local addr, count = rest:match("^(%x+)%s+(%x+)$")
         if not addr then return "ERR format" end
         addr,count = tonumber(addr,16),tonumber(count,16)
-        if not readable(addr,count) then return "ERR range" end
+        if cmd == "READROM" then
+            if count < 1 or count > 65536 or addr < 0x08000000 or addr + count > 0x0A000000 then return "ERR range" end
+        elseif not readable(addr,count) then return "ERR range" end
         return hex(emu:readRange(addr,count))
     end
     return "ERR unsupported"
@@ -80,6 +83,7 @@ local function disconnect()
     if client then client:close() end
     client=nil
     input,output="",""
+    outputLimit=32768
 end
 local function flush()
     while client and #output > 0 do
@@ -90,6 +94,7 @@ local function flush()
         end
         output=output:sub(sent+1)
     end
+    if #output == 0 then outputLimit=32768 end
 end
 local function received()
     while client do
@@ -106,8 +111,12 @@ local function received()
             local line=input:sub(1,nl-1)
             input=input:sub(nl+1)
             local ok,response=pcall(handle,line)
-            output=output..(ok and response or "ERR internal").."\n"
-            if #output>32768 then disconnect(); return end
+            response=(ok and response or "ERR internal").."\n"
+            local responseLimit=line:match("^READROM%s") and 131073 or 32768
+            if #response > responseLimit then disconnect(); return end
+            outputLimit=math.max(outputLimit,responseLimit)
+            output=output..response
+            if #output>outputLimit then disconnect(); return end
             flush()
         end
     end
@@ -118,6 +127,7 @@ local function accept()
     if client then incoming:close(); return end
     client=incoming
     input,output="",""
+    outputLimit=32768
     client:add("received",function() if client == incoming then received() end end)
     client:add("error",function() if client == incoming then disconnect() end end)
 end

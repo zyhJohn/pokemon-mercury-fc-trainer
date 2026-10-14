@@ -60,6 +60,11 @@ class MemClient:
     def command(self, command, allow_error=False):
         if self.s is None:
             raise IOError("未连接")
+        response_limit = (
+            131073
+            if command.partition(" ")[0] == "READROM" and "ROMREAD" in self.capabilities
+            else 32768
+        )
         try:
             self.s.sendall(command.encode("ascii") + b"\n")
             while b"\n" not in self.buffer:
@@ -67,9 +72,11 @@ class MemClient:
                 if not data:
                     raise IOError("mGBA 已断开连接")
                 self.buffer += data
-                if len(self.buffer) > 32768:
+                if len(self.buffer) > response_limit:
                     raise IOError("桥接响应超过长度限制")
             line, self.buffer = self.buffer.split(b"\n", 1)
+            if len(line) >= response_limit:
+                raise IOError("桥接响应超过长度限制")
         except OSError:
             self.close()
             raise
@@ -95,6 +102,37 @@ class MemClient:
         if len(result) != size:
             raise IOError("内存响应长度不完整")
         return result
+
+    def read_rom(self, address, size):
+        """Read a bounded ROM range, using 64 KiB requests with a capable bridge."""
+        if (
+            not isinstance(address, int)
+            or isinstance(address, bool)
+            or not isinstance(size, int)
+            or isinstance(size, bool)
+            or not 1 <= size <= 0x02000000
+            or not 0x08000000 <= address < 0x0A000000
+            or address + size > 0x0A000000
+        ):
+            raise ValueError("ROM 读取须位于 0x08000000～0x0A000000，大小须为 1～32MiB")
+        capable = "ROMREAD" in self.capabilities
+        chunk_size = 65536 if capable else 4096
+        result = bytearray()
+        while len(result) < size:
+            count = min(chunk_size, size - len(result))
+            chunk_address = address + len(result)
+            command = "READROM" if capable else "READ"
+            response = self.command(f"{command} {chunk_address:x} {count:x}")
+            if len(response) != count * 2:
+                raise IOError("ROM 响应长度不完整")
+            try:
+                chunk = bytes.fromhex(response.decode("ascii"))
+            except (UnicodeDecodeError, ValueError) as exc:
+                raise IOError("ROM 响应不是有效十六进制") from exc
+            if len(chunk) != count:
+                raise IOError("ROM 响应长度不完整")
+            result.extend(chunk)
+        return bytes(result)
 
     def batch(self, patches, verify=False, large_boxes=False):
         if "BATCH" not in self.capabilities:

@@ -46,6 +46,7 @@ def main():
         "rom_profile.json",
         "rom_profile_v12.json",
         "rom_profile_v133.json",
+        "rom_compatibility_manifest.json",
         "sidequests.json",
         "sidequests_layout.json",
         "game_fields_layout.json",
@@ -75,6 +76,7 @@ def main():
         "requirements-audit-2026-10-06.md",
         "distribution-compatibility.md",
         "rom-v133-compatibility.md",
+        "rom-compatibility.md",
     ]:
         source = ROOT / "docs" / name
         if source.exists():

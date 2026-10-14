@@ -15,6 +15,8 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
+from rom_versions import rom_identity
+
 FLASH_SIZE = 0x20000
 SAVE_SIZE = FLASH_SIZE + 16
 WEEKDAYS = ("周一", "周二", "周三", "周四", "周五", "周六", "周日")
@@ -193,8 +195,19 @@ def digest(data):
 
 
 def verify_rom(rom_path, profile):
-    if digest(Path(rom_path).read_bytes()) != profile["rom_sha256"]:
+    if profile.get("compatibility") and not profile.get("actual_rom_sha256"):
+        raise ValueError("兼容 ROM 的 RTC 编辑需要先核对所选本地 ROM 的 SHA-256")
+    expected = profile.get("actual_rom_sha256", profile["rom_sha256"])
+    if digest(Path(rom_path).read_bytes()) != expected:
         raise ValueError("所选本地 ROM 的 SHA-256 与已验证版本不符")
+
+
+def _same_rom(record, profile):
+    if record.get("rom_sha256") != profile["rom_sha256"]:
+        return False
+    if "rom_identity" not in record:
+        return not profile.get("compatibility")
+    return record["rom_identity"] == rom_identity(profile)
 
 
 def read_save(path, rom_path, profile):
@@ -206,7 +219,14 @@ def read_save(path, rom_path, profile):
     info = save_info(data)
     if path.read_bytes() != data:
         raise ValueError("读取期间存档已变化，请关闭游戏后重新读取")
-    return {**info, "path": str(path), "data": data, "sha256": digest(data)}
+    return {
+        **info,
+        "path": str(path),
+        "data": data,
+        "sha256": digest(data),
+        "rom_sha256": profile["rom_sha256"],
+        "rom_identity": rom_identity(profile),
+    }
 
 
 @contextmanager
@@ -259,6 +279,8 @@ def durable_json(path, record):
 
 def _write_footer(snapshot, footer, rom_path, profile, backup_dir, label):
     verify_rom(rom_path, profile)
+    if not _same_rom(snapshot, profile):
+        raise ValueError("RTC 存档快照来自另一 ROM，请重新读取")
     before = snapshot["data"]
     save_info(before)
     after = before[:FLASH_SIZE] + footer
@@ -275,6 +297,7 @@ def _write_footer(snapshot, footer, rom_path, profile, backup_dir, label):
         "label": label,
         "status": "prepared",
         "rom_sha256": profile["rom_sha256"],
+        "rom_identity": rom_identity(profile),
         "save_name": Path(snapshot["path"]).name,
         "before_sha256": digest(before),
         "after_sha256": digest(after),
@@ -330,7 +353,7 @@ def restore_calendar(snapshot, record_path, rom_path, profile, backup_dir):
     if (
         record.get("schema") != "mercury-rtc-1"
         or record.get("status") != "verified"
-        or record.get("rom_sha256") != profile["rom_sha256"]
+        or not _same_rom(record, profile)
     ):
         raise ValueError("RTC 备份格式、完成状态或 ROM 不匹配")
     if digest(snapshot["data"]) != record.get("after_sha256"):

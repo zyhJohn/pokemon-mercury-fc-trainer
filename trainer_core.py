@@ -37,6 +37,7 @@ from pokemon_data import (
     toxtricity_species,
 )
 from pokemon_creation import box_to_party_pokemon, create_box_pokemon
+from rom_versions import rom_identity, runtime_compatibility_check
 
 PARTY = 0x02024284
 PARTY_COUNT = 0x02024029
@@ -63,7 +64,7 @@ class Trainer:
         # connection reads the same ROM and identical PC bytes.
         self.connection_generation = uuid4().hex
 
-    def verify(self):
+    def verify(self, *, full_compatibility=False):
         self.verified = False
         if "ROMCRC" in self.g.capabilities:
             expected = self.profile["rom_crc32"]
@@ -74,7 +75,24 @@ class Trainer:
             expected = bytes.fromhex(signature["hex"])
             if self.g.read(signature["address"], len(expected)) != expected:
                 raise ValueError("当前 ROM 与已验证水银 FC 布局不匹配，未开放编辑")
+        if self.profile.get("compatibility"):
+            runtime_compatibility_check(self.g, self.profile, full=full_compatibility)
         self.verified = True
+
+    def _rom_context(self):
+        return {
+            "rom_sha256": self.profile["rom_sha256"],
+            "rom_identity": rom_identity(self.profile),
+        }
+
+    def _same_rom(self, record):
+        # Legacy records identify only an exact known release. They cannot
+        # identify a modified ROM which shares that release's layout.
+        if record.get("rom_sha256") != self.profile["rom_sha256"]:
+            return False
+        if "rom_identity" not in record:
+            return not self.profile.get("compatibility")
+        return record["rom_identity"] == rom_identity(self.profile)
 
     def locate(self):
         address = self.g.r32(SAVE_POINTER)
@@ -120,6 +138,7 @@ class Trainer:
         ):
             raise ValueError("读取时代币或点数已变化，请刷新")
         return {
+            **self._rom_context(),
             "saveblock": sb,
             "money_raw": money,
             "money": struct.unpack_from("<I", money)[0]
@@ -153,6 +172,7 @@ class Trainer:
             raise ValueError("读取时训练师资料已变化，请重新读取")
         tid, sid = struct.unpack_from("<HH", raw, 10)
         return {
+            **self._rom_context(),
             "address": address,
             "raw": raw,
             "tid": tid,
@@ -196,6 +216,7 @@ class Trainer:
             except ValueError as exc:
                 daily_date, daily_error = None, str(exc)
             return {
+                **self._rom_context(),
                 "address": address,
                 "raw": raw,
                 "playtime": decode_playtime(raw),
@@ -313,12 +334,18 @@ class Trainer:
             raise ValueError("读取时盒子内容已变化，请重新读取")
         return {
             "index": index,
+            **self._rom_context(),
             "address": address,
             "raw": raw,
             "pokemon": tuple(BoxPokemon(raw[i : i + 58]) for i in range(0, size, 58)),
         }
 
     def edit_box(self, snap, slot, **changes):
+        if (
+            (self.profile.get("compatibility") or "rom_sha256" in snap)
+            and not self._same_rom(snap)
+        ):
+            raise ValueError("盒子快照来自另一ROM，请重新读取")
         self.check_box_unlocked(snap["index"])
         slot = integer(slot, 0, 29, "盒子位置")
         address = self.profile["storage"]["box_addresses"][snap["index"]]
@@ -373,6 +400,7 @@ class Trainer:
             raise ValueError("读取时盒名已变化，请重新读取")
         return {
             "index": index,
+            **self._rom_context(),
             "address": address,
             "raw": raw,
             "name": name,
@@ -388,14 +416,14 @@ class Trainer:
         return {
             **snapshot,
             "after": encode_box_name(name),
-            "rom_sha256": self.profile["rom_sha256"],
+            **self._rom_context(),
             "connection_generation": self.connection_generation,
         }
 
     def commit_box_name(self, prepared):
         if (
             prepared.get("connection_generation") != self.connection_generation
-            or prepared.get("rom_sha256") != self.profile["rom_sha256"]
+            or not self._same_rom(prepared)
         ):
             raise ValueError("盒名预览来自旧连接或另一ROM，请重新预览")
         index = integer(prepared["index"], 0, 24, "盒子位置")
@@ -478,13 +506,13 @@ class Trainer:
             "pokemon": pokemon,
             "destination": (index, slot),
             "patches": [(address, b"\0" * 58, record)],
-            "rom_sha256": self.profile["rom_sha256"],
+            **self._rom_context(),
             "connection_generation": self.connection_generation,
         }
 
     def commit_gift_box(self, prepared):
         if (
-            prepared.get("rom_sha256") != self.profile["rom_sha256"]
+            not self._same_rom(prepared)
             or prepared.get("connection_generation") != self.connection_generation
         ):
             raise ValueError("礼物预览来自旧连接或另一ROM，请重新预览")
@@ -538,13 +566,13 @@ class Trainer:
             "pokemon": pokemon,
             "destination": (index, slot),
             "patches": [(address, b"\0" * 58, pokemon.raw)],
-            "rom_sha256": self.profile["rom_sha256"],
+            **self._rom_context(),
             "connection_generation": self.connection_generation,
         }
 
     def commit_create_box(self, prepared):
         if (
-            prepared.get("rom_sha256") != self.profile["rom_sha256"]
+            not self._same_rom(prepared)
             or prepared.get("connection_generation") != self.connection_generation
         ):
             raise ValueError("创建预览来自旧连接或另一ROM，请重新预览")
@@ -605,13 +633,13 @@ class Trainer:
             "replaced": snap["party"][slot] if replacing else None,
             "party_count": count,
             "patches": patches,
-            "rom_sha256": self.profile["rom_sha256"],
+            **self._rom_context(),
             "connection_generation": self.connection_generation,
         }
 
     def _commit_party_insertion(self, prepared, expected_pc_record, label):
         if (
-            prepared.get("rom_sha256") != self.profile["rom_sha256"]
+            not self._same_rom(prepared)
             or prepared.get("connection_generation") != self.connection_generation
         ):
             raise ValueError("队伍投放预览来自旧连接或另一ROM，请重新预览")
@@ -719,6 +747,8 @@ class Trainer:
             for n, box in enumerate(boxes)
         ]
         return {
+            **self._rom_context(),
+            "connection_generation": self.connection_generation,
             "indices": indices,
             "locked": frozenset(self.locked_boxes),
             "patches": patches,
@@ -726,6 +756,11 @@ class Trainer:
         }
 
     def commit_box_sort(self, prepared):
+        if (
+            not self._same_rom(prepared)
+            or prepared.get("connection_generation") != self.connection_generation
+        ):
+            raise ValueError("排序预览来自旧连接或另一ROM，请重新预览")
         if frozenset(self.locked_boxes) != prepared["locked"]:
             raise ValueError("预览后盒锁已变化，请重新预览排序")
         self.check_box_patches_unlocked(prepared["patches"])
@@ -734,6 +769,8 @@ class Trainer:
         return self.commit(snap, prepared["patches"], "全部未锁盒按内部编号排序")
 
     def box_reference(self, snapshot, slot):
+        if not self._same_rom(snapshot):
+            raise ValueError("盒子快照来自另一ROM，请重新读取")
         slot = integer(slot, 0, 29, "盒子位置")
         index = integer(snapshot["index"], 0, 24, "盒子位置")
         if snapshot["address"] != self.profile["storage"]["box_addresses"][index]:
@@ -745,7 +782,7 @@ class Trainer:
             "box": index,
             "slot": slot,
             "raw": raw,
-            "rom_sha256": self.profile["rom_sha256"],
+            **self._rom_context(),
             "connection_generation": self.connection_generation,
         }
 
@@ -767,7 +804,7 @@ class Trainer:
             index = integer(reference["box"], 0, 24, "盒子位置")
             slot = integer(reference["slot"], 0, 29, "盒子位置")
             self.check_box_unlocked(index)
-            if reference.get("rom_sha256") != self.profile["rom_sha256"]:
+            if not self._same_rom(reference):
                 raise ValueError("暂存引用来自另一ROM版本，请重新选择")
             raw = read(index)["raw"][slot * 58 : (slot + 1) * 58]
             if raw != reference["raw"]:
@@ -820,6 +857,7 @@ class Trainer:
                 buffers[index][slot * 58 : (slot + 1) * 58] = patches[0][2]
                 destinations.append((index, slot))
         return {
+            **self._rom_context(),
             "operation": operation,
             "connection_generation": self.connection_generation,
             "references": refs,
@@ -832,8 +870,11 @@ class Trainer:
         }
 
     def commit_box_batch(self, prepared):
-        if prepared.get("connection_generation") != self.connection_generation:
-            raise ValueError("批量预览来自旧连接，请重新选择并预览")
+        if (
+            not self._same_rom(prepared)
+            or prepared.get("connection_generation") != self.connection_generation
+        ):
+            raise ValueError("批量预览来自旧连接或另一ROM，请重新选择并预览")
         if prepared["locked"] != frozenset(self.locked_boxes):
             raise ValueError("预览后盒锁已变化，请重新预览")
         self.check_box_patches_unlocked(prepared["patches"])
@@ -866,6 +907,8 @@ class Trainer:
         layout = self.profile["storage"]
         slot = integer(slot, 0, 29, "源槽位")
         for snap in (source, target):
+            if not self._same_rom(snap):
+                raise ValueError("盒子快照来自另一ROM，请重新读取")
             self.check_box_unlocked(snap["index"])
             index = integer(
                 snap["index"], 0, len(layout["box_addresses"]) - 1, "盒子位置"
@@ -1154,8 +1197,14 @@ class Trainer:
         return [(pocket["address"] + 4 * slot, old, updated)]
 
     def commit(self, snap, patches, label):
+        contexts = [snap] + [
+            snap[key] for key in ("trainer", "time", "daily_time") if key in snap
+        ]
+        for context in contexts:
+            if not self._same_rom(context):
+                raise ValueError("写入快照来自另一ROM，请重新读取")
         self.check_box_patches_unlocked(patches)
-        self.verify()
+        self.verify(full_compatibility=True)
         if any(
             address == PARTY_COUNT and before == after
             for address, before, after in patches
@@ -1346,7 +1395,7 @@ class Trainer:
         record = {
             "schema": 1,
             "label": label,
-            "rom_sha256": self.profile["rom_sha256"],
+            **self._rom_context(),
             "status": "prepared",
             "patches": [
                 {"address": a, "before": b.hex(), "after": c.hex()}
@@ -1397,7 +1446,7 @@ class Trainer:
         record = json.loads(Path(path).read_text(encoding="utf-8"))
         if (
             record.get("schema") != 1
-            or record.get("rom_sha256") != self.profile["rom_sha256"]
+            or not self._same_rom(record)
         ):
             raise ValueError("备份格式或 ROM 版本不匹配")
         if record.get("status") != "verified":
