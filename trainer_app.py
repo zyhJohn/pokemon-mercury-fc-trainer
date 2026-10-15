@@ -5,6 +5,7 @@ import secrets
 import struct
 import sys
 import threading
+import time
 import tkinter as tk
 import webbrowser
 from datetime import datetime, timedelta
@@ -48,6 +49,9 @@ from sidequest_data import load_catalog as load_sidequests
 from sidequest_page import SidequestPage
 from distribution_catalog import load_distributions
 from gift_page import GiftPage
+from unown_page import UnownPage
+from wild_encounter_page import WildEncounterPage
+from wild_encounter_control import WildEncounterControl
 
 
 def resource_path(name):
@@ -66,6 +70,11 @@ class App:
         self.snapshot = None
         self.mem = None
         self.trainer = None
+        self.wild_control = None
+        self.wild_results = queue.Queue()
+        self.wild_heartbeat_pending = set()
+        self.wild_heartbeat_at = 0.0
+        self.wild_close_attempted = False
         self.busy = False
         self.closed = False
         self.close_requested = False
@@ -494,6 +503,8 @@ class App:
             resource_path("sidequests_layout.json"),
         )
         self.gift_page = GiftPage(self, load_distributions(resource_path("distributions.json")))
+        self.unown_page = UnownPage(self)
+        self.wild_page = WildEncounterPage(self)
         self._build_details()
         self._build_trainer()
         self.nb.insert(0, self.tab_party)
@@ -2619,14 +2630,54 @@ class App:
                     self.last_error = str(exc) or type(exc).__name__
                     self.status.set("显示结果时遇到错误：" + str(exc))
                     messagebox.showerror("显示失败", str(exc))
+        self._poll_wild_heartbeat()
         if self.close_requested and not self.busy:
             self.close()
             return
         self.update_box_egg_button()
+        self.unown_page.update_actions()
+        self.wild_page.update_actions()
         if self.icon_request_pending and not self.busy and self.trainer is not None:
             self.icon_request_pending = False
             self.load_icons()
         self.timer = self.root.after(50, self._poll)
+
+    def _poll_wild_heartbeat(self):
+        """Keep control I/O separate from run() and its busy/freeze lifecycle."""
+        while True:
+            try:
+                control, trainer, generation, state, error = self.wild_results.get_nowait()
+            except queue.Empty:
+                break
+            self.wild_heartbeat_pending.discard(id(control))
+            if (control is self.wild_control and trainer is self.trainer
+                    and generation == getattr(trainer, "connection_generation", None)
+                    and not self.closed and not self.close_requested):
+                self.wild_page.apply_status(state if error is None else
+                                            {"state": "error", "reason": error})
+        control, trainer = self.wild_control, self.trainer
+        now = time.monotonic()
+        if (control is None or not control.active or self.close_requested
+                or id(control) in self.wild_heartbeat_pending or now < self.wild_heartbeat_at):
+            return
+        self.wild_heartbeat_at = now + 2.0
+        self.wild_heartbeat_pending.add(id(control))
+        generation = getattr(trainer, "connection_generation", None)
+
+        def worker():
+            try:
+                state, error = control.heartbeat(), None
+            except Exception as exc:
+                state, error = None, str(exc) or type(exc).__name__
+            self.wild_results.put((control, trainer, generation, state, error))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def discard_unown_changes(self):
+        if not self.unown_page.has_changes():
+            return True
+        return messagebox.askyesno("丢弃未知图腾记录草稿？", "当前记录有未写入修改，是否丢弃？",
+                                   parent=self.root)
 
     def pocket_id(self):
         return next(
@@ -2640,9 +2691,14 @@ class App:
             not self.discard_party_changes()
             or not self.discard_box_changes()
             or not self.discard_trainer_changes()
+            or not self.discard_unown_changes()
         ):
             return
         old_mem = self.mem
+        old_wild = self.wild_control
+        self.wild_control = None
+        self.unown_page.invalidate()
+        self.wild_page.invalidate()
         diagnostic = {
             "started_at": datetime.now().astimezone().isoformat(),
             "stage": "disconnect_previous",
@@ -2688,7 +2744,11 @@ class App:
             mem = None
             try:
                 if old_mem:
-                    old_mem.close()
+                    try:
+                        if old_wild is not None and old_wild.active:
+                            old_wild.stop()
+                    finally:
+                        old_mem.close()
                 diagnostic["stage"] = "bridge_connect"
                 mem = MemClient()
                 diagnostic["port"] = getattr(mem, "port", None)
@@ -2746,6 +2806,11 @@ class App:
         def done(result):
             self.mem, self.trainer, snap = result
             self.profile = self.trainer.profile
+            self.wild_control = (WildEncounterControl(self.mem, self.profile, self.trainer.backup_dir)
+                                 if "WILDNATIVE1" in self.mem.capabilities else None)
+            self.wild_heartbeat_at = 0.0
+            self.wild_close_attempted = False
+            self.wild_page.refresh_profile()
             self.gift_page.show_detail()
             if self.box_save_path.get():
                 try:
@@ -2768,6 +2833,12 @@ class App:
 
     def refresh(self, after=None):
         if self.trainer is None:
+            return
+        if after is None and self.nb.select() == str(self.unown_page.tab):
+            self.unown_page.read()
+            return
+        if after is None and self.nb.select() == str(self.wild_page.tab):
+            self.wild_page.read()
             return
         if after is None and self.nb.select() == str(self.quest_page.tab):
             self.quest_page.read()
@@ -3463,6 +3534,26 @@ class App:
             self.close_requested = True
             self.status.set("正在完成当前操作与备份记录，完成后关闭…")
             return
+        if (not self.wild_close_attempted and self.mem is not None
+                and ((self.wild_control is not None and self.wild_control.active)
+                     or getattr(self.mem, "_wild_overlay", None) is not None)):
+            self.wild_close_attempted = True
+            self.close_requested = True
+            control, mem = self.wild_control, self.mem
+
+            def job():
+                try:
+                    if control is not None:
+                        control.stop()
+                finally:
+                    mem.close()
+
+            def done(_):
+                self.wild_control = None
+                self.mem = None
+
+            self.run("正在停用野生遭遇指定并关闭连接…", job, done)
+            return
         self.closed = True
         self.root.after_cancel(self.timer)
         if self.mem:
@@ -3483,6 +3574,7 @@ class App:
             not self.discard_party_changes()
             or not self.discard_box_changes()
             or not self.discard_trainer_changes()
+            or not self.discard_unown_changes()
         ):
             return
         pocket = self.pocket_id()
@@ -3502,6 +3594,7 @@ class App:
             return result, self.trainer.snapshot(pocket), box, trainer_snap, time_snap
 
         def done(result):
+            self.unown_page.invalidate()
             self.apply_snapshot(result[1])
             if result[2] is not None:
                 self.apply_box_snapshot(result[2])
@@ -3524,9 +3617,11 @@ def main():
     app = App(root)
     if smoke:
         from rom_versions import RELEASES
+        from wild_encounter_data import wild_layout
 
         for _, crc, _ in RELEASES.values():
-            load_profile(crc=crc, root=resource_path("rom_profile.json").parent)
+            profile = load_profile(crc=crc, root=resource_path("rom_profile.json").parent)
+            wild_layout(profile)
         from rom_compatibility import validate_contracts
 
         validate_contracts(resource_path("rom_profile.json").parent)

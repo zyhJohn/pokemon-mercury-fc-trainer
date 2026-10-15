@@ -24,6 +24,7 @@ def main():
     subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-q"], cwd=ROOT, check=True
     )
+    subprocess.run([sys.executable, "tools/sync_wild_bridge.py", "--check"], cwd=ROOT, check=True)
     command = [
         sys.executable,
         "-m",
@@ -47,6 +48,8 @@ def main():
         "rom_profile_v12.json",
         "rom_profile_v133.json",
         "rom_compatibility_manifest.json",
+        "unown_records_layout.json",
+        "wild_encounter_layout.json",
         "sidequests.json",
         "sidequests_layout.json",
         "game_fields_layout.json",
@@ -77,6 +80,8 @@ def main():
         "distribution-compatibility.md",
         "rom-v133-compatibility.md",
         "rom-compatibility.md",
+        "unown-records-audit-2026-10-16.md",
+        "wild-encounters-audit-2026-10-16.md",
     ]:
         source = ROOT / "docs" / name
         if source.exists():

@@ -190,6 +190,8 @@ def _memory_reader(memory):
     def read(address, size):
         if not 0 < size <= GUARD_LIMIT or not ROM_BASE <= address <= ROM_BASE + ROM_SIZE - size:
             raise ValueError("兼容检查ROM读取超出范围")
+        if hasattr(memory, "read_compatible_rom"):
+            return memory.read_compatible_rom(address, size)
         if hasattr(memory, "read_rom"):
             return memory.read_rom(address, size)
         parts = []

@@ -4,6 +4,7 @@ import json
 import hashlib
 import os
 import struct
+from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -38,6 +39,10 @@ from pokemon_data import (
 )
 from pokemon_creation import box_to_party_pokemon, create_box_pokemon
 from rom_versions import rom_identity, runtime_compatibility_check
+from unown_records import (
+    CAPTURE_ADDRESS, FINAL_ADDRESS, RESEARCH_ADDRESS, RESEARCH_MASK,
+    prepare_unown_records_patches, read_unown_records, unown_rom_features,
+)
 
 PARTY = 0x02024284
 PARTY_COUNT = 0x02024029
@@ -63,6 +68,8 @@ class Trainer:
         # A reference belongs to this connection's Trainer, even when a later
         # connection reads the same ROM and identical PC bytes.
         self.connection_generation = uuid4().hex
+        self._unown_snapshots = {}
+        self._unown_previews = {}
 
     def verify(self, *, full_compatibility=False):
         self.verified = False
@@ -93,6 +100,172 @@ class Trainer:
         if "rom_identity" not in record:
             return not self.profile.get("compatibility")
         return record["rom_identity"] == rom_identity(self.profile)
+
+    @staticmethod
+    def _remember_unown(store, token, value):
+        store[token] = deepcopy(value)
+        if len(store) > 64:
+            del store[next(iter(store))]
+
+    def snapshot_unown_records(self):
+        self.verify()
+        for address, expected in unown_rom_features(self.profile["rom_sha256"]):
+            if self.g.read(address, len(expected)) != expected:
+                raise ValueError("未知图腾记录相关ROM函数与已核验布局不匹配")
+        battle_address = self.profile["battle_flag"]["address"]
+        battle = self.g.read(battle_address, 1)
+        snapshot = read_unown_records(self.g, self.profile["rom_sha256"])
+        if battle != self.g.read(battle_address, 1):
+            raise ValueError("读取期间战斗状态变化，请重新读取未知图腾记录")
+        snapshot.update(self._rom_context())
+        snapshot.update({
+            "connection_generation": self.connection_generation,
+            "snapshot_nonce": uuid4().hex,
+            "battle_raw": battle,
+            "in_battle": bool(battle[0] & self.profile["battle_flag"]["mask"]),
+        })
+        self._remember_unown(self._unown_snapshots, snapshot["snapshot_nonce"], snapshot)
+        return snapshot
+
+    def _validate_unown_snapshot(self, snapshot):
+        if (
+            not self._same_rom(snapshot)
+            or snapshot.get("connection_generation") != self.connection_generation
+            or self._unown_snapshots.get(snapshot.get("snapshot_nonce")) != snapshot
+        ):
+            raise ValueError("未知图腾记录快照来自旧连接、另一ROM或已被修改，请重新读取")
+
+    def prepare_unown_records(self, snapshot, changes):
+        self._validate_unown_snapshot(snapshot)
+        patches = prepare_unown_records_patches(snapshot, changes)
+        prepared = {
+            **self._rom_context(),
+            "connection_generation": self.connection_generation,
+            "preview_nonce": uuid4().hex,
+            "snapshot": deepcopy(snapshot),
+            "changes": deepcopy(changes),
+            "patches": tuple((p.address, p.before, p.after) for p in patches),
+        }
+        self._remember_unown(self._unown_previews, prepared["preview_nonce"], prepared)
+        return prepared
+
+    def commit_unown_records(self, prepared):
+        if (
+            not self._same_rom(prepared)
+            or prepared.get("connection_generation") != self.connection_generation
+            or self._unown_previews.get(prepared.get("preview_nonce")) != prepared
+        ):
+            raise ValueError("未知图腾记录预览来自旧连接、另一ROM或已被修改，请重新预览")
+        original = prepared["snapshot"]
+        self._validate_unown_snapshot(original)
+        if original["in_battle"]:
+            raise ValueError("战斗中不能写入未知图腾记录，请结束战斗并重新读取")
+        patches = tuple(
+            (p.address, p.before, p.after)
+            for p in prepare_unown_records_patches(original, prepared["changes"])
+        )
+        if patches != prepared["patches"]:
+            raise ValueError("未知图腾记录预览补丁已变化，请重新预览")
+        snap = self.snapshot()
+        snap["unown_records"] = original
+        snap["battle_raw"], snap["in_battle"] = original["battle_raw"], original["in_battle"]
+        result = self.commit(snap, list(patches), "未知图腾捕获与研究记录")
+        self._unown_previews.pop(prepared["preview_nonce"], None)
+        return result
+
+    @staticmethod
+    def _valid_unown_patch(address, before, after):
+        mask = {
+            CAPTURE_ADDRESS: bytes.fromhex("fcffff3f"),
+            RESEARCH_ADDRESS: bytes([RESEARCH_MASK]),
+        }.get(address)
+        return (
+            mask is not None and len(before) == len(after) == len(mask)
+            and before != after
+            and all(not ((old ^ new) & ~bits) for old, new, bits in zip(before, after, mask))
+        )
+
+    def _unown_transaction_context(self, original, patches):
+        self._validate_unown_snapshot(original)
+        if len(patches) > 2 or len({p[0] for p in patches}) != len(patches):
+            raise ValueError("未知图腾记录补丁数量或地址重复")
+        records = original["records"]
+        after = dict(records)
+        for address, before, updated in patches:
+            if not self._valid_unown_patch(address, before, updated) or records.get(address) != before:
+                raise ValueError("未知图腾记录补丁越过已核验字段或原值不匹配")
+            after[address] = updated
+        guards = []
+        changed = {p[0] for p in patches}
+        for address, raw in original["guards"]:
+            if address == SAVE_POINTER:
+                guards += [(address + i, raw[i:i + 4], raw[i:i + 4]) for i in (0, 4)]
+            elif address not in changed:
+                guards.append((address, raw, raw))
+        guards += [
+            (address, raw, raw)
+            for address, raw in unown_rom_features(self.profile["rom_sha256"])
+        ]
+        context = {
+            "schema": "mercury-unown-1",
+            "pointers": original["guards"][0][1].hex(),
+            "before": {str(a): raw.hex() for a, raw in records.items()},
+            "after": {str(a): raw.hex() for a, raw in after.items()},
+        }
+        return guards, context
+
+    @staticmethod
+    def _merge_unown_guards(guards, changes):
+        merged = []
+        for patch in guards + changes:
+            if patch in merged:
+                continue
+            address, before, _ = patch
+            if any(address < a + len(b) and a < address + len(before) for a, b, _ in merged):
+                raise ValueError("未知图腾事务守卫与补丁重叠或原值不一致")
+            merged.append(patch)
+        if len(merged) > 64:
+            raise ValueError("未知图腾事务守卫与补丁超过64项，未写入")
+        return [p for p in merged if p[1] == p[2]]
+
+    def _restore_unown_context(self, record, snap):
+        context = record.get("unown_context")
+        sizes = {CAPTURE_ADDRESS: 4, RESEARCH_ADDRESS: 1, FINAL_ADDRESS: 1}
+        try:
+            if not isinstance(context, dict) or context.get("schema") != "mercury-unown-1":
+                raise ValueError("缺少已核验的未知图腾记录恢复上下文")
+            before = {int(a): bytes.fromhex(raw) for a, raw in context["before"].items()}
+            after = {int(a): bytes.fromhex(raw) for a, raw in context["after"].items()}
+            pointers = bytes.fromhex(context["pointers"])
+            if (
+                set(before) != set(sizes) or set(after) != set(sizes) or len(pointers) != 8
+                or any(len(before[a]) != size or len(after[a]) != size for a, size in sizes.items())
+                or before[FINAL_ADDRESS] != after[FINAL_ADDRESS]
+            ):
+                raise ValueError("未知图腾记录恢复上下文范围或只读最终页不一致")
+            expected = {
+                a for a in sizes if before[a] != after[a]
+            }
+            items = record.get("patches", [])
+            if (
+                not expected or len(items) != len(expected)
+                or {p["address"] for p in items} != expected
+                or any(
+                    not self._valid_unown_patch(a, before[a], after[a]) for a in expected
+                )
+                or any(
+                    bytes.fromhex(p["before"]) != before[p["address"]]
+                    or bytes.fromhex(p["after"]) != after[p["address"]] for p in items
+                )
+            ):
+                raise ValueError("未知图腾记录恢复补丁越过掩码、缺失或与上下文不一致")
+        except (KeyError, TypeError, AttributeError) as exc:
+            raise ValueError("未知图腾记录恢复上下文格式异常") from exc
+        current = self.snapshot_unown_records()
+        if current["guards"][0][1] != pointers or current["records"] != after:
+            raise ValueError("未知图腾记录、邻位、最终页或存档块指针已变化，不能条件恢复")
+        snap["unown_records"] = current
+        snap["battle_raw"], snap["in_battle"] = current["battle_raw"], current["in_battle"]
 
     def locate(self):
         address = self.g.r32(SAVE_POINTER)
@@ -1198,7 +1371,7 @@ class Trainer:
 
     def commit(self, snap, patches, label):
         contexts = [snap] + [
-            snap[key] for key in ("trainer", "time", "daily_time") if key in snap
+            snap[key] for key in ("trainer", "time", "daily_time", "unown_records") if key in snap
         ]
         for context in contexts:
             if not self._same_rom(context):
@@ -1216,6 +1389,8 @@ class Trainer:
             "time" in snap or "daily_time" in snap
         ) and "BATCHVERIFY" not in self.g.capabilities:
             raise ValueError("时间相关写入需要重新加载 0.2.10 的 mercury_bridge.lua")
+        if "unown_records" in snap and "BATCHVERIFY" not in self.g.capabilities:
+            raise ValueError("未知图腾记录写入需要支持回调内读回的 mercury_bridge.lua")
         if snap.get("time_apply_absolute"):
             # The user's inputs are absolute H:M:S. Capture the latest expected
             # value after slow ROM checks, then compare inside the callback.
@@ -1225,6 +1400,10 @@ class Trainer:
             decode_playtime(before + b"\0")
             patches = [(address, before, patches[0][2])]
         changes = [p for p in patches if p[1] != p[2]]
+        unown_context = None
+        unown_guards = []
+        if "unown_records" in snap:
+            unown_guards, unown_context = self._unown_transaction_context(snap["unown_records"], changes)
         if not changes:
             return {"changed": False, "backup": None}
         count_changes = [p for p in changes if p[0] == PARTY_COUNT]
@@ -1344,6 +1523,7 @@ class Trainer:
             "trainer" in snap
             or "time" in snap
             or "daily_time" in snap
+            or "unown_records" in snap
             or value_edit
             or bag_sort
             or box_edit
@@ -1371,11 +1551,14 @@ class Trainer:
             ]
         guards += snap.get("box_batch_guards", [])
         guards += snap.get("box_name_guards", [])
+        guards += unown_guards
         # Also reject a ROM swap between Python validation and the callback.
         guards += [
             (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
             for s in self.profile["signatures"]
         ]
+        if unown_context is not None:
+            guards = self._merge_unown_guards(guards, changes)
         large_boxes = any(
             self.is_box_patch(a, len(b)) and len(b) == 1740 for a, b, _ in patches
         )
@@ -1408,6 +1591,8 @@ class Trainer:
                 "save2": snap["money_save2"],
                 "key": snap["money_key_raw"].hex(),
             }
+        if unown_context is not None:
+            record["unown_context"] = unown_context
 
         def save_record():
             temp = path.with_suffix(".tmp")
@@ -1422,9 +1607,9 @@ class Trainer:
             self.check_box_patches_unlocked(patches)
             if large_boxes:
                 self.g.batch(guards + changes, verify=True, large_boxes=True)
-            elif "time" in snap or "daily_time" in snap:
-                # Time may tick between network requests; read back in the same
-                # emulator callback, while no game frame can advance.
+            elif "time" in snap or "daily_time" in snap or unown_context is not None:
+                # Confirm time and Unown records in the same emulator callback,
+                # before the game can advance and change the written fields.
                 self.g.batch(guards + changes, verify=True)
             else:
                 self.g.batch(guards + changes)
@@ -1452,6 +1637,13 @@ class Trainer:
         if record.get("status") != "verified":
             raise ValueError("此备份的写入未被确认完成，不能自动恢复；请先导出诊断核对")
         snap = self.snapshot()
+        unown_ranges = ((CAPTURE_ADDRESS, 4), (RESEARCH_ADDRESS, 1), (FINAL_ADDRESS, 1))
+        unown_restore = "unown_context" in record or any(
+            item["address"] < a + size and a < item["address"] + len(bytes.fromhex(item["before"]))
+            for item in record.get("patches", []) for a, size in unown_ranges
+        )
+        if unown_restore:
+            self._restore_unown_context(record, snap)
         patches = []
         for item in record.get("patches", []):
             address = item["address"]
@@ -1463,6 +1655,9 @@ class Trainer:
                 len(before) == 100
                 and PARTY <= address < PARTY + 6 * 100
                 and (address - PARTY) % 100 == 0
+            )
+            valid = valid or (
+                unown_restore and self._valid_unown_patch(address, before, after)
             )
             valid = valid or (
                 address == PARTY_COUNT

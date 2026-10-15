@@ -1,0 +1,392 @@
+{
+  "schema": 1,
+  "releases": {
+    "1.0": {
+      "generator": 165037976,
+      "ordinary": 165039376,
+      "ordinary_end": 165040132,
+      "fishing": 165043704,
+      "fishing_end": 165043872,
+      "callers": [
+        165039656,
+        165039760,
+        165039866,
+        165039958,
+        165043756,
+        165043806
+      ],
+      "version": "1.0",
+      "rom_sha256": "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821",
+      "stub_address": 145276928,
+      "stub_size": 100,
+      "original_generator": "f0b58bb00792012205000691",
+      "original_stub": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "generator_end": 165038428,
+      "base_stats_address": 158785468,
+      "base_stats_record_size": 28,
+      "species_count": 1432,
+      "valid_species_ranges": [
+        [
+          1,
+          251
+        ],
+        [
+          254,
+          260
+        ],
+        [
+          262,
+          411
+        ],
+        [
+          413,
+          705
+        ],
+        [
+          707,
+          1293
+        ],
+        [
+          1401,
+          1488
+        ],
+        [
+          1491,
+          1491
+        ],
+        [
+          1494,
+          1525
+        ],
+        [
+          1527,
+          1539
+        ],
+        [
+          1544,
+          1553
+        ]
+      ],
+      "hook_template": "08b4014b1847c04601c0a808",
+      "stub_template": "08bcf0b57446094d06262f68bc4203d00435013ef9d101e0054801218bb00792012205000691034c2047c04638c0a80801000000a547d6092d4ed609954ed609ff4ed6095b4fd609315ed609635ed609c046c046c046c046c046c046c046c046c046c046",
+      "stub_species_offset": 48,
+      "stub_level_offset": 26,
+      "guards": [
+        {
+          "address": 134752764,
+          "expected_hex": "004a10479947d609"
+        },
+        {
+          "address": 134753468,
+          "expected_hex": "004a10474f5ad609"
+        },
+        {
+          "address": 165037976,
+          "expected_hex": "f0b58bb007920122050006910592002b04d05c4b01f040fd002305931c215a4b1a680b006b439b181b7c584a1400002b00d189e0fe2b00d386e0554f002211313800544b01f028fd061e00d07ce03800a3f728fa382800d076e04f4b01f01cfd032127f797fa0904090c00d16ce0388c39684a4b01f010fdfe2802d0002863d1"
+        },
+        {
+          "address": 165038104,
+          "expected_hex": "fe36fef79ffc079907002800fff776ff6423020005985843029229002018019700962023069a3e4d01f0f8fc3d483e4d01f0f4fc002809d06422059b53438022e3184633597952420a435a71374801f0e5fc002808d06422059b53430822e3184033d9790a43da71314801f0d7fc002814d0059b5a42082364211a402d4bd218"
+        },
+        {
+          "address": 165038232,
+          "expected_hex": "0023059c4c432c4ed55ab54203d01f4fe018c01985850233082bf5d1a8f7dcf96423059c5c43194be418002807d00127224d194e200001f0b1fc002818d12000a2f7ccfb0bb0f0bdfef73cfc079906002800fff713ff64230200059858430192201800962023069a2900a2f76dfb9de701f095fc09aa099039002000104b01f0"
+        },
+        {
+          "address": 165038360,
+          "expected_hex": "8bfcd7e735da0308bc0100082c40020284420202e9fb0308c94e04088df7030801de03080f090000d1e60608280900000b090000b8700302ffff0000714404087d030408"
+        },
+        {
+          "address": 165039376,
+          "expected_hex": "f0b50d25002489b004abed180700039105922c70a14200d183e0012936d1053400942b002a2208217868fff74dfa002834d100942b0009220d217868fff744fa00282bd100942b001f220d217868fff73bfa002822d100942b0012220a217868fff732fa002819d100942b00e1220c217868fff729fa002810d100942b008322"
+        },
+        {
+          "address": 165039504,
+          "expected_hex": "0b217868fff720fa002807d10d2604abf618039b002b46d0022b49d92d787868ab00c0180493fff781fa059b0490db0740d4059b9b0720d58e4e00222d2130008d4b01f02dfa002817d13000a2f72eff332801d0162810d154363378052b0cd9049a043b934208dd844b01f019fa0221834b01f015fa002822d0039b002b21d1"
+        },
+        {
+          "address": 165039632,
+          "expected_hex": "0e2604abf6183000fff74aff002819d0308801232a000499fff7b6fc180009b0f0bd0c247ce7774b01f0faf93070b5e7754bf9e70498754b01f0f2f90028b8d10023ebe77248734e01f0edf9002825d06a4b01f0e5f9704f0600704801f0e4f90a210400300026f759ff062363436c480a31c31809062a00090e040058880123"
+        },
+        {
+          "address": 165039760,
+          "expected_hex": "fff782fc654801f0cff906264643a419a18800226348dcf7ddffbfe7039b002b61d11f2001f0bff900285cd0534b059301f0b6f9032126f731ff0904090c52d0594b5a4801f0acf9fff7d2fb059b060001f0a6f90a2126f721ff0904090c032935d8308801232a000499fff74dfc9120484b000101f094f90123002800d18de7"
+        },
+        {
+          "address": 165039888,
+          "expected_hex": "0d2504abed1800232b709c4230d1039b002b64d0022b67d92c787868a6008019fff7c4f9039b0500002b5fd10e3304aa9b181800fff7b4fe002857d004abd889002322002900fff71ffc012366e70b061b0e052901d87088c4e7072b01d8b088c0e7f088bee77b68aa009b185888b9e700942b002a2208217868fff725f90028"
+        },
+        {
+          "address": 165040016,
+          "expected_hex": "cad100942b0009220d217868fff71cf90028c1d100942b001f220d217868fff713f90028b8d100942b0012220a217868fff70af90028afd100942b00e1220c217868fff701f90028a6d100942b0083220b217868fff7f8f800289dd197e7094b01f01ef9287097e7074bf9e77b689e197088a5e7"
+        },
+        {
+          "address": 165043704,
+          "expected_hex": "f7b505000220fff765fc0122264b1a70264b04002800019300f00efa870006006068c019fef74efa6368df190100012378883200fef7b4fc91201d4b000100f0fbf9002811d0019b280000f0f5f98600050060688019fef735fa63689b1901002a0058880023fef79bfc124b124800220b2100f0e1f9114e33880404240c104d"
+        },
+        {
+          "address": 165043832,
+          "expected_hex": "a3420ed12878ff210130fcf77bfa28700c200c4b348000f0cff90b4b00f0ccf9f7bd00232b70f3e7"
+        }
+      ]
+    },
+    "1.2": {
+      "generator": 165055340,
+      "ordinary": 165056772,
+      "ordinary_end": 165057528,
+      "fishing": 165061100,
+      "fishing_end": 165061268,
+      "callers": [
+        165057052,
+        165057156,
+        165057262,
+        165057354,
+        165061152,
+        165061202
+      ],
+      "version": "1.2",
+      "rom_sha256": "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896",
+      "stub_address": 145276928,
+      "stub_size": 100,
+      "original_generator": "f0b58bb00792012205000691",
+      "original_stub": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "generator_end": 165055792,
+      "base_stats_address": 158785468,
+      "base_stats_record_size": 28,
+      "species_count": 1432,
+      "valid_species_ranges": [
+        [
+          1,
+          251
+        ],
+        [
+          254,
+          260
+        ],
+        [
+          262,
+          411
+        ],
+        [
+          413,
+          705
+        ],
+        [
+          707,
+          1293
+        ],
+        [
+          1401,
+          1488
+        ],
+        [
+          1491,
+          1491
+        ],
+        [
+          1494,
+          1525
+        ],
+        [
+          1527,
+          1539
+        ],
+        [
+          1544,
+          1553
+        ]
+      ],
+      "hook_template": "08b4014b1847c04601c0a808",
+      "stub_template": "08bcf0b57446094d06262f68bc4203d00435013ef9d101e0054801218bb00792012205000691034c2047c04638c0a80801000000798bd6092192d6098992d609f392d6094f93d60925a2d60957a2d609c046c046c046c046c046c046c046c046c046c046",
+      "stub_species_offset": 48,
+      "stub_level_offset": 26,
+      "guards": [
+        {
+          "address": 134752764,
+          "expected_hex": "004a10476d8bd609"
+        },
+        {
+          "address": 134753468,
+          "expected_hex": "004a1047439ed609"
+        },
+        {
+          "address": 165055340,
+          "expected_hex": "f0b58bb007920122050006910592002b04d05c4b01f050fd002305931c215a4b1a680b006b439b181b7c584a1400002b00d189e0fe2b00d386e0554f002211313800544b01f038fd061e00d07ce03800a1f780fa382800d076e04f4b01f02cfd032123f7adf80904090c00d16ce0388c39684a4b01f020fdfe2802d0002863d1"
+        },
+        {
+          "address": 165055468,
+          "expected_hex": "fe36fef773fc079907002800fff760ff6423020005985843029229002018019700962023069a3e4d01f008fd3d483e4d01f004fd002809d06422059b53438022e3184633597952420a435a71374801f0f5fc002808d06422059b53430822e3184033d9790a43da71314801f0e7fc002814d0059b5a42082364211a402d4bd218"
+        },
+        {
+          "address": 165055596,
+          "expected_hex": "0023059c4c432c4ed55ab54203d01f4fe018c01985850233082bf5d1a6f734fa6423059c5c43194be418002807d00127224d194e200001f0c1fc002818d12000a0f724fc0bb0f0bdfef710fc079906002800fff7fdfe64230200059858430192201800962023069a2900a0f7c5fb9de701f0a5fc09aa099039002000104b01f0"
+        },
+        {
+          "address": 165055724,
+          "expected_hex": "9bfcd7e735da0308bc0100082c40020284420202e9fb0308c94e04088df7030801de03080f090000d1e60608280900000b090000b8700302ffff0000714404087d030408"
+        },
+        {
+          "address": 165056772,
+          "expected_hex": "f0b50d25002489b004abed180700039105922c70a14200d183e0012936d1053400942b002a2208217868fff727fa002834d100942b0009220d217868fff71efa00282bd100942b001f220d217868fff715fa002822d100942b0012220a217868fff70cfa002819d100942b00e1220c217868fff703fa002810d100942b008322"
+        },
+        {
+          "address": 165056900,
+          "expected_hex": "0b217868fff7faf9002807d10d2604abf618039b002b46d0022b49d92d787868ab00c0180493fff75bfa059b0490db0740d4059b9b0720d58e4e00222d2130008d4b01f02dfa002817d13000a0f776ff332801d0162810d154363378052b0cd9049a043b934208dd844b01f019fa0221834b01f015fa002822d0039b002b21d1"
+        },
+        {
+          "address": 165057028,
+          "expected_hex": "0e2604abf6183000fff74aff002819d0308801232a000499fff7a6fc180009b0f0bd0c247ce7774b01f0faf93070b5e7754bf9e70498754b01f0f2f90028b8d10023ebe77248734e01f0edf9002825d06a4b01f0e5f9704f0600704801f0e4f90a210400300022f75ffd062363436c480a31c31809062a00090e040058880123"
+        },
+        {
+          "address": 165057156,
+          "expected_hex": "fff772fc654801f0cff906264643a419a18800226348dbf7f3febfe7039b002b61d11f2001f0bff900285cd0534b059301f0b6f9032122f737fd0904090c52d0594b5a4801f0acf9fff7acfb059b060001f0a6f90a2122f727fd0904090c032935d8308801232a000499fff73dfc9120484b000101f094f90123002800d18de7"
+        },
+        {
+          "address": 165057284,
+          "expected_hex": "0d2504abed1800232b709c4230d1039b002b64d0022b67d92c787868a6008019fff79ef9039b0500002b5fd10e3304aa9b181800fff7b4fe002857d004abd889002322002900fff70ffc012366e70b061b0e052901d87088c4e7072b01d8b088c0e7f088bee77b68aa009b185888b9e700942b002a2208217868fff7fff80028"
+        },
+        {
+          "address": 165057412,
+          "expected_hex": "cad100942b0009220d217868fff7f6f80028c1d100942b001f220d217868fff7edf80028b8d100942b0012220a217868fff7e4f80028afd100942b00e1220c217868fff7dbf80028a6d100942b0083220b217868fff7d2f800289dd197e7094b01f01ef9287097e7074bf9e77b689e197088a5e7"
+        },
+        {
+          "address": 165061100,
+          "expected_hex": "f7b505000220fff765fc0122264b1a70264b04002800019300f00efa870006006068c019fef728fa6368df190100012378883200fef7a4fc91201d4b000100f0fbf9002811d0019b280000f0f5f98600050060688019fef70ffa63689b1901002a0058880023fef78bfc124b124800220b2100f0e1f9114e33880404240c104d"
+        },
+        {
+          "address": 165061228,
+          "expected_hex": "a3420ed12878ff210130fcf73ffa28700c200c4b348000f0cff90b4b00f0ccf9f7bd00232b70f3e7"
+        }
+      ]
+    },
+    "1.33": {
+      "generator": 165067384,
+      "ordinary": 165068816,
+      "ordinary_end": 165069572,
+      "fishing": 165073144,
+      "fishing_end": 165073312,
+      "callers": [
+        165069096,
+        165069200,
+        165069306,
+        165069398,
+        165073196,
+        165073246
+      ],
+      "version": "1.33",
+      "rom_sha256": "9801866280284a8ac12650666b8526ff3d07aa455f8dc623c2c56c0537313ec4",
+      "stub_address": 145276928,
+      "stub_size": 100,
+      "original_generator": "f0b58bb00792012205000691",
+      "original_stub": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "generator_end": 165067836,
+      "base_stats_address": 158785468,
+      "base_stats_record_size": 28,
+      "species_count": 1432,
+      "valid_species_ranges": [
+        [
+          1,
+          251
+        ],
+        [
+          254,
+          260
+        ],
+        [
+          262,
+          411
+        ],
+        [
+          413,
+          705
+        ],
+        [
+          707,
+          1293
+        ],
+        [
+          1401,
+          1488
+        ],
+        [
+          1491,
+          1491
+        ],
+        [
+          1494,
+          1525
+        ],
+        [
+          1527,
+          1539
+        ],
+        [
+          1544,
+          1553
+        ]
+      ],
+      "hook_template": "08b4014b1847c04601c0a808",
+      "stub_template": "08bcf0b57446094d06262f68bc4203d00435013ef9d101e0054801218bb00792012205000691034c2047c04638c0a8080100000085bad6092dc1d60995c1d609ffc1d6095bc2d60931d1d60963d1d609c046c046c046c046c046c046c046c046c046c046",
+      "stub_species_offset": 48,
+      "stub_level_offset": 26,
+      "guards": [
+        {
+          "address": 134752764,
+          "expected_hex": "004a104779bad609"
+        },
+        {
+          "address": 134753468,
+          "expected_hex": "004a10474fcdd609"
+        },
+        {
+          "address": 165067384,
+          "expected_hex": "f0b58bb007920122050006910592002b04d05c4b01f050fd002305931c215a4b1a680b006b439b181b7c584a1400002b00d189e0fe2b00d386e0554f002211313800544b01f038fd061e00d07ce038009ef774ff382800d076e04f4b01f02cfd032120f727f90904090c00d16ce0388c39684a4b01f020fdfe2802d0002863d1"
+        },
+        {
+          "address": 165067512,
+          "expected_hex": "fe36fef76dfc079907002800fff760ff6423020005985843029229002018019700962023069a3e4d01f008fd3d483e4d01f004fd002809d06422059b53438022e3184633597952420a435a71374801f0f5fc002808d06422059b53430822e3184033d9790a43da71314801f0e7fc002814d0059b5a42082364211a402d4bd218"
+        },
+        {
+          "address": 165067640,
+          "expected_hex": "0023059c4c432c4ed55ab54203d01f4fe018c01985850233082bf5d1a3f728ff6423059c5c43194be418002807d00127224d194e200001f0c1fc002818d120009ef718f90bb0f0bdfef70afc079906002800fff7fdfe64230200059858430192201800962023069a29009ef7b9f89de701f0a5fc09aa099039002000104b01f0"
+        },
+        {
+          "address": 165067768,
+          "expected_hex": "9bfcd7e735da0308bc0100082c40020284420202e9fb0308c94e04088df7030801de03080f090000d1e60608280900000b090000b8700302ffff0000714404087d030408"
+        },
+        {
+          "address": 165068816,
+          "expected_hex": "f0b50d25002489b004abed180700039105922c70a14200d183e0012936d1053400942b002a2208217868fff727fa002834d100942b0009220d217868fff71efa00282bd100942b001f220d217868fff715fa002822d100942b0012220a217868fff70cfa002819d100942b00e1220c217868fff703fa002810d100942b008322"
+        },
+        {
+          "address": 165068944,
+          "expected_hex": "0b217868fff7faf9002807d10d2604abf618039b002b46d0022b49d92d787868ab00c0180493fff75bfa059b0490db0740d4059b9b0720d58e4e00222d2130008d4b01f02dfa002817d130009ef76afc332801d0162810d154363378052b0cd9049a043b934208dd844b01f019fa0221834b01f015fa002822d0039b002b21d1"
+        },
+        {
+          "address": 165069072,
+          "expected_hex": "0e2604abf6183000fff74aff002819d0308801232a000499fff7a6fc180009b0f0bd0c247ce7774b01f0faf93070b5e7754bf9e70498754b01f0f2f90028b8d10023ebe77248734e01f0edf9002825d06a4b01f0e5f9704f0600704801f0e4f90a21040030001ff7d9fd062363436c480a31c31809062a00090e040058880123"
+        },
+        {
+          "address": 165069200,
+          "expected_hex": "fff772fc654801f0cff906264643a419a18800226348daf769fdbfe7039b002b61d11f2001f0bff900285cd0534b059301f0b6f903211ff7b1fd0904090c52d0594b5a4801f0acf9fff7acfb059b060001f0a6f90a211ff7a1fd0904090c032935d8308801232a000499fff73dfc9120484b000101f094f90123002800d18de7"
+        },
+        {
+          "address": 165069328,
+          "expected_hex": "0d2504abed1800232b709c4230d1039b002b64d0022b67d92c787868a6008019fff79ef9039b0500002b5fd10e3304aa9b181800fff7b4fe002857d004abd889002322002900fff70ffc012366e70b061b0e052901d87088c4e7072b01d8b088c0e7f088bee77b68aa009b185888b9e700942b002a2208217868fff7fff80028"
+        },
+        {
+          "address": 165069456,
+          "expected_hex": "cad100942b0009220d217868fff7f6f80028c1d100942b001f220d217868fff7edf80028b8d100942b0012220a217868fff7e4f80028afd100942b00e1220c217868fff7dbf80028a6d100942b0083220b217868fff7d2f800289dd197e7094b01f01ef9287097e7074bf9e77b689e197088a5e7"
+        },
+        {
+          "address": 165073144,
+          "expected_hex": "f7b505000220fff765fc0122264b1a70264b04002800019300f00efa870006006068c019fef728fa6368df190100012378883200fef7a4fc91201d4b000100f0fbf9002811d0019b280000f0f5f98600050060688019fef70ffa63689b1901002a0058880023fef78bfc124b124800220b2100f0e1f9114e33880404240c104d"
+        },
+        {
+          "address": 165073272,
+          "expected_hex": "a3420ed12878ff210130fcf739fa28700c200c4b348000f0cff90b4b00f0ccf9f7bd00232b70f3e7"
+        }
+      ]
+    }
+  }
+}

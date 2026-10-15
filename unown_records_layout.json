@@ -1,0 +1,310 @@
+{
+  "schema_version": 1,
+  "item_id": 740,
+  "first_capture_flag": 5866,
+  "letters": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "!",
+    "?"
+  ],
+  "extended_flags": {
+    "address": 33796468,
+    "first_flag": 2304,
+    "last_flag": 6399
+  },
+  "capture_address": 33796913,
+  "capture_bytes": 4,
+  "capture_mask_hex": "fcffff3f",
+  "notes": [
+    {
+      "key": "note_stone_radio",
+      "label": "石板与电波记录（同时改变研究阶段）",
+      "flag": 2784,
+      "pages": [
+        4,
+        5
+      ],
+      "editable": true
+    },
+    {
+      "key": "note_radio_observed",
+      "label": "电波体验记录（影响任务条件）",
+      "flag": 2785,
+      "pages": [],
+      "editable": true
+    },
+    {
+      "key": "note_language",
+      "label": "未知图腾语言记录（同时改变研究阶段）",
+      "flag": 2786,
+      "pages": [
+        5,
+        6
+      ],
+      "editable": true
+    },
+    {
+      "key": "note_order",
+      "label": "排列文字记录（同时改变研究阶段）",
+      "flag": 2787,
+      "pages": [
+        7,
+        8
+      ],
+      "editable": true
+    },
+    {
+      "key": "note_secret_room",
+      "label": "秘密房间体验记录（影响任务条件）",
+      "flag": 2788,
+      "pages": [],
+      "editable": true
+    },
+    {
+      "key": "note_symbols",
+      "label": "最后两个符号记录（同时改变研究阶段）",
+      "flag": 2789,
+      "pages": [
+        9,
+        10
+      ],
+      "editable": true
+    },
+    {
+      "key": "note_final",
+      "label": "最终记录（与任务034完成共用，奖励保护，只读）",
+      "flag": 5970,
+      "pages": [
+        11,
+        12,
+        13
+      ],
+      "editable": false
+    }
+  ],
+  "save_mapping": [
+    {
+      "ram": 33796468,
+      "size": 204,
+      "section": 0,
+      "offset": 3876
+    },
+    {
+      "ram": 33796672,
+      "size": 600,
+      "section": 4,
+      "offset": 3480
+    }
+  ],
+  "pointer_guards": [
+    50352136,
+    50352140
+  ],
+  "releases": {
+    "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821": {
+      "version": "1.0",
+      "item_use": 148877560,
+      "form_counter": 148868864,
+      "form_renderer": 148871216,
+      "capture_start": 164679228,
+      "capture_end": 164679252,
+      "serializer": 164981832,
+      "flag_get": 134670032,
+      "flag_set": 134669952,
+      "flag_clear": 134669992,
+      "get_flag_address": 134669760,
+      "notebook_dispatch": 148871676,
+      "notebook_dispatch_end": 148877406,
+      "trampoline": 148877644,
+      "runtime_features": [
+        {
+          "address": 134670032,
+          "hex": "10b50004040c201cfff772ff002809d0007807212140084101210840002801d0012000e0002010bc02bc0847",
+          "purpose": "FlagGet"
+        },
+        {
+          "address": 134669760,
+          "hex": "00490847d5d0cc09",
+          "purpose": "GetFlagAddr hook"
+        },
+        {
+          "address": 164983656,
+          "hex": "0c4b0200c3180c481904090c814203d8d8100a4bc0187047094b00209a42fad803000849914243415842074b1840074bf0e7c04600f7ffffff0f000074b10302ff3f0000ff180000488ffcfdb8700302",
+          "purpose": "extended flags resolver"
+        },
+        {
+          "address": 164679228,
+          "hex": "c92c09d1384b00f0ddf9384bc0180004000c374b00f0d6f9",
+          "purpose": "capture form flag write"
+        },
+        {
+          "address": 164679460,
+          "hex": "b92a0808ea16000081e60608",
+          "purpose": "capture literal pointers"
+        },
+        {
+          "address": 149717285,
+          "hex": "2b51170601c683ec0805e7c4ae0829000b29",
+          "purpose": "NPC acceptance guard"
+        },
+        {
+          "address": 142409008,
+          "hex": "0d7a107b0d240cdb018705b2ff00e402000000002039ea0800000202f9b0df08000000000000000000000000",
+          "purpose": "notebook key item"
+        },
+        {
+          "address": 149717958,
+          "hex": "2be00a0601ee83ec080f00e08aec08090267838bec08663102013229e00a0f00a68bec08090202ff2be10a06010184ec080f00a68bec08090202ff2be20a06012984ec080f00008cec08090267838bec08663102013229e20a0f00558cec08090202ff2bea1606002187ec082beb1606002187ec082bec1606002187ec082bed1606002187ec082bee1606002187ec082bef1606002187ec082bf01606002187ec082bf11606002187ec082bf21606002187ec082bf31606002187ec082bf41606002187ec082bf51606002187ec082bf61606002187ec082bf71606002187ec082bf81606002187ec082bf91606002187ec082bfa1606002187ec082bfb1606002187ec082bfc1606002187ec082bfd1606002187ec082bfe1606002187ec082bff1606002187ec082b001706002187ec082b011706002187ec082b021706002187ec082b031706002187ec082be30a06014485ec080f00238aec08090267838bec08663102013229e30a0f009789ec080902020f009789ec08090202ff2be40a06015785ec080f009789ec08090202ff2be50a06017f85ec080f004589ec08090267838bec08663102013229e50a0f00db88ec08090202ff2b521706013886ec082b041706002e86ec082b051706002e86ec080f00b187ec08090267838bec0866310201320f002b87ec0809026a1a008062011a0180010009006a2805006a1a008065011a0180010009006a2805006a1a008066011a0180010009006a2805000f00e686ec0809022f02000f00c786ec08160080010016018001001602801c0016038002002351649b080f00a286ec080902230101fb082952171735510f0090983a00000002ff0f00db88ec08090202ff0f004286ec08090202ff",
+          "purpose": "complete NPC reward branch script; end 08EC8642 exclusive"
+        }
+      ],
+      "npc_script_sha256": "435d12dc5a864f7a2387e9086c43a90f6a99ad5ed733008b625320761ab1cad4"
+    },
+    "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896": {
+      "version": "1.2",
+      "item_use": 148879748,
+      "form_counter": 148871052,
+      "form_renderer": 148873404,
+      "capture_start": 164688576,
+      "capture_end": 164688600,
+      "serializer": 164998664,
+      "flag_get": 134670032,
+      "flag_set": 134669952,
+      "flag_clear": 134669992,
+      "get_flag_address": 134669760,
+      "notebook_dispatch": 148873864,
+      "notebook_dispatch_end": 148879594,
+      "trampoline": 148879832,
+      "runtime_features": [
+        {
+          "address": 134670032,
+          "hex": "10b50004040c201cfff772ff002809d0007807212140084101210840002801d0012000e0002010bc02bc0847",
+          "purpose": "FlagGet"
+        },
+        {
+          "address": 134669760,
+          "hex": "0049084799d1cc09",
+          "purpose": "GetFlagAddr hook"
+        },
+        {
+          "address": 165000416,
+          "hex": "0c4b0200c3180c481904090c814203d8d8100a4bc0187047094b00209a42fad803000849914243415842074b1840074bf0e7c04600f7ffffff0f000074b10302ff3f0000ff180000488ffcfdb8700302",
+          "purpose": "extended flags resolver"
+        },
+        {
+          "address": 164688576,
+          "hex": "c92c09d1384b00f0ddf9384bc0180004000c374b00f0d6f9",
+          "purpose": "capture form flag write"
+        },
+        {
+          "address": 164688808,
+          "hex": "b92a0808ea16000081e60608",
+          "purpose": "capture literal pointers"
+        },
+        {
+          "address": 149717285,
+          "hex": "2b51170601c683ec0805e7c4ae0829000b29",
+          "purpose": "NPC acceptance guard"
+        },
+        {
+          "address": 142409008,
+          "hex": "0d7a107b0d240cdb018705b2ff00e402000000002039ea080000020285b9df08000000000000000000000000",
+          "purpose": "notebook key item"
+        },
+        {
+          "address": 149717958,
+          "hex": "2be00a0601ee83ec080f00e08aec08090267838bec08663102013229e00a0f00a68bec08090202ff2be10a06010184ec080f00a68bec08090202ff2be20a06012984ec080f00008cec08090267838bec08663102013229e20a0f00558cec08090202ff2bea1606002187ec082beb1606002187ec082bec1606002187ec082bed1606002187ec082bee1606002187ec082bef1606002187ec082bf01606002187ec082bf11606002187ec082bf21606002187ec082bf31606002187ec082bf41606002187ec082bf51606002187ec082bf61606002187ec082bf71606002187ec082bf81606002187ec082bf91606002187ec082bfa1606002187ec082bfb1606002187ec082bfc1606002187ec082bfd1606002187ec082bfe1606002187ec082bff1606002187ec082b001706002187ec082b011706002187ec082b021706002187ec082b031706002187ec082be30a06014485ec080f00238aec08090267838bec08663102013229e30a0f009789ec080902020f009789ec08090202ff2be40a06015785ec080f009789ec08090202ff2be50a06017f85ec080f004589ec08090267838bec08663102013229e50a0f00db88ec08090202ff2b521706013886ec082b041706002e86ec082b051706002e86ec080f00b187ec08090267838bec0866310201320f002b87ec0809026a1a008062011a0180010009006a2805006a1a008065011a0180010009006a2805006a1a008066011a0180010009006a2805000f00e686ec0809022f02000f00c786ec08160080010016018001001602801c0016038002002351649b080f00a286ec080902230101fb082952171735510f0090983a00000002ff0f00db88ec08090202ff0f004286ec08090202ff",
+          "purpose": "complete NPC reward branch script; end 08EC8642 exclusive"
+        }
+      ],
+      "npc_script_sha256": "435d12dc5a864f7a2387e9086c43a90f6a99ad5ed733008b625320761ab1cad4"
+    },
+    "9801866280284a8ac12650666b8526ff3d07aa455f8dc623c2c56c0537313ec4": {
+      "version": "1.33",
+      "item_use": 148880122,
+      "form_counter": 148871424,
+      "form_renderer": 148873776,
+      "capture_start": 164690868,
+      "capture_end": 164690892,
+      "serializer": 165006260,
+      "flag_get": 134670032,
+      "flag_set": 134669952,
+      "flag_clear": 134669992,
+      "get_flag_address": 134669760,
+      "notebook_dispatch": 148874236,
+      "notebook_dispatch_end": 148879966,
+      "trampoline": 148880204,
+      "runtime_features": [
+        {
+          "address": 134670032,
+          "hex": "10b50004040c201cfff772ff002809d0007807212140084101210840002801d0012000e0002010bc02bc0847",
+          "purpose": "FlagGet"
+        },
+        {
+          "address": 134669760,
+          "hex": "0049084799d1cc09",
+          "purpose": "GetFlagAddr hook"
+        },
+        {
+          "address": 165008024,
+          "hex": "0c4b0200c3180c481904090c814203d8d8100a4bc0187047094b00209a42fad803000849914243415842074b1840074bf0e7c04600f7ffffff0f000074b10302ff3f0000ff180000488ffcfdb8700302",
+          "purpose": "extended flags resolver"
+        },
+        {
+          "address": 164690868,
+          "hex": "c92c09d1384b00f0ddf9384bc0180004000c374b00f0d6f9",
+          "purpose": "capture form flag write"
+        },
+        {
+          "address": 164691100,
+          "hex": "b92a0808ea16000081e60608",
+          "purpose": "capture literal pointers"
+        },
+        {
+          "address": 149717285,
+          "hex": "2b51170601c683ec0805e7c4ae0829000b29",
+          "purpose": "NPC acceptance guard"
+        },
+        {
+          "address": 142409008,
+          "hex": "0d7a107b0d240cdb018705b2ff00e402000000002039ea0800000202fbbadf08000000000000000000000000",
+          "purpose": "notebook key item"
+        },
+        {
+          "address": 149717958,
+          "hex": "2be00a0601ee83ec080f00e08aec08090267838bec08663102013229e00a0f00a68bec08090202ff2be10a06010184ec080f00a68bec08090202ff2be20a06012984ec080f00008cec08090267838bec08663102013229e20a0f00558cec08090202ff2bea1606002187ec082beb1606002187ec082bec1606002187ec082bed1606002187ec082bee1606002187ec082bef1606002187ec082bf01606002187ec082bf11606002187ec082bf21606002187ec082bf31606002187ec082bf41606002187ec082bf51606002187ec082bf61606002187ec082bf71606002187ec082bf81606002187ec082bf91606002187ec082bfa1606002187ec082bfb1606002187ec082bfc1606002187ec082bfd1606002187ec082bfe1606002187ec082bff1606002187ec082b001706002187ec082b011706002187ec082b021706002187ec082b031706002187ec082be30a06014485ec080f00238aec08090267838bec08663102013229e30a0f009789ec080902020f009789ec08090202ff2be40a06015785ec080f009789ec08090202ff2be50a06017f85ec080f004589ec08090267838bec08663102013229e50a0f00db88ec08090202ff2b521706013886ec082b041706002e86ec082b051706002e86ec080f00b187ec08090267838bec0866310201320f002b87ec0809026a1a008062011a0180010009006a2805006a1a008065011a0180010009006a2805006a1a008066011a0180010009006a2805000f00e686ec0809022f02000f00c786ec08160080010016018001001602801c0016038002002351649b080f00a286ec080902230101fb082952171735510f0090983a00000002ff0f00db88ec08090202ff0f004286ec08090202ff",
+          "purpose": "complete NPC reward branch script; end 08EC8642 exclusive"
+        }
+      ],
+      "npc_script_sha256": "435d12dc5a864f7a2387e9086c43a90f6a99ad5ed733008b625320761ab1cad4"
+    }
+  },
+  "research_mask_hex": "3f",
+  "task_accept_flag": 5969,
+  "task_complete_flag": 5970
+}

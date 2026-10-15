@@ -2,10 +2,15 @@
 
 import socket
 import struct
+import threading
+from uuid import uuid4
 
 
 class MemClient:
     def __init__(self, host="127.0.0.1", port=8888):
+        self._lock = threading.RLock()
+        self._wild_overlay = None
+        self.connection_generation = uuid4().hex
         self.host, self.port = host, port
         self.s = None
         self.buffer = b""
@@ -50,14 +55,30 @@ class MemClient:
         )
 
     def close(self):
+        with self._lock:
+            if self.s is not None and self._wild_overlay is not None:
+                try:
+                    self.command("WILDOFF " + self._wild_overlay["nonce"])
+                except (OSError, ValueError):
+                    pass
+            self._wild_overlay = None
+            self._close_socket()
+
+    def _close_socket(self):
         if self.s is not None:
             self.s.close()
         self.s = None
         self.buffer = b""
         self.capabilities = set()
         self.expected_rom_crc32 = None
+        self._wild_overlay = None
+        self.connection_generation = uuid4().hex
 
     def command(self, command, allow_error=False):
+        with self._lock:
+            return self._command(command, allow_error=allow_error)
+
+    def _command(self, command, allow_error=False):
         if self.s is None:
             raise IOError("未连接")
         response_limit = (
@@ -78,7 +99,7 @@ class MemClient:
             if len(line) >= response_limit:
                 raise IOError("桥接响应超过长度限制")
         except OSError:
-            self.close()
+            self._close_socket()
             raise
         if line.startswith(b"ERR") and not allow_error:
             if line == b"ERR stale":
@@ -133,6 +154,43 @@ class MemClient:
                 raise IOError("ROM 响应长度不完整")
             result.extend(chunk)
         return bytes(result)
+
+    def read_compatible_rom(self, address, size):
+        """Normalize only this connection's currently acknowledged owned overlay.
+
+        Raw reads remain unchanged. Full patch comparison prevents this narrow
+        view from masking another tool's edits, including edits outside a slice.
+        """
+        with self._lock:
+            owner = self._wild_overlay
+            if owner is None:
+                return self.read_rom(address, size)
+            if owner["generation"] != self.connection_generation:
+                self._wild_overlay = None
+                raise IOError("野生遭遇覆盖不属于当前连接")
+            if self.command("ROMCRC").decode("ascii").lower() != owner["crc"]:
+                self._wild_overlay = None
+                raise IOError("ROM已切换，不能归一化临时覆盖")
+            state = self.command("WILDSTATE").decode("ascii").split()
+            if state[:1] == ["INACTIVE"]:
+                for a, before, _ in owner["patches"]:
+                    if self.read_rom(a, len(before)) != before:
+                        raise IOError("停用后ROM补丁未恢复，拒绝兼容检查")
+                self._wild_overlay = None
+                return self.read_rom(address, size)
+            if len(state) != 6 or state[:2] != ["ACTIVE", owner["nonce"]] or state[2] != owner["crc"]:
+                raise IOError("野生遭遇覆盖所有权已变化")
+            for a, _, after in owner["patches"]:
+                if self.read_rom(a, len(after)) != after:
+                    raise IOError("野生遭遇临时补丁已被改动，拒绝兼容检查")
+            raw = bytearray(self.read_rom(address, size))
+            for a, before, after in owner["patches"]:
+                start, end = max(address, a), min(address + size, a + len(before))
+                if start < end:
+                    if raw[start-address:end-address] != after[start-a:end-a]:
+                        raise IOError("野生遭遇补丁在兼容读取期间已变化")
+                    raw[start-address:end-address] = before[start-a:end-a]
+            return bytes(raw)
 
     def batch(self, patches, verify=False, large_boxes=False):
         if "BATCH" not in self.capabilities:
