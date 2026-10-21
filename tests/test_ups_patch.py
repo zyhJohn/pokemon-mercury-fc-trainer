@@ -1,10 +1,11 @@
 """Synthetic UPS fixtures; no ROMs or third-party patch bytes are included."""
 
-from dataclasses import FrozenInstanceError
+import random
 import unittest
 import zlib
+from dataclasses import FrozenInstanceError
 
-from ups_patch import MAX_IMAGE_SIZE, UpsPatchError, apply_ups, parse_ups
+from ups_patch import MAX_IMAGE_SIZE, UpsPatchError, apply_ups, encode_ups, parse_ups
 
 
 def _number(value):
@@ -45,6 +46,31 @@ def _patch(source, target):
 
 
 class UpsPatchTests(unittest.TestCase):
+    def test_encoder_forward_reverse_length_changes_and_eof(self):
+        for source, target in ((b"", b""), (b"", b"x"), (b"x", b""),
+                               (b"same", b"same"), (b"abc", b"abc\0\0"),
+                               (b"abc\0\0", b"abc"), (b"a" * 130, b"a" * 129 + b"z")):
+            with self.subTest(source=source, target=target):
+                encoded = encode_ups(source, target)
+                self.assertEqual(apply_ups(source, encoded), target)
+                self.assertEqual(apply_ups(target, encoded, reverse=True), source)
+                self.assertEqual(encoded, _patch(source, target))
+
+    def test_encoder_random_equal_and_unequal_images(self):
+        rng = random.Random(20261021)
+        for _ in range(400):
+            source = rng.randbytes(rng.randrange(512))
+            target = rng.randbytes(rng.randrange(512))
+            encoded = encode_ups(source, target)
+            self.assertEqual(apply_ups(source, encoded), target)
+            self.assertEqual(apply_ups(target, encoded, reverse=True), source)
+            self.assertEqual(encoded, _patch(source, target))
+
+    def test_encoder_immutable_input_types(self):
+        for source, target in ((bytearray(b"a"), b"b"), (b"a", "b")):
+            with self.assertRaises(TypeError):
+                encode_ups(source, target)
+
     def test_parse_identity_and_frozen_records(self):
         patch = _patch(b"abc def", b"ABC dEf")
         parsed = parse_ups(patch)

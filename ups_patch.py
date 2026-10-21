@@ -6,9 +6,8 @@ Format reference: https://github.com/Alcaro/Flips/blob/master/libups.cpp
 No file access, input mutation or automatic direction selection is performed.
 """
 
-from dataclasses import dataclass
 import zlib
-
+from dataclasses import dataclass
 
 MAX_IMAGE_SIZE = 64 * 1024 * 1024
 
@@ -29,6 +28,49 @@ class UpsPatch:
 
 def _crc32(data: bytes) -> str:
     return f"{zlib.crc32(data):08x}"
+
+
+def encode_ups(source: bytes, target: bytes) -> bytes:
+    """Encode bounded images without I/O or authorizing either image's layout."""
+    if not isinstance(source, bytes) or not isinstance(target, bytes):
+        raise TypeError("UPS images must be bytes")
+    if max(len(source), len(target)) > MAX_IMAGE_SIZE:
+        raise UpsPatchError("UPS image exceeds supported bounds")
+
+    def number(value):
+        output = bytearray()
+        while True:
+            digit = value & 0x7f
+            value >>= 7
+            if not value:
+                output.append(digit | 0x80)
+                return output
+            output.append(digit)
+            value -= 1
+
+    output = bytearray(b"UPS1") + number(len(source)) + number(len(target))
+    size, index, cursor = max(len(source), len(target)), 0, 0
+    while index < size:
+        left = source[index] if index < len(source) else 0
+        right = target[index] if index < len(target) else 0
+        if left == right:
+            index += 1
+            continue
+        output.extend(number(index - cursor))
+        while index < size:
+            left = source[index] if index < len(source) else 0
+            right = target[index] if index < len(target) else 0
+            if left == right:
+                break
+            output.append(left ^ right)
+            index += 1
+        output.append(0)
+        index += 1
+        cursor = index
+    output.extend(zlib.crc32(source).to_bytes(4, "little"))
+    output.extend(zlib.crc32(target).to_bytes(4, "little"))
+    output.extend(zlib.crc32(output).to_bytes(4, "little"))
+    return bytes(output)
 
 
 def parse_ups(patch: bytes) -> UpsPatch:
