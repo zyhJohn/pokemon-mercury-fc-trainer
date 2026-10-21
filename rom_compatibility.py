@@ -1,9 +1,9 @@
 """Conservative, bounded structural contracts for the three audited layouts.
 
-This is deliberately stronger than matching a few opcodes. Numeric tables and
-the full audited engine regions must remain identical. Assets outside these
-regions may change; a new layout or new numeric metadata requires a new contract.
-The manifest contains hashes and addresses, never ROM bytes.
+This is deliberately stronger than matching a few opcodes. Extracted numeric
+values remain fixed; protected bytes match either a baseline or a separately
+audited patch contract. Assets outside these regions may change. The manifests
+contain hashes and addresses, never ROM bytes.
 """
 
 import hashlib
@@ -20,6 +20,8 @@ GUARD_LIMIT = 65536
 MAX_GUARD_BYTES = 12 * 1024 * 1024
 MANIFEST_NAME = "rom_compatibility_manifest.json"
 SCHEMA = "mercury-protected-layout-v1"
+PATCH_MANIFEST_NAME = "rom_patch_compatibility.json"
+PATCH_SCHEMA = "mercury-patched-layout-v1"
 FONT_MAPPING_RANGE = (0x087D0000, 0x088B0000)
 
 
@@ -27,6 +29,12 @@ class CompatibilityError(ValueError):
     def __init__(self, message, report):
         super().__init__(message)
         self.compatibility_report = report
+
+
+class GuardMismatch(ValueError):
+    def __init__(self, message, mismatch):
+        super().__init__(message)
+        self.mismatch = mismatch
 
 
 def normalize_crc(crc):
@@ -123,6 +131,8 @@ def build_manifest_entry(rom, profile, catalog):
 
 
 def _validated_guards(entry):
+    if not isinstance(entry, dict):
+        raise ValueError("兼容契约条目格式异常")
     if entry.get("rom_size") != ROM_SIZE:
         raise ValueError("兼容契约ROM长度不正确")
     guards = entry.get("guards")
@@ -131,6 +141,8 @@ def _validated_guards(entry):
     result = []
     total = 0
     for guard in guards:
+        if not isinstance(guard, dict):
+            raise ValueError("兼容契约地址、长度或指纹异常")
         address, size = guard.get("address"), guard.get("size")
         digest = guard.get("sha256")
         if (type(address) is not int or type(size) is not int
@@ -147,30 +159,165 @@ def _validated_guards(entry):
     return tuple(result)
 
 
-def validate_contracts(root=None):
-    """Check packaged contracts and profile identities without a private ROM."""
+def _validated_baselines(root, manifest):
     from rom_versions import RELEASES
 
-    root = Path(root) if root is not None else Path(__file__).resolve().parent
-    manifest = json.loads((root / MANIFEST_NAME).read_text(encoding="utf-8"))
-    if manifest.get("schema") != SCHEMA:
+    if not isinstance(manifest, dict) or manifest.get("schema") != SCHEMA:
         raise ValueError("兼容检查契约格式不正确")
     result = {}
     for sha, (version, crc, filename) in RELEASES.items():
         profile = json.loads((root / filename).read_text(encoding="utf-8"))
         try:
             entry = manifest["releases"][sha]
-        except KeyError as exc:
+        except (KeyError, TypeError) as exc:
             raise ValueError(f"兼容契约缺少 V{version} 基线") from exc
-        if (profile.get("rom_sha256") != sha or profile.get("rom_crc32") != crc
+        if (not isinstance(profile, dict) or not isinstance(entry, dict)
+                or profile.get("rom_sha256") != sha or profile.get("rom_crc32") != crc
                 or entry.get("baseline_sha256") != sha
                 or entry.get("baseline_version") != version
                 or entry.get("profile_sha256") != profile_digest(profile)):
             raise ValueError(f"V{version} ROM配置或兼容契约基线身份不一致")
         guards = _validated_guards(entry)
-        result[sha] = {"baseline_version": version, "guard_count": len(guards),
-                       "checked_bytes": sum(size for _, size, _, _ in guards)}
+        result[sha] = (profile, entry, guards)
     return result
+
+
+def _validated_patch_entries(root, manifest, baselines=None):
+    """Validate provenance and complete replacement guards, never a CRC allowlist."""
+    from rom_versions import RELEASES
+
+    baselines = baselines if baselines is not None else _validated_baselines(root, manifest)
+    patches = json.loads((root / PATCH_MANIFEST_NAME).read_text(encoding="utf-8"))
+    if not isinstance(patches, dict) or patches.get("schema") != PATCH_SCHEMA:
+        raise ValueError("补丁兼容契约格式不正确")
+    variants = patches.get("variants")
+    if not isinstance(variants, list) or len(variants) > 32:
+        raise ValueError("补丁兼容契约变体数量异常")
+    result = {}
+    for entry in variants:
+        if not isinstance(entry, dict):
+            raise ValueError("补丁兼容契约条目格式异常")
+        patch_id = entry.get("id")
+        if (not isinstance(patch_id, str) or re.fullmatch(r"[a-z0-9][a-z0-9-]{0,95}", patch_id) is None
+                or patch_id in result):
+            raise ValueError("补丁兼容契约标识异常或重复")
+        for field in ("name", "scope", "allowed_changes"):
+            if not isinstance(entry.get(field), str) or not entry[field].strip():
+                raise ValueError(f"补丁兼容契约缺少 {field}")
+        for field in ("baseline_sha256", "profile_sha256", "patch_sha256", "target_sha256"):
+            if not isinstance(entry.get(field), str) or re.fullmatch(r"[0-9a-f]{64}", entry[field]) is None:
+                raise ValueError(f"补丁兼容契约 {field} 指纹异常")
+        for field in ("source_crc32", "target_crc32", "patch_crc32"):
+            if not isinstance(entry.get(field), str) or re.fullmatch(r"[0-9a-f]{8}", entry[field]) is None:
+                raise ValueError(f"补丁兼容契约 {field} CRC32异常")
+        sha = entry["baseline_sha256"]
+        if sha not in baselines:
+            raise ValueError("补丁兼容契约基线身份不一致")
+        profile, baseline, original_guards = baselines[sha]
+        version, crc, _ = RELEASES[sha]
+        if (entry.get("baseline_version") != version or entry["source_crc32"] != crc
+                or entry["profile_sha256"] != profile_digest(profile)):
+            raise ValueError("补丁兼容契约基线身份或配置指纹不一致")
+        if entry.get("profile_values_unchanged") is not True:
+            raise ValueError("补丁兼容契约缺少配置数值保持不变的审计声明")
+        guards = _validated_guards(entry)
+        keyed = {(address, size, kind): digest for address, size, digest, kind in guards}
+        if len(keyed) != len(guards):
+            raise ValueError("补丁兼容契约保护范围重复")
+        exceptions = entry.get("metadata_exceptions", [])
+        if not isinstance(exceptions, list) or len(exceptions) > len(original_guards):
+            raise ValueError("补丁兼容契约元数据审计例外格式异常")
+        audited_metadata = {}
+        for exception in exceptions:
+            if not isinstance(exception, dict):
+                raise ValueError("补丁兼容契约元数据审计例外格式异常")
+            address, size = exception.get("address"), exception.get("size")
+            if (type(address) is not int or type(size) is not int
+                    or not isinstance(exception.get("reason"), str) or not exception["reason"].strip()
+                    or any(not isinstance(exception.get(field), str)
+                           or re.fullmatch(r"[0-9a-f]{64}", exception[field]) is None
+                           for field in ("baseline_sha256", "target_sha256"))):
+                raise ValueError("补丁兼容契约元数据审计例外地址、指纹或说明异常")
+            key = (address, size, "metadata")
+            if key in audited_metadata:
+                raise ValueError("补丁兼容契约元数据审计例外重复")
+            audited_metadata[key] = exception
+        original_keys = {(address, size, kind) for address, size, _, kind in original_guards}
+        changed_metadata = set()
+        for address, size, digest, kind in original_guards:
+            key = (address, size, kind)
+            if key not in keyed:
+                raise ValueError("补丁兼容契约未完整保留基线保护范围")
+            if kind == "metadata" and keyed[key] != digest:
+                changed_metadata.add(key)
+                exception = audited_metadata.get(key)
+                if (exception is None or exception["baseline_sha256"] != digest
+                        or exception["target_sha256"] != keyed[key]):
+                    raise ValueError("补丁兼容契约元数据表变更缺少匹配的明确审计例外")
+        if set(audited_metadata) != changed_metadata:
+            raise ValueError("补丁兼容契约元数据审计例外与实际变更范围不一致")
+        # Added payloads are code guards. Disallow overlaps so additions cannot
+        # reclassify numeric metadata or disguise an omitted baseline interval.
+        for address, size, _, kind in guards:
+            if (address, size, kind) not in original_keys and kind != "engine":
+                raise ValueError("补丁兼容契约新增保护范围必须为代码")
+        ordered = sorted(guards)
+        if any(left[0] + left[1] > right[0] for left, right in zip(ordered, ordered[1:])):
+            raise ValueError("补丁兼容契约保护范围重叠")
+        regions = entry.get("payload_regions")
+        if not isinstance(regions, list) or not 1 <= len(regions) <= 32:
+            raise ValueError("补丁兼容契约载荷区域数量异常或缺失")
+        intervals = []
+        for region in regions:
+            if not isinstance(region, dict):
+                raise ValueError("补丁兼容契约载荷区域格式异常")
+            address, size = region.get("address"), region.get("size")
+            if (type(address) is not int or type(size) is not int
+                    or not 1 <= size <= ROM_SIZE
+                    or not ROM_BASE <= address <= ROM_BASE + ROM_SIZE - size):
+                raise ValueError("补丁兼容契约载荷区域地址或长度异常")
+            intervals.append((address, address + size))
+        intervals.sort()
+        if any(left[1] > right[0] for left, right in zip(intervals, intervals[1:])):
+            raise ValueError("补丁兼容契约载荷区域重叠")
+        for start, end in intervals:
+            cursor = start
+            for address, size, _, _ in ordered:
+                if address + size <= cursor:
+                    continue
+                if address > cursor:
+                    break
+                cursor = address + size
+                if cursor >= end:
+                    break
+            if cursor < end:
+                raise ValueError("补丁兼容契约载荷区域未被保护范围完整覆盖")
+        result[patch_id] = (profile, entry, guards)
+    return result
+
+
+def validate_patch_contracts(root=None):
+    """Require and validate packaged patch evidence without reading a ROM."""
+    root = Path(root) if root is not None else Path(__file__).resolve().parent
+    manifest = json.loads((root / MANIFEST_NAME).read_text(encoding="utf-8"))
+    entries = _validated_patch_entries(root, manifest)
+    return {patch_id: {"name": entry["name"], "baseline_version": entry["baseline_version"],
+                       "baseline_sha256": entry["baseline_sha256"],
+                       "patch_sha256": entry["patch_sha256"], "guard_count": len(guards),
+                       "checked_bytes": sum(size for _, size, _, _ in guards)}
+            for patch_id, (_, entry, guards) in entries.items()}
+
+
+def validate_contracts(root=None):
+    """Check packaged contracts and profile identities without a private ROM."""
+    root = Path(root) if root is not None else Path(__file__).resolve().parent
+    manifest = json.loads((root / MANIFEST_NAME).read_text(encoding="utf-8"))
+    baselines = _validated_baselines(root, manifest)
+    if (root / PATCH_MANIFEST_NAME).exists():
+        _validated_patch_entries(root, manifest, baselines)
+    return {sha: {"baseline_version": entry["baseline_version"], "guard_count": len(guards),
+                  "checked_bytes": sum(size for _, size, _, _ in guards)}
+            for sha, (_, entry, guards) in baselines.items()}
 
 
 def _check(read, guards):
@@ -179,9 +326,14 @@ def _check(read, guards):
         raw = read(address, size)
         if not isinstance(raw, (bytes, bytearray)) or len(raw) != size:
             raise ValueError(f"兼容检查读取不完整：0x{address:08X} / {size}字节")
-        if hashlib.sha256(raw).hexdigest() != digest:
+        actual_digest = hashlib.sha256(raw).hexdigest()
+        if actual_digest != digest:
             label = "代码/关键映射" if kind == "engine" else "元数据表"
-            raise ValueError(f"{label}指纹不匹配：0x{address:08X} / {size}字节；未开放编辑")
+            raise GuardMismatch(
+                f"{label}指纹不匹配：0x{address:08X} / {size}字节；未开放编辑",
+                {"address": address, "size": size, "kind": kind,
+                 "expected_sha256": digest, "actual_sha256": actual_digest},
+            )
         counts[kind] += size
     return counts
 
@@ -198,7 +350,7 @@ def _memory_reader(memory):
         for offset in range(0, size, READ_LIMIT):
             length = min(READ_LIMIT, size - offset)
             raw = memory.read(address + offset, length)
-            if len(raw) != length:
+            if not isinstance(raw, (bytes, bytearray)) or len(raw) != length:
                 raise ValueError(f"兼容检查读取不完整：0x{address + offset:08X}")
             parts.append(raw)
         return b"".join(parts)
@@ -238,15 +390,21 @@ def compatible_profile(*, rom=None, crc=None, memory=None, root):
             raise CompatibilityError("ROM在兼容检查开始前已切换，请重新连接", report)
         read = _memory_reader(memory)
     report["actual_crc32"] = actual_crc
-    manifest = json.loads((Path(root) / MANIFEST_NAME).read_text(encoding="utf-8"))
-    if manifest.get("schema") != SCHEMA:
-        raise CompatibilityError("兼容检查契约格式不正确", report)
+    root = Path(root)
+    try:
+        manifest = json.loads((root / MANIFEST_NAME).read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict) or manifest.get("schema") != SCHEMA:
+            raise ValueError("兼容检查契约格式不正确")
+        patch_entries = (_validated_patch_entries(root, manifest)
+                         if (root / PATCH_MANIFEST_NAME).exists() else {})
+    except (ValueError, KeyError, TypeError, OSError, UnicodeError) as exc:
+        raise CompatibilityError(f"兼容检查契约读取或校验失败：{exc}", report) from exc
     matches = []
     for sha, (version, baseline_crc, filename) in RELEASES.items():
         candidate = {"baseline_version": version, "baseline_sha256": sha}
         report["candidates"].append(candidate)
         try:
-            profile = json.loads((Path(root) / filename).read_text(encoding="utf-8"))
+            profile = json.loads((root / filename).read_text(encoding="utf-8"))
             entry = manifest["releases"][sha]
             if (profile["rom_sha256"] != sha or profile["rom_crc32"] != baseline_crc
                     or entry.get("baseline_sha256") != sha
@@ -257,8 +415,25 @@ def compatible_profile(*, rom=None, crc=None, memory=None, root):
             counts = _check(read, guards)
             candidate.update(result="matched", checked_bytes=counts)
             matches.append((profile, entry, guards, counts))
-        except (ValueError, KeyError) as exc:
+        except (ValueError, KeyError, TypeError, OSError, UnicodeError) as exc:
             candidate.update(result="rejected", reason=str(exc))
+            if isinstance(exc, GuardMismatch):
+                candidate["mismatch"] = exc.mismatch
+    for patch_id, (profile, entry, guards) in patch_entries.items():
+        candidate = {"baseline_version": entry["baseline_version"],
+                     "baseline_sha256": entry["baseline_sha256"],
+                     "patch_id": patch_id, "patch_name": entry["name"],
+                     "patch_sha256": entry["patch_sha256"]}
+        report["candidates"].append(candidate)
+        try:
+            _signature_check(read, profile)
+            counts = _check(read, guards)
+            candidate.update(result="matched", checked_bytes=counts)
+            matches.append((profile, entry, guards, counts))
+        except (ValueError, KeyError, TypeError, OSError, UnicodeError) as exc:
+            candidate.update(result="rejected", reason=str(exc))
+            if isinstance(exc, GuardMismatch):
+                candidate["mismatch"] = exc.mismatch
     if rom is None and memory_crc(memory) != actual_crc:
         raise CompatibilityError("ROM在兼容检查期间已切换，请重新连接", report)
     if len(matches) != 1:
@@ -283,6 +458,16 @@ def compatible_profile(*, rom=None, crc=None, memory=None, root):
         "allowed_changes": entry["allowed_changes"], "checked_bytes": counts,
         "checks": report, "metadata_policy": "unchanged-required",
     }
+    if "id" in entry:
+        profile["compatibility"].update({
+            "name": f"结构兼容 · {entry['name']} · 基线 V{entry['baseline_version']}",
+            "schema": PATCH_SCHEMA, "patch_id": entry["id"], "patch_name": entry["name"],
+            "profile_values_unchanged": True,
+            "metadata_exceptions": entry.get("metadata_exceptions", []),
+            "payload_regions": entry["payload_regions"],
+            **{key: entry[key] for key in ("patch_sha256", "source_crc32", "target_crc32",
+                                          "target_sha256", "patch_crc32")},
+        })
     profile["_compatibility_guards"] = guards
     return profile
 

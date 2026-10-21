@@ -48,6 +48,7 @@ def main():
         "rom_profile_v12.json",
         "rom_profile_v133.json",
         "rom_compatibility_manifest.json",
+        "rom_patch_compatibility.json",
         "unown_records_layout.json",
         "wild_encounter_layout.json",
         "sidequests.json",
@@ -82,6 +83,7 @@ def main():
         "rom-compatibility.md",
         "unown-records-audit-2026-10-16.md",
         "wild-encounters-audit-2026-10-16.md",
+        "builtin-editor-patch-compatibility.md",
     ]:
         source = ROOT / "docs" / name
         if source.exists():

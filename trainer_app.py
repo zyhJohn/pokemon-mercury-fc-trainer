@@ -3463,6 +3463,7 @@ class App:
         )
         data = {
             "schema": 1,
+            "app_version": APP_VERSION,
             "exported_at": datetime.now().astimezone().isoformat(),
             "snapshot_at": self.snapshot_at,
             "last_error": self.last_error,
@@ -3622,9 +3623,10 @@ def main():
         for _, crc, _ in RELEASES.values():
             profile = load_profile(crc=crc, root=resource_path("rom_profile.json").parent)
             wild_layout(profile)
-        from rom_compatibility import validate_contracts
+        from rom_compatibility import validate_contracts, validate_patch_contracts
 
         validate_contracts(resource_path("rom_profile.json").parent)
+        validate_patch_contracts(resource_path("rom_profile.json").parent)
         root.update_idletasks()
         app.close()
     else:

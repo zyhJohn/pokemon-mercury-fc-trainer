@@ -5,6 +5,7 @@ that a superficially similar code/header has the same data layout.
 """
 
 import argparse
+import hashlib
 import json
 import struct
 import sys
@@ -13,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from name_codec import decode_name
-from rom_versions import release, ADDRESS_MAPS
+from rom_versions import release, ADDRESS_MAPS, RELEASES
 
 SIGNATURES = [
     (0x80000AC, 4),
@@ -69,6 +70,26 @@ SIGNATURES = [
 
 def extract(rom, catalog, *, read_observer=None):
     sha, (version, _, _) = release(rom)
+    return _extract(rom, catalog, sha, version, read_observer=read_observer)
+
+
+def extract_for_layout(rom, catalog, baseline_sha256, *, read_observer=None):
+    """Research-only extraction using an explicitly audited layout hypothesis.
+
+    This does not recognize or authorize the input ROM. Patch-contract builders
+    must independently validate the source, UPS CRCs and complete resulting
+    metadata against the baseline before publishing a compatibility contract.
+    The returned identity is always the actual input image, never the baseline.
+    The ordinary CLI and extract() retain their exact-source requirement.
+    """
+    if baseline_sha256 not in RELEASES or len(rom) != 0x02000000:
+        raise ValueError("布局提取需要已核验基线及32 MiB ROM")
+    sha = hashlib.sha256(rom).hexdigest()
+    version = RELEASES[baseline_sha256][0]
+    return _extract(rom, catalog, sha, version, read_observer=read_observer)
+
+
+def _extract(rom, catalog, sha, version, *, read_observer=None):
     relocations = ADDRESS_MAPS[version]
 
     def resolve_address(a):
