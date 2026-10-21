@@ -1017,6 +1017,3057 @@
           "reason": "道具13使用回调指针改变；完整重提取的数值、地址及编码配置不变"
         }
       ]
+    },
+    {
+      "baseline_sha256": "628607dcbeac3ab471310d5472c8fbd0df250745230207c488f66adbf1a43821",
+      "baseline_version": "1.0",
+      "rom_size": 33554432,
+      "profile_sha256": "d65b0d91504666562cb59b755f66b8aa205fe1d96aa9fddf865e011d59aa6725",
+      "guards": [
+        {
+          "address": 134217728,
+          "size": 160,
+          "kind": "engine",
+          "sha256": "a3443662298576e97556f0b2e71475734e6da0a15390351d9d735a13c0dc73aa"
+        },
+        {
+          "address": 134217900,
+          "size": 16,
+          "kind": "engine",
+          "sha256": "1746a7843453b114c1f755f0a0a054ae3c58821fb518a968f5615632887820be"
+        },
+        {
+          "address": 134217918,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d4bc1be42a6fa1e2c46b6617b67e1d9aae1cd122542f0c54c999c6833237da2d"
+        },
+        {
+          "address": 134283454,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "27ff2e7ffb58572e0fcafc1b75b1d3bd11fc1e42a64e72837a008e3bfd8f3550"
+        },
+        {
+          "address": 134348990,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "df1253df51c8e4a0507deeb92876629ec58763376fcfc2bdbea18e4154853847"
+        },
+        {
+          "address": 134414526,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7af94b7876e44f9f6e3112f46feaa56b1903a842047350f3b82b0e6fd516a8ae"
+        },
+        {
+          "address": 134480062,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "755ada72ca2585ff9ba480e897d74ac7434a73e5f9d09a0f50d87a8328f5700d"
+        },
+        {
+          "address": 134545598,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b7641a0fd668fbc9dabf60092a764c7722fe787cf705147d9407c3ce7ef0c1d3"
+        },
+        {
+          "address": 134611134,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8675210c5101142f3ad441cb57bf5e6cffb3e445732057a947c1ed601868c4cb"
+        },
+        {
+          "address": 134676670,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e09e8a8ce8123eaa7579a38c8a9829ea068f2d038d4f9eeeb5fd4d4fe99a127f"
+        },
+        {
+          "address": 134742206,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "829ed4925a3be37386ca6cacc023f635074925ac2c901277d8d037baf6be0d26"
+        },
+        {
+          "address": 134807742,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2f86fa1035d049f8799b65525c7207239f39b99c8af36347f826398e758d8545"
+        },
+        {
+          "address": 134873278,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "875e2695edbd0d2f83ecc27d83db0bd13761f6814fd852c854bfd79b38afe997"
+        },
+        {
+          "address": 134938814,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cdfd943cbfdc87315129927ab4fc8b82c48183c2cfffb56082553ee176835aec"
+        },
+        {
+          "address": 135004350,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2c9b4ea8ede5d1b77df7b23d10eaaffea209a8fc4bcd5dee539d8874325fe2e3"
+        },
+        {
+          "address": 135069886,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e1d34a80407a8ff1b5dfc0a246358479c33d6384e95c4706979329e38075d64f"
+        },
+        {
+          "address": 135135422,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c0f9834cd0f2a959acb3b48a2d6849f9e5c415697e6040a20e304d42c715d715"
+        },
+        {
+          "address": 135200958,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7c6cd5a13981c716603090b75eca480093f1bad9c5f8b2afe652a184a5ffd9db"
+        },
+        {
+          "address": 135266494,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ac5c35b41f361299976822850862f6bb84be5296fb343df898e68d811e264a05"
+        },
+        {
+          "address": 135332030,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "05c90a5cac808e97e17d3fd60b3c4a7387dac2ceb5af63a4332775979213fe30"
+        },
+        {
+          "address": 135397566,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "965b70acd1ff65f50f767c2eb86baa8091e1f0d465a20bde20747b4931f44baa"
+        },
+        {
+          "address": 135463102,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f43c6be99dec70475b2bdf5f551d69f0c73f413c690032d7056cf7b6a919afb0"
+        },
+        {
+          "address": 135528638,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b3f9512ec8dd65bff43698404c4279e8460cd52a10913944ce1bc5266a06f5c3"
+        },
+        {
+          "address": 135594174,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "297f83abc6a6a4b54e27ac622c9a9f1a4375f5d3fdb2cab66c9e67b87fe102a0"
+        },
+        {
+          "address": 135659710,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d6bf249985d01f1d344db95ae1afbc01df7e4ca03364fd2ae179f889e31fbcb7"
+        },
+        {
+          "address": 135725246,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "fc5caf97988da809b24f7d756508a1d6c34d56c5b8b0e05722de2a9e5f93b027"
+        },
+        {
+          "address": 135790782,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b077addf8bc992f99208e404e32909997d2a05e31029d1502d7e69d831d2d75b"
+        },
+        {
+          "address": 135856318,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a25eb3ad7480ed7f129151d5bf8f5104714daa452ffd65a108a901c582e4b04a"
+        },
+        {
+          "address": 135921854,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "46e4fea8f63d1ae80939fdd72cf2b3307f57d7ba70d1d15fbea07756467b2d12"
+        },
+        {
+          "address": 135987390,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c0ad508206673a1f12d1080de9e9a67304dc74fe70e22f99a65ef30efb3e9862"
+        },
+        {
+          "address": 136052926,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a25a88c56984f7fbb68c45cf21a66fc17ee5f8f452f612e1929a291dcc262338"
+        },
+        {
+          "address": 136118462,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d51403ee66bbc3f1b00c0f54eddf27a205b2a7d3074e77ee1c317dc6e69e77a5"
+        },
+        {
+          "address": 136183998,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7ad36f99c3828135a12b65e7089e52070e756b95916b38efbdfe54296add399a"
+        },
+        {
+          "address": 136249534,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "764e9a4b9b99620a28214f077378b7e81927dcff3d55aae81ede6ca9e58171e1"
+        },
+        {
+          "address": 136315070,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a1e07bec6aa7be075d8f2283f1e0150ed75623b035e580b3781eb5cb93aaf320"
+        },
+        {
+          "address": 136380606,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cdedd20d27fd4fdde6e5012baf3fa8830f1e5d101099cc0187141f077f9060ed"
+        },
+        {
+          "address": 136446142,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8804163496ae806a155bbc1fc49d4fe89a8b1495cbf52936ee39dd70b68abaaf"
+        },
+        {
+          "address": 136511678,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e429c7ab6d7abde451e8cc967d238cb482c63db5354bec156b6800c6462e416a"
+        },
+        {
+          "address": 136577214,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ba39f5973d55b1c53b49845fafdac52809310159a987a610b2c4e1fcbc8fcf6d"
+        },
+        {
+          "address": 136642750,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9ebc18809e1203597bfc646bc645c055e335461d2ddcfcd1f4d34afe5901db1d"
+        },
+        {
+          "address": 136708286,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "70e163da4d005ad60b473edbfb7a67838029d7fbd0819fdcac6414f5e73307a2"
+        },
+        {
+          "address": 136773822,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e415d8d7633ec255378b0a0519253870fdb0f3756a13daf002fc935ee3e2a3c4"
+        },
+        {
+          "address": 136839358,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eb6552d06d39f10ec9c7bb79674800165c60758835efbed503169a3df59e611e"
+        },
+        {
+          "address": 136904894,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "189b7b489c726f45d6ab83d02bda152bb4ad4c1e789ee3ba745b831175931505"
+        },
+        {
+          "address": 136970430,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3088f1c833a8c3fc69efb4177282e49d57ac4bed10b6fdf14db08fd66ba71a2c"
+        },
+        {
+          "address": 137035966,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "097faa3c3c9377ef70a5cd621617addcfda614284db41a7ad1d8426b7360ece6"
+        },
+        {
+          "address": 137101502,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0cd8bdd5a0cc5573c64f0267236f923a6d8da029b8a8cc3ee40add262b497eca"
+        },
+        {
+          "address": 137167038,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "073c59fe25aa0aec627de2f82bb80adbb06d740624ee2c747f2278f6709ab75e"
+        },
+        {
+          "address": 137232574,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "866e215e6fa93362688c2486ed2a2660fcb08c7b9a12dfabfb3d861158714a07"
+        },
+        {
+          "address": 137298110,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2f6a2f183a061ff654f099e120f429b35c0409b2275d175af8b172463733e618"
+        },
+        {
+          "address": 137363646,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "82a6141c853c9abc0eefa2625011340b39d490d9e24087799a2c852c0be49480"
+        },
+        {
+          "address": 137429182,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4fc0b322efb8e4df30420653e459e5241bf77d80918e697d6c5361086b05d526"
+        },
+        {
+          "address": 137494718,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "44c34876b5acfabcc76b917c103f3cd9120eae1e505763bc189058aaa605c669"
+        },
+        {
+          "address": 137560254,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c162f16f72db17e8166eedb185386acf54b474d86da377b88e04deb6e25a7d1b"
+        },
+        {
+          "address": 137625790,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8c41e06fbb410a7c770a015a01d35b58b604eb822a188fd73cf274cff23f9bce"
+        },
+        {
+          "address": 137691326,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c0be5d8576087815bf9aac46d30fb6535803b58ec3d8760ece62424b94d3ab32"
+        },
+        {
+          "address": 137756862,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "95a0a03031aaa374d515e7c3338a9d2263eb5c32adc862b9c2e88889bdd23396"
+        },
+        {
+          "address": 137822398,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f903c21173f40ac7ba6f92870eef1b0670d2d84cdd8fc6c65a01330775d2a0f1"
+        },
+        {
+          "address": 137887934,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "825ca757c4091acd6df23d4390f724dc837a9724e5f9993e967a1b3aa64fb0cf"
+        },
+        {
+          "address": 137953470,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9fb3290b0275917145937af46e47d09768d7777057667fc07ee8725811e2c74e"
+        },
+        {
+          "address": 138019006,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "47a17c03f14cd9ad35481513fdbda1a04f4b671c93ac7efb9bfe27849b298498"
+        },
+        {
+          "address": 138084542,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5dd5ba1050fcd955647eab7bfe01996baa157f3348e90e6bad48a09fb2001306"
+        },
+        {
+          "address": 138150078,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f368838dc3d4d8ea3a288243a0ffd7b3a3de93a4dde6cf8d9050e52e9f953fcc"
+        },
+        {
+          "address": 138215614,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0be03040b3db4406480dc231f1423079f699dcc320c01aa71e73e760ac89f8fa"
+        },
+        {
+          "address": 138281150,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "73802e859bf1bf276ccfa33bde0e745f4dda5866baeb7212d90f7780b39357d7"
+        },
+        {
+          "address": 138346686,
+          "size": 65346,
+          "kind": "engine",
+          "sha256": "bede394a70799bfcc7cda75291154c34b9c444786fbd1f24a51fec9d67d3c792"
+        },
+        {
+          "address": 142376448,
+          "size": 33000,
+          "kind": "metadata",
+          "sha256": "fce0facbb961726736f990e4b2375e742b9944a882901d1164b12302ab8270bb"
+        },
+        {
+          "address": 142409728,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "1831194ab5e7ce06da83449288e1fd89b8468b8f43e3944f62077d310a1106d9"
+        },
+        {
+          "address": 142475264,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "64f59273ffae5deb615119415238bffcd97732dea472419daf8a8da1e19d9f1c"
+        },
+        {
+          "address": 142540800,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "1b90b68da1a00c7e3b362bfb08f1b10e7750ecbe91d03bd6a5d45457bba5e7c3"
+        },
+        {
+          "address": 142606336,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "db5775d017cb2aa84d1af74c2b0b8fb9e97fa0937661010c61702070a09c6ba6"
+        },
+        {
+          "address": 142671872,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eb627a7b4b1f67b5404b0a5d16cb479b859430e4a6a9ce59779e237d4b827419"
+        },
+        {
+          "address": 142737408,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "58686cd2a8d0af76dfa92a0a6c93dc9c7b8782ad1743592039298a8d31f21e30"
+        },
+        {
+          "address": 142802944,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "45ac4ad4a798a2c3e43b4daa5e9a7b4486bb6247c2e42382232bb8804aac8109"
+        },
+        {
+          "address": 142868480,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7e604014326175d6439aa89790e4f4d83e9fa9fd33dc36072907c83927397597"
+        },
+        {
+          "address": 142934016,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "68526adddf5e0965ecb7ddc33c5567d4944d0cc29aa9fa452a0c23f765d8d8a6"
+        },
+        {
+          "address": 142999552,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "bf01a2bc796b60dc73070ca3717cf49b634289cca36fa6596bfc2520a7f3421c"
+        },
+        {
+          "address": 143065088,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0d3b7370ad3d12d33526de2d029604baf05c6b10558d4d68fcd04a8623947839"
+        },
+        {
+          "address": 143130624,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a5dc11c6719c0a0d5558a9337d37a5ab41aa5990f1689a08b72340e37ec35ff1"
+        },
+        {
+          "address": 143196160,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ac4a8663e3af573a55abf401ceddc91b367e36587f16d866cde4258b5368e91c"
+        },
+        {
+          "address": 143261696,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6673e5b08e10d6e157c5b51d19ca7e60d51003a309f33fe531bcf26ca6540328"
+        },
+        {
+          "address": 143611460,
+          "size": 200,
+          "kind": "engine",
+          "sha256": "26af7307914ba5089e11b4eeb02fe69ac76c7bbd3d2f58d88a744ed8d9de231d"
+        },
+        {
+          "address": 144109568,
+          "size": 512,
+          "kind": "metadata",
+          "sha256": "4ef310629cfffe107709dbc28c472f6e2e7987e10d81545b02396fd38642a9d7"
+        },
+        {
+          "address": 145203200,
+          "size": 24576,
+          "kind": "engine",
+          "sha256": "0482dcd811c71c53cbad387715fadb694e88b1f1f00ddff537fc99704943b5b1"
+        },
+        {
+          "address": 146976768,
+          "size": 660,
+          "kind": "metadata",
+          "sha256": "fae26bf81f4c0b2facc1b5b4b8c9bf1980cfce5b7fd217ddac1496199d4c3bfe"
+        },
+        {
+          "address": 147012240,
+          "size": 128,
+          "kind": "metadata",
+          "sha256": "e8aada1ab2a61158f0cac7af454882eea1a5e61f6b48ac501d3a3ce997081f5c"
+        },
+        {
+          "address": 147016892,
+          "size": 128,
+          "kind": "metadata",
+          "sha256": "8e23872d53db178c6c1b49ca11d6ff736206b8dec40834b32d5ecaeef0f44f6b"
+        },
+        {
+          "address": 148832256,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a882115bd464c2ba67515962948422c1585b1799bcba54b59a0999cce78b3acd"
+        },
+        {
+          "address": 148897792,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c9f095d73b0a76175092c3d65deaa430a05411bfcf2a3eca489e5e352a0e3694"
+        },
+        {
+          "address": 148963328,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "07795155f2870864a868766ef141c7ff4c960a832b0b64df56e3bfb411df0d3c"
+        },
+        {
+          "address": 149028864,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8d6ba308be1ebefa83a149eb5707e3bd5430c657b46d3824aaa6431bb58a38f4"
+        },
+        {
+          "address": 149094400,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "760630d6fcd6db3b06253f9cfd370ef21e17dcd26f04fab8ba5709c57371dc69"
+        },
+        {
+          "address": 149629665,
+          "size": 155,
+          "kind": "metadata",
+          "sha256": "9365b1e11cefdfead6a5980134d1bf061b8f96d03f9d742fe9c876176030126f"
+        },
+        {
+          "address": 155190436,
+          "size": 20688,
+          "kind": "metadata",
+          "sha256": "cdd15f2177d8af47c7b1446db71e2cc3b53add83c46d225bccac3df8566b6736"
+        },
+        {
+          "address": 155212836,
+          "size": 2224,
+          "kind": "metadata",
+          "sha256": "8da394d28f31829d2a0eda05a258983e4a2d4bb7d2ccd4ae00dc055160e06172"
+        },
+        {
+          "address": 155215124,
+          "size": 160,
+          "kind": "metadata",
+          "sha256": "7dd72633fd6a5a253045aa3fc4de9ea22cb6bc5b9db1daeb5d7d6875bd4a8304"
+        },
+        {
+          "address": 158785496,
+          "size": 7028,
+          "kind": "metadata",
+          "sha256": "57b754107f5caded14c4a78b58e6442bf6fb73e612299601ac7d36b81d3fa674"
+        },
+        {
+          "address": 158792580,
+          "size": 29120,
+          "kind": "metadata",
+          "sha256": "332f126f088ece103913be80e4b40cf1a09740baecde2153eded78cc742d91b3"
+        },
+        {
+          "address": 158824696,
+          "size": 2464,
+          "kind": "metadata",
+          "sha256": "4c68c8272f0a2cff274d3578270561b3acf084096f50d28682ddaff1167880eb"
+        },
+        {
+          "address": 158827216,
+          "size": 28,
+          "kind": "metadata",
+          "sha256": "b393da1000da3a262caf8aff19a4fbe69d67d7bccb15fba9ed69ed18b22a7566"
+        },
+        {
+          "address": 158827300,
+          "size": 1288,
+          "kind": "metadata",
+          "sha256": "a5239f3609299ee6ae8b92aa57462e859cdc7487b331d85810e23fd6fcd98686"
+        },
+        {
+          "address": 158828700,
+          "size": 280,
+          "kind": "metadata",
+          "sha256": "edabbc03fe55907e0bc850e60f6f4aabe0a8c07b88b213ebe29415de02816a13"
+        },
+        {
+          "address": 159103552,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "39005c748e3d741a63ff3f6c5df166705eee477eabd6fe1e05bfc9c0015cec5f"
+        },
+        {
+          "address": 159118851,
+          "size": 1293,
+          "kind": "metadata",
+          "sha256": "c7f2c0f4ac80451cdc3f3a73a43ebd36e8b9a248be07ef4152ec10548cf6f9af"
+        },
+        {
+          "address": 159120251,
+          "size": 5329,
+          "kind": "metadata",
+          "sha256": "c24367610a9ef09e78e67e9036734a302a09c5e8a6ca5f5dc7f94a87a9c6e15c"
+        },
+        {
+          "address": 159126008,
+          "size": 612,
+          "kind": "metadata",
+          "sha256": "be6a93507e469f56956b7d2893732636dcfc3a6fe0bff62f79a56f2e464032f4"
+        },
+        {
+          "address": 159134396,
+          "size": 5172,
+          "kind": "metadata",
+          "sha256": "7df4bcaa30ffc82bd524fd5e6eceba5e960b78c6c55fbb4b335513122fdef8ce"
+        },
+        {
+          "address": 159139996,
+          "size": 65536,
+          "kind": "metadata",
+          "sha256": "790fcf4cb7062cc2d4d959d50a856cbf7485798651b6c802fcc6b16da1cd7ae3"
+        },
+        {
+          "address": 159205532,
+          "size": 7199,
+          "kind": "metadata",
+          "sha256": "d02bfbdda28b6de5612690af366aa432b4fcdde0290f2acd0da10c98cf38b94d"
+        },
+        {
+          "address": 159215200,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "5096d8e1c1dbfeced8dfd035973228bfe1058715dcce998c8c34b7821d87b45e"
+        },
+        {
+          "address": 159273832,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "d2a8d3dd28a5739c02207422316e6cfeb353b3ce95c97574f615cec0b743b601"
+        },
+        {
+          "address": 159287198,
+          "size": 256,
+          "kind": "metadata",
+          "sha256": "2726135c178a80ca367d005c843f8b46886684b9210b86586a8eb5f92c6fd5f3"
+        },
+        {
+          "address": 164417536,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0e81bf1c1b82e15eff9b740f7e4b6714ebd50380a31698be9182ddd7b490b4b7"
+        },
+        {
+          "address": 164483072,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3befb1863c6c108b0e6729a79f80a2696f0d12f2bcda4c0a6a74af7c714e5e46"
+        },
+        {
+          "address": 164548608,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c4e3ae0bbc991c1445764b3356845b30e486662dd7db940f89d27a205e51ea69"
+        },
+        {
+          "address": 164614144,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cf5ef761f9a70bd50d5b394f17471811201c21695bc3aa7524f3f1a456be1bc0"
+        },
+        {
+          "address": 164679680,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e707cdb24ac33b53618b410c5ff39d5b2535af25c79c656ea4240399cd4c609e"
+        },
+        {
+          "address": 164745216,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6e53bd688c424967faa0f36d1ee986aa417ba8d8f711dd036446ba0c7f4b8697"
+        },
+        {
+          "address": 164810752,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f3bdaaaaf714d098e1d371c892853643b482b0455fd4fc29aeb4b2dbf3a3a825"
+        },
+        {
+          "address": 164876288,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d175ad0de0193cf0cab11f4898f5e3a296e9e7d96253ceb54b369ed3e1007ffa"
+        },
+        {
+          "address": 164941824,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "787787393010a5514d76812144d624f1ec91a70836252b2d8846f8505813ac90"
+        },
+        {
+          "address": 165007360,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "93d9dfd817566c6314b960ac85d32aa42b31a3d9be79079331a9bf025266746b"
+        },
+        {
+          "address": 165072896,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "bbc737f80f496fc7bb800253eea9616f4fbbba0c39a79c31e2ec2c6bed322a2a"
+        },
+        {
+          "address": 165138432,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a74992160247cb9545cb1801c49e72339fabdb4985fecb5066eec186ec94178d"
+        },
+        {
+          "address": 165203968,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "17abb91777ff665de079d3bc9053b1b42c19959d095bd6ae13d65806192358c3"
+        },
+        {
+          "address": 165269504,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "80fb6aa49de2afa2aa5853dd51fd71a0e553a887ee6af44ef2abf87d1e62b58e"
+        },
+        {
+          "address": 165335040,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b87660e0119f0afe40bc9de2dc6fbf20b83ff8ab0758552c7ddc84e5cdee3a09"
+        },
+        {
+          "address": 165400576,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b8356d83066b91e3143a06a07682e496f1d9fee6e76c38e8b75506a2885b7d79"
+        },
+        {
+          "address": 165466112,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b9c5b12f95e10c8a31fcfe0c831b26f96c090a6d607b8fa963f8b0352c7d1d07"
+        },
+        {
+          "address": 165531648,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "60a6daa5ef053883a3d3f32fc4eb8b6545ab4bdbb2eacaa559ddf0b7f864dbde"
+        },
+        {
+          "address": 165597184,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9dc1cdfb3f4ef18a5d5e13dc33043cdc2d57a9097e5bce345466eec1e6214809"
+        },
+        {
+          "address": 165662720,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "deb3bfa64e35bd718f4912b9f489f300e770857c6a52bd88eafd04197d0ff01d"
+        },
+        {
+          "address": 165728256,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ee3dbacbb445d6f21584a9324869295914f83f83b4481c828d0d1d96b1945766"
+        },
+        {
+          "address": 165793792,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c0ed73d0dfd958031b412edccbf0e0e3e4ca2a0435632c085de430de95191488"
+        },
+        {
+          "address": 165859328,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "da8f61b04c39b10451663dcac55ccd034796e2b09c33b6993c2c994f852c039c"
+        },
+        {
+          "address": 165924864,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9ee38026644697e732c53c408e398f3d8f404213e603a0820f9c7a61a01e20f4"
+        },
+        {
+          "address": 165990400,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "498e2d6e6e4e2123b9794194d9daa11d8fae853dcb1952780c65ef0fdc186486"
+        },
+        {
+          "address": 166055936,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f04949bdb10c79d6e741cc626806d0b9388b036fbc9c7409e8bf08d1a0caaacc"
+        },
+        {
+          "address": 166121472,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a1141f733986ee9273561ae4fc7b9d40a4a56143a1904e003ac7d5a941437e38"
+        },
+        {
+          "address": 166187008,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6d4429a4910d50be2d69365e4f53666321198e3491d1a9cc7a262c38d4a10995"
+        },
+        {
+          "address": 166252544,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "575a98c81eb11afc1a35f20455a3c2a24bd2f1d9a4dfffb0774e2234d2e1f485"
+        },
+        {
+          "address": 166318080,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "61b1e8e0ee9cd276c1f55d9cba634f910bb0a08e9f6c95028a6a437048f1f9d3"
+        },
+        {
+          "address": 166383616,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d3fc6f286aedb721830f92a9eb6d14036f5c3687341f90ff886b15db3c32ee53"
+        },
+        {
+          "address": 166449152,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "945b2dfd5b2fbb00f397fb0f88d672f291563b0b8636ca3ff47319ab3e68c3f4"
+        },
+        {
+          "address": 166514688,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "754733d32c759feab2fbc81c6c4158d87177bc7e9235def4b6bb2c053b515ae3"
+        },
+        {
+          "address": 166580224,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ca3e104db3daa71f9f6321f81065556527fe7f86248d77d6e95d5a03917a9010"
+        },
+        {
+          "address": 166645760,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "16a4600d0e01a8fc936aeb242c2375c73e6e78ad57c35a739552cfb58058e833"
+        },
+        {
+          "address": 166711296,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b67e23669c0fd5695586b0a57468d19c94904c288dd9f21580941d940c6f1853"
+        },
+        {
+          "address": 166776832,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4d45a543605a5519b7017b236306d3d04dbd30492492b8bf2a042572de9feaea"
+        },
+        {
+          "address": 166842368,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "fada6fe5fbb2afd71490c196c9cd29d19fdd1b31b81061db545c9d15a3ebaed1"
+        },
+        {
+          "address": 166907904,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "fb5924acfa5def32c29ba1862554c1e845771afcee0ff7e926a0343a6a5c42f3"
+        },
+        {
+          "address": 166973440,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "13b8ebef601c61f413a914b1efa54015f6aa60d5ca8b4436c8654c9120914154"
+        },
+        {
+          "address": 167038976,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "aa6f11d925d518fdd8cd9932454c5f813efc4842c3d419a355d1e1d83783ed36"
+        },
+        {
+          "address": 167104512,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "297e9cb65afc4dcf876ea391758a2fc7a6bebcdb46b032b18a03f132fb0330fa"
+        },
+        {
+          "address": 167170048,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "be98fffd968379781cbf7561270aedb6643ba694c6d3f53a4adac7d26427767e"
+        },
+        {
+          "address": 167235584,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5e9fd0432ec845aff06db0d5c3e264ca8f98983deaaa6031fe0aa3d6dc472bf9"
+        },
+        {
+          "address": 167301120,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "bc1449690bc4d13757e1b3d42128043ad38bd5fe4ef487e50e875eb8feab9422"
+        },
+        {
+          "address": 167366656,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f5fabd7acc5a668f3448c86983accb1ec305293971a185190985350640ef6011"
+        },
+        {
+          "address": 167432192,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b0f424a9b766d5ad2d47069c268537729e55484959d07b534b286ae7acd0e166"
+        },
+        {
+          "address": 167497728,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8439bf48e84e59000c58c6c09a7c546aaea8bf3f869c9c3ef0493e3ba58cd2d7"
+        },
+        {
+          "address": 167563264,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4eaa89a8ca2fbb7d27f2ccae284dfc33c09dfb3340a4ff7997aa465561871322"
+        },
+        {
+          "address": 167628800,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0158d436f32cbf4f29a32da347a72cacb351d7ef2698d8b23dcd47d52c44c65f"
+        },
+        {
+          "address": 167694336,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "28e77e263d3d3cd1f5df2364808267d965a3c0de21e5db74691166edd6dcfaa1"
+        },
+        {
+          "address": 167759872,
+          "size": 12288,
+          "kind": "engine",
+          "sha256": "db5ea87d6159e1958de71b25dd4e403a4565a658ddb2c32ded3623010e256b2c"
+        }
+      ],
+      "scope": "完整原版保护范围及已审计内置修改器payload；完整重提取配置相同",
+      "allowed_changes": "GBA标题/修订标签，以及受保护范围外的文本或图像载荷；不保证所有文案/贴图均在范围外",
+      "id": "builtin-editor-safe-v10",
+      "name": "内置修改器安全移植（开发核验）",
+      "patch_sha256": "8310111595206cc4b1ab011c6199cac0c134387658977d5af062e16374c003cc",
+      "source_crc32": "b4af11c8",
+      "target_crc32": "85c03f81",
+      "target_sha256": "093a110d43d9adbd1aa4a8b2fcdc54dff0eebce8a343b8f54354dbdb5d540de3",
+      "patch_crc32": "b96b411a",
+      "profile_values_unchanged": true,
+      "payload_regions": [
+        {
+          "address": 145203200,
+          "size": 24576
+        }
+      ],
+      "metadata_exceptions": [
+        {
+          "address": 142376448,
+          "size": 33000,
+          "baseline_sha256": "84d02c096cd5fb6fe52a335c70943d4a7f2ed699502e364aba0e414ebabbe462",
+          "target_sha256": "fce0facbb961726736f990e4b2375e742b9944a882901d1164b12302ab8270bb",
+          "reason": "道具13使用回调指针改变；完整重提取的数值、地址及编码配置不变"
+        }
+      ]
+    },
+    {
+      "baseline_sha256": "b98d9701f4b567810c70221564c348f4482791c614c3f1bb282e96678b7a0896",
+      "baseline_version": "1.2",
+      "rom_size": 33554432,
+      "profile_sha256": "2df7d5b0c8cc38e8805447335467a1c3327fab23f972542ba1388dfc2df66276",
+      "guards": [
+        {
+          "address": 134217728,
+          "size": 160,
+          "kind": "engine",
+          "sha256": "a3443662298576e97556f0b2e71475734e6da0a15390351d9d735a13c0dc73aa"
+        },
+        {
+          "address": 134217900,
+          "size": 16,
+          "kind": "engine",
+          "sha256": "1746a7843453b114c1f755f0a0a054ae3c58821fb518a968f5615632887820be"
+        },
+        {
+          "address": 134217918,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a200e732f132a7f82ac1858ea2d73c10702f2a430862e415d2ace617c47913df"
+        },
+        {
+          "address": 134283454,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "215038ba70f0e79a4f6434c39983cb564aef2b26aa395368ba0cacd8c79473e6"
+        },
+        {
+          "address": 134348990,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "02e4ded386fbc80dbdf5c0d59e306251017a81d6bb12f541b48ff30f9b0b9096"
+        },
+        {
+          "address": 134414526,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2a17b6c8f24d4b3765bae46e479183ccfad05fb110aa2e9ec2a75f3eadcb51a1"
+        },
+        {
+          "address": 134480062,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "dfecf9d401fdec671a5b4ab393cb66e13e03bac8ef4e8b38ae684cbd380286ad"
+        },
+        {
+          "address": 134545598,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f5a0b5c8767cb8859533e1707c93b0f08b73aa636d060ec3d09494aeaea53e66"
+        },
+        {
+          "address": 134611134,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0578343853d4d4e9cae708d3e2e1cc4c9dc38974f2dd740cc50bdb039f53da24"
+        },
+        {
+          "address": 134676670,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7ec8f5889ec1633bb99e3ac9a8830dde0cb975589e33b33df1b96585f695c564"
+        },
+        {
+          "address": 134742206,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "29b8323a3b6d737122e92895cf346c9f1d7c14678cd6f17e44e883621a5eba84"
+        },
+        {
+          "address": 134807742,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d92e313e016a72fedbe2ac179fc24937d616ee76a57e4b8bc19a74d1d580cda3"
+        },
+        {
+          "address": 134873278,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "46a7338528b256fbfbc09c1e25daad9b12a4a00b505c36af5295090fd7be57f1"
+        },
+        {
+          "address": 134938814,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "21432e0024f24fda89bdd6f889e7437082a478870347ad182234b99f1350a7c6"
+        },
+        {
+          "address": 135004350,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5470da779b46c86f465db64c68b1c2e6b9bf3777046555f99cfb9b128fe74842"
+        },
+        {
+          "address": 135069886,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "759fa7ee8ff4c7f5373135ea720339aefd28ced5f2fa38d4238263f676d36536"
+        },
+        {
+          "address": 135135422,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7c3d1c1603efc3518531f84015b74c78c3a76f38e1245a79ac4c669eab6c9621"
+        },
+        {
+          "address": 135200958,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3bfdf86ca854070f6d51f99178fcc92ef3ed3b12d65a05b392a625c580b0afae"
+        },
+        {
+          "address": 135266494,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d1de4f3398f9dade198573e989c9f199a3ed6fc290c1cd126c674bd77136202e"
+        },
+        {
+          "address": 135332030,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b3678aac6a2648183f4dfc54aa55491cc9e580dfb24592cf77044aee96fae5de"
+        },
+        {
+          "address": 135397566,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "95e6634109d69fd9d7e602e9eee7042c086c6097e6cc6da6762768ac6eec8e82"
+        },
+        {
+          "address": 135463102,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "854e4f39416db5a3967909c93d023f024f77d63c38caee219d4a1ff576f907d9"
+        },
+        {
+          "address": 135528638,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "834f6991d97a02c15231be2ba1e0f4777debe0dea36af87ca56387d39f60b5ce"
+        },
+        {
+          "address": 135594174,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "72ff8e49af7773a5fa02f3661835be2b691eaeb6d133e71ba307e4e8d3b3672a"
+        },
+        {
+          "address": 135659710,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "002eacf16127a457d448254288d1edebf0b4dc23cc7abc13e96aa808102f59bd"
+        },
+        {
+          "address": 135725246,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4c2fb06bcba6390f194e716d44c44e599da9f5191eb6a75b6569127eb3c83b90"
+        },
+        {
+          "address": 135790782,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b077addf8bc992f99208e404e32909997d2a05e31029d1502d7e69d831d2d75b"
+        },
+        {
+          "address": 135856318,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a0d926402afe702cbaef6c091f7e0fb7a929567afc5b9a868eccbbd09e8f256c"
+        },
+        {
+          "address": 135921854,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b814026b4db14d9699a2a33ee4b3d5dcaf1ce5f63a426723036ac4ce138ee166"
+        },
+        {
+          "address": 135987390,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c0ad508206673a1f12d1080de9e9a67304dc74fe70e22f99a65ef30efb3e9862"
+        },
+        {
+          "address": 136052926,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a25a88c56984f7fbb68c45cf21a66fc17ee5f8f452f612e1929a291dcc262338"
+        },
+        {
+          "address": 136118462,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5bce0a451fe615c01e210254824c66fd7af5f0efab01f93ec4c8a67d0d974af0"
+        },
+        {
+          "address": 136183998,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cc62957085f604323b42f91cb704c2d7c4290e627a3186918dc868e17e35a8d2"
+        },
+        {
+          "address": 136249534,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "764e9a4b9b99620a28214f077378b7e81927dcff3d55aae81ede6ca9e58171e1"
+        },
+        {
+          "address": 136315070,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a1e07bec6aa7be075d8f2283f1e0150ed75623b035e580b3781eb5cb93aaf320"
+        },
+        {
+          "address": 136380606,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cdedd20d27fd4fdde6e5012baf3fa8830f1e5d101099cc0187141f077f9060ed"
+        },
+        {
+          "address": 136446142,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8804163496ae806a155bbc1fc49d4fe89a8b1495cbf52936ee39dd70b68abaaf"
+        },
+        {
+          "address": 136511678,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "384b2a7c898b4dd7767d2892147a1339ba7ccf38c90296347cb5e1c288ef9314"
+        },
+        {
+          "address": 136577214,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3f5a9a705da11e60a24fca3b0f3d8fa7a029578556bae81f5f7c581d843449dd"
+        },
+        {
+          "address": 136642750,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2971fdc1824470fcc792f710baa29aa957a101b3ac2ef204b18b92d9f06e757f"
+        },
+        {
+          "address": 136708286,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5956097084d5d03737b26d3097ebf0816cb5cead684b83abbdcbc3b022f038ea"
+        },
+        {
+          "address": 136773822,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e415d8d7633ec255378b0a0519253870fdb0f3756a13daf002fc935ee3e2a3c4"
+        },
+        {
+          "address": 136839358,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eb6552d06d39f10ec9c7bb79674800165c60758835efbed503169a3df59e611e"
+        },
+        {
+          "address": 136904894,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "28106704d622ac0ec6189ff39bc1a7b17eaf41e61050cb842865edb4270f801e"
+        },
+        {
+          "address": 136970430,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d6747df53a900ced6d491975e7f4c410207768d1ba7c381313d2594f30eab8c1"
+        },
+        {
+          "address": 137035966,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "90468e65e03b2b11eecb63ec89cf6494c3032190eb332f0f57f76e66702222fa"
+        },
+        {
+          "address": 137101502,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0cd8bdd5a0cc5573c64f0267236f923a6d8da029b8a8cc3ee40add262b497eca"
+        },
+        {
+          "address": 137167038,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "60f3ac052787796bbfb7f57d3f9715e3fa8f06436e7d7a5a90cd1bfa3abef63f"
+        },
+        {
+          "address": 137232574,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "866e215e6fa93362688c2486ed2a2660fcb08c7b9a12dfabfb3d861158714a07"
+        },
+        {
+          "address": 137298110,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "78a3e235dbe4c2667028f166bf72b12f623411dbdb80714fb8fc87a2d604c0f8"
+        },
+        {
+          "address": 137363646,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4c237aba9000cfd3c794643320a8903767d9062200f784902aabc9e945f91e3b"
+        },
+        {
+          "address": 137429182,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4fc0b322efb8e4df30420653e459e5241bf77d80918e697d6c5361086b05d526"
+        },
+        {
+          "address": 137494718,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "44c34876b5acfabcc76b917c103f3cd9120eae1e505763bc189058aaa605c669"
+        },
+        {
+          "address": 137560254,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3af053d29d21d0d9e3ec5d984d419a72a0b5c5065227c91bc876cdee6047c500"
+        },
+        {
+          "address": 137625790,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a62b8fd1a7f05ea38ddb9e93c6caa7d7391bce54c2bb5996454d46fe558418c1"
+        },
+        {
+          "address": 137691326,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a1c538530e3a2745d5579a4230f8e48a1866d6a79ef3aac8e42b73cd571a6f3a"
+        },
+        {
+          "address": 137756862,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "95a0a03031aaa374d515e7c3338a9d2263eb5c32adc862b9c2e88889bdd23396"
+        },
+        {
+          "address": 137822398,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f903c21173f40ac7ba6f92870eef1b0670d2d84cdd8fc6c65a01330775d2a0f1"
+        },
+        {
+          "address": 137887934,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "825ca757c4091acd6df23d4390f724dc837a9724e5f9993e967a1b3aa64fb0cf"
+        },
+        {
+          "address": 137953470,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9fb3290b0275917145937af46e47d09768d7777057667fc07ee8725811e2c74e"
+        },
+        {
+          "address": 138019006,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3e214a70acc6767a405ecc8349e41b6f147af5c7d0a5e86172a7fa390118986e"
+        },
+        {
+          "address": 138084542,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5dd5ba1050fcd955647eab7bfe01996baa157f3348e90e6bad48a09fb2001306"
+        },
+        {
+          "address": 138150078,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f368838dc3d4d8ea3a288243a0ffd7b3a3de93a4dde6cf8d9050e52e9f953fcc"
+        },
+        {
+          "address": 138215614,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3c189c1b5091aed03e842ab097160fde93ef82ad75d30811cbd5b15f9d18951a"
+        },
+        {
+          "address": 138281150,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c2f58cff2dd583ee3b9e8205fffdd2c90ac31f2311491787186c66ba6e453c3c"
+        },
+        {
+          "address": 138346686,
+          "size": 65346,
+          "kind": "engine",
+          "sha256": "e490b27aea2fc8c453613223d38ea10d32428d717453a0d2dc9ca33e731a9f10"
+        },
+        {
+          "address": 142376448,
+          "size": 33000,
+          "kind": "metadata",
+          "sha256": "ec468cd189f15744480e5f91f1dbef117ea11c65f8f5c1df16147ca0859b3371"
+        },
+        {
+          "address": 142409728,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "1831194ab5e7ce06da83449288e1fd89b8468b8f43e3944f62077d310a1106d9"
+        },
+        {
+          "address": 142475264,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "64f59273ffae5deb615119415238bffcd97732dea472419daf8a8da1e19d9f1c"
+        },
+        {
+          "address": 142540800,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "1b90b68da1a00c7e3b362bfb08f1b10e7750ecbe91d03bd6a5d45457bba5e7c3"
+        },
+        {
+          "address": 142606336,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "db5775d017cb2aa84d1af74c2b0b8fb9e97fa0937661010c61702070a09c6ba6"
+        },
+        {
+          "address": 142671872,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eb627a7b4b1f67b5404b0a5d16cb479b859430e4a6a9ce59779e237d4b827419"
+        },
+        {
+          "address": 142737408,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "58686cd2a8d0af76dfa92a0a6c93dc9c7b8782ad1743592039298a8d31f21e30"
+        },
+        {
+          "address": 142802944,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "45ac4ad4a798a2c3e43b4daa5e9a7b4486bb6247c2e42382232bb8804aac8109"
+        },
+        {
+          "address": 142868480,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7e604014326175d6439aa89790e4f4d83e9fa9fd33dc36072907c83927397597"
+        },
+        {
+          "address": 142934016,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "68526adddf5e0965ecb7ddc33c5567d4944d0cc29aa9fa452a0c23f765d8d8a6"
+        },
+        {
+          "address": 142999552,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "bf01a2bc796b60dc73070ca3717cf49b634289cca36fa6596bfc2520a7f3421c"
+        },
+        {
+          "address": 143065088,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0d3b7370ad3d12d33526de2d029604baf05c6b10558d4d68fcd04a8623947839"
+        },
+        {
+          "address": 143130624,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a5dc11c6719c0a0d5558a9337d37a5ab41aa5990f1689a08b72340e37ec35ff1"
+        },
+        {
+          "address": 143196160,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ac4a8663e3af573a55abf401ceddc91b367e36587f16d866cde4258b5368e91c"
+        },
+        {
+          "address": 143261696,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6673e5b08e10d6e157c5b51d19ca7e60d51003a309f33fe531bcf26ca6540328"
+        },
+        {
+          "address": 143611460,
+          "size": 200,
+          "kind": "engine",
+          "sha256": "31a61bbcab93fb61b3e087c7277f82defd83961b99d908a9d9e0b013d146170e"
+        },
+        {
+          "address": 144109568,
+          "size": 512,
+          "kind": "metadata",
+          "sha256": "4ef310629cfffe107709dbc28c472f6e2e7987e10d81545b02396fd38642a9d7"
+        },
+        {
+          "address": 145203200,
+          "size": 24576,
+          "kind": "engine",
+          "sha256": "b427b1d4acc7b65249471c74e1c61e057c0a843327531f2bda7c64ab37d09ee7"
+        },
+        {
+          "address": 146976768,
+          "size": 660,
+          "kind": "metadata",
+          "sha256": "fae26bf81f4c0b2facc1b5b4b8c9bf1980cfce5b7fd217ddac1496199d4c3bfe"
+        },
+        {
+          "address": 147012240,
+          "size": 128,
+          "kind": "metadata",
+          "sha256": "e8aada1ab2a61158f0cac7af454882eea1a5e61f6b48ac501d3a3ce997081f5c"
+        },
+        {
+          "address": 147016892,
+          "size": 128,
+          "kind": "metadata",
+          "sha256": "8e23872d53db178c6c1b49ca11d6ff736206b8dec40834b32d5ecaeef0f44f6b"
+        },
+        {
+          "address": 148832256,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a36a58203b6187ee9b1f5eb8f561a9b341513c8bd4469c85fb0b4b10252e10f9"
+        },
+        {
+          "address": 148897792,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "923876d9190cf712ce54c2ee236598ebb429c42fb0f1590721adab02e84fc3fa"
+        },
+        {
+          "address": 148963328,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4bec6f316310696fe188ced71d1498ba4f8767ecc9dfa6137b0e898fbc945fd4"
+        },
+        {
+          "address": 149028864,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "48f1a64e78adc9a396446c5138bd3515c758aa623860f782650be98269e79384"
+        },
+        {
+          "address": 149094400,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "db60afcbae1d607c83da4c646107181804182aff1b1a96fbc6ebdc726542a3b4"
+        },
+        {
+          "address": 149629665,
+          "size": 155,
+          "kind": "metadata",
+          "sha256": "9365b1e11cefdfead6a5980134d1bf061b8f96d03f9d742fe9c876176030126f"
+        },
+        {
+          "address": 155190436,
+          "size": 20688,
+          "kind": "metadata",
+          "sha256": "cdd15f2177d8af47c7b1446db71e2cc3b53add83c46d225bccac3df8566b6736"
+        },
+        {
+          "address": 155212836,
+          "size": 2224,
+          "kind": "metadata",
+          "sha256": "8da394d28f31829d2a0eda05a258983e4a2d4bb7d2ccd4ae00dc055160e06172"
+        },
+        {
+          "address": 155215124,
+          "size": 160,
+          "kind": "metadata",
+          "sha256": "7dd72633fd6a5a253045aa3fc4de9ea22cb6bc5b9db1daeb5d7d6875bd4a8304"
+        },
+        {
+          "address": 158785496,
+          "size": 7028,
+          "kind": "metadata",
+          "sha256": "b6c051e2a9bd7746a12a51966ecfb26b05a0e1b9f5c061fec134f56f9e8458c7"
+        },
+        {
+          "address": 158792580,
+          "size": 29120,
+          "kind": "metadata",
+          "sha256": "04e16aad2d86be063cfdf5c57388808f041ac890da424c498ae798b9900d41a9"
+        },
+        {
+          "address": 158824696,
+          "size": 2464,
+          "kind": "metadata",
+          "sha256": "d6b78e7abcf3f0680bba7e16beb2c481eef27e6bde1d083f3c58054fd11e6629"
+        },
+        {
+          "address": 158827216,
+          "size": 28,
+          "kind": "metadata",
+          "sha256": "b393da1000da3a262caf8aff19a4fbe69d67d7bccb15fba9ed69ed18b22a7566"
+        },
+        {
+          "address": 158827300,
+          "size": 1288,
+          "kind": "metadata",
+          "sha256": "a5239f3609299ee6ae8b92aa57462e859cdc7487b331d85810e23fd6fcd98686"
+        },
+        {
+          "address": 158828700,
+          "size": 280,
+          "kind": "metadata",
+          "sha256": "edabbc03fe55907e0bc850e60f6f4aabe0a8c07b88b213ebe29415de02816a13"
+        },
+        {
+          "address": 159103556,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "39005c748e3d741a63ff3f6c5df166705eee477eabd6fe1e05bfc9c0015cec5f"
+        },
+        {
+          "address": 159118855,
+          "size": 1293,
+          "kind": "metadata",
+          "sha256": "c7f2c0f4ac80451cdc3f3a73a43ebd36e8b9a248be07ef4152ec10548cf6f9af"
+        },
+        {
+          "address": 159120255,
+          "size": 5329,
+          "kind": "metadata",
+          "sha256": "c24367610a9ef09e78e67e9036734a302a09c5e8a6ca5f5dc7f94a87a9c6e15c"
+        },
+        {
+          "address": 159126012,
+          "size": 612,
+          "kind": "metadata",
+          "sha256": "be6a93507e469f56956b7d2893732636dcfc3a6fe0bff62f79a56f2e464032f4"
+        },
+        {
+          "address": 159134400,
+          "size": 5172,
+          "kind": "metadata",
+          "sha256": "6e3ddebb07c2807ea9a0bda97405c4d817abaed0fd902393d6c31fc01cae4f52"
+        },
+        {
+          "address": 159140000,
+          "size": 65536,
+          "kind": "metadata",
+          "sha256": "e609744895ac0475f39cc9b4f00a77df123ea2a3b5d1ff268c5ed3fdfe89cbeb"
+        },
+        {
+          "address": 159205536,
+          "size": 7226,
+          "kind": "metadata",
+          "sha256": "d5fdfe8bd8eb7ba9b9bc7f4ab5a909e90930a0a133f1f99ec7f1494f69e5ce7b"
+        },
+        {
+          "address": 159215232,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "5096d8e1c1dbfeced8dfd035973228bfe1058715dcce998c8c34b7821d87b45e"
+        },
+        {
+          "address": 159273864,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "d2a8d3dd28a5739c02207422316e6cfeb353b3ce95c97574f615cec0b743b601"
+        },
+        {
+          "address": 159287230,
+          "size": 256,
+          "kind": "metadata",
+          "sha256": "2726135c178a80ca367d005c843f8b46886684b9210b86586a8eb5f92c6fd5f3"
+        },
+        {
+          "address": 164417536,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6595a294e1ede2ac2a3577dbd6a5d9735392b121a32b6df25a4660670d9b48f4"
+        },
+        {
+          "address": 164483072,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a7e76f07d56fe3c70e6ca2c8e09ee52dd38137cb4a45272b9568fb25e2b52bb8"
+        },
+        {
+          "address": 164548608,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "50de738c5a568e2d180f192873a73dddb322e143bc2c9c743c9d46cefedba5bd"
+        },
+        {
+          "address": 164614144,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6f094b40cac9b22ac7ea1e0db8ccc8b758bb223e6dcafae8ed0ff1b0e893c3df"
+        },
+        {
+          "address": 164679680,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4f8f56b978e76a0c55ecc0187b4d331926ff720dd3f63c60a610d82391647a87"
+        },
+        {
+          "address": 164745216,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "23db5d9ba4b7889a42a259001e0ca7152c2e356be9bdc410f1ad3ca6b2b86ac1"
+        },
+        {
+          "address": 164810752,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7676f015504e9b14fe2e8bbdc172919623de3fbec18ce1a055d380e076436af3"
+        },
+        {
+          "address": 164876288,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "dcdf1e127cfc64b1e859f82bd590dda9604c33ce74528af6354dec9f508cf817"
+        },
+        {
+          "address": 164941824,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6abe5ab92477657a48e57ec9f888736427de1b9bd6549bddcfaeed4581dcd1a3"
+        },
+        {
+          "address": 165007360,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e6d6f264b0ab76b004e7e2dc1d8b4ad5c40ea2762b921debf2f111dc3b79709e"
+        },
+        {
+          "address": 165072896,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "59a047b83e01c39d24717f7f1e81fee1b141e2e3bee705b5e2c0cbef3f84b19e"
+        },
+        {
+          "address": 165138432,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "86bb6fa18fbdce6055c0046dfc5e6c5b10432662db496ecf10b4bc66e6444df8"
+        },
+        {
+          "address": 165203968,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "12bebd58af788eebf97c6eb8c10a684df3eb7a0c9cd9023948e33c9a744f34bc"
+        },
+        {
+          "address": 165269504,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2fc72c1292647c70331013c25bac9e1075a13f6135d477105169f8130135d532"
+        },
+        {
+          "address": 165335040,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "71c91a1ff758f83a8f0243788d3ad35bd08474c8274acd04a9f3adf2030f74aa"
+        },
+        {
+          "address": 165400576,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e1230ed7cdc70ec69334eacf1a73aa0c0a0a8edd8a81c931fa425d9c7f285dfc"
+        },
+        {
+          "address": 165466112,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2134fb824586dbfa4d23f1f7ce802258332e7cd481b483a3882240d94e540829"
+        },
+        {
+          "address": 165531648,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "268714dbdb7ed26ba6c76a439367ab2302961c3e7a5344dc090963b738316894"
+        },
+        {
+          "address": 165597184,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2fc78d6c946dcb3131bf99b4ebd3b005536eacc60123813edc9ce75d515cb586"
+        },
+        {
+          "address": 165662720,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e1c3755a7b34c0d9b4564ea8ce593c55ccef7d723358e4d5bb715c5812b2db3e"
+        },
+        {
+          "address": 165728256,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d90af5da4f3760eb7b9abd4f0e8afe8c66d3bafd2c2f3cc6e542f192027f29c1"
+        },
+        {
+          "address": 165793792,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "98e8fb534c2febe002a4cf32c80c4493abb7f02d24de42394094e1a978dd5fa2"
+        },
+        {
+          "address": 165859328,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ca49ab02229c8d5c216d6a6938242f0857e75e0f8ad2db5494a06650f3f8c014"
+        },
+        {
+          "address": 165924864,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6d8ad57df51b11ca800946e797b19cd2c985274650b20962f5e104dec79e53f4"
+        },
+        {
+          "address": 165990400,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5e924083b1fc0049517c4cc2c13b0fdf9d2ad2cc53346fc27d5a106295b7a2b9"
+        },
+        {
+          "address": 166055936,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "22b585faaf4fe1eb22c163eeba17f16d80f8043c18f2b3f348da9f2530fbc803"
+        },
+        {
+          "address": 166121472,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "90487275658cf4f8a603ce207286180a4a5471bf63c9039917660a8f694b39d0"
+        },
+        {
+          "address": 166187008,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7bc6f3e159f9c555aba90fc381b4e2accbfacd64a7ddb1350651652c0d98fc24"
+        },
+        {
+          "address": 166252544,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "671dfe625e6545e7b2496a24e43e9d4c047d20f02fbb5a5c45fa98722469fa4e"
+        },
+        {
+          "address": 166318080,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "554e0188468306ba8871ffbc1aefb2caee411db9be48a38d397ddd65b7529836"
+        },
+        {
+          "address": 166383616,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e2bed6e482e7178f273132ee383b19d86af9414701e01970cd003fbe6e65e87f"
+        },
+        {
+          "address": 166449152,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5c2e57699d73a95f1e70f30942365e99f38a5ef755bddd3c947ba9c8497d5cfd"
+        },
+        {
+          "address": 166514688,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d0ec31dc3acb091830ecc6f7ebf2c38a40c0954f16d7b0c07c21e6e474097319"
+        },
+        {
+          "address": 166580224,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "241614804da24922c9336ab8e68b630dc6109f5ff339e12f661ef9d69cac40d0"
+        },
+        {
+          "address": 166645760,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "26d6ff96b2322a1960724a26a0df2324a07d4fc5abe5dbfec66ad917b384ec5a"
+        },
+        {
+          "address": 166711296,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "17f71ecfb2e1fd79349cd117d204fcf07913c0acd868c9b31a72f2bc5f2c6d08"
+        },
+        {
+          "address": 166776832,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "140f1c4fba265d2b240af4692e691bf94f23f4844516799a1a75364fd41d8844"
+        },
+        {
+          "address": 166842368,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0c93ab2e848876e01dff23cf74bdbc0450523c407970aba38feef490ac27aa9a"
+        },
+        {
+          "address": 166907904,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e3ba8203fde42a30d5cb1477193aff057f4983e3900e1f3d5907d1f6e3931501"
+        },
+        {
+          "address": 166973440,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f8b33c3664f54aec06b65f623dfe8bfb4ce1a43b5d2d7ad86db07c027ef2722e"
+        },
+        {
+          "address": 167038976,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "84951c5e6ca0ec7635939a1a48eb5be9343ffe6311f4c7735010d90fa53468de"
+        },
+        {
+          "address": 167104512,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "45916a7c34c99b39984aa79837fe0fa9054b56f7f0682becd56329c54b93d1cc"
+        },
+        {
+          "address": 167170048,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cb250adf26e5dd61f09f3a3bbe8520ebb05d86f5f9022754ac5781f5bbe4ce2c"
+        },
+        {
+          "address": 167235584,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9284d0d5a1dbad63aa5fa1b0e2c3ab305fb58b6bf78c8894ef33859d5b87e314"
+        },
+        {
+          "address": 167301120,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eb65aa7f3562d75fd2b5da64e7cb931de62a3d44afba7dfe185f4725b27cc0de"
+        },
+        {
+          "address": 167366656,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "30fb564e4e16cfffc5f4138e6c4d1292e25510266f9e211c8213a90988fe119c"
+        },
+        {
+          "address": 167432192,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d38a9e524dbbc1ed7369a2e2dc3a26d8bec16c4fa9000fbb8bd616c97621b891"
+        },
+        {
+          "address": 167497728,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9ef98ee4e455a7033be53855347fce9e748da5d2b4e3df16b4e3915638120b92"
+        },
+        {
+          "address": 167563264,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "28a1fc4d1ac34caba94e0e9ccda91a5fa5dd330481f4d62cafacf85fa20b8f05"
+        },
+        {
+          "address": 167628800,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4960cbe5a750bce20ab0d55b037120536405ade87297ff97c6b987d19cfa3816"
+        },
+        {
+          "address": 167694336,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9e95f0f16b57cbf41ac7d22639c6c920008337b8a9829c9970b8d71da6cb7336"
+        },
+        {
+          "address": 167759872,
+          "size": 12288,
+          "kind": "engine",
+          "sha256": "98924285c150c84ebc8f8c6a551451507bc78508a95d08eaf6f67d0a63c37325"
+        }
+      ],
+      "scope": "完整原版保护范围及已审计内置修改器payload；完整重提取配置相同",
+      "allowed_changes": "GBA标题/修订标签，以及受保护范围外的文本或图像载荷；不保证所有文案/贴图均在范围外",
+      "id": "builtin-editor-safe-v12",
+      "name": "内置修改器安全移植（开发核验）",
+      "patch_sha256": "0185857d265aa00d3465a7d29fd20d078671a17d66e3b43d49c423ff6baeb5ca",
+      "source_crc32": "4755f497",
+      "target_crc32": "0f613575",
+      "target_sha256": "2803552d5e5bb37855080bdef5116fc75f8f8064ddfd7f6b6024dd5a338739d5",
+      "patch_crc32": "fb95bb58",
+      "profile_values_unchanged": true,
+      "payload_regions": [
+        {
+          "address": 145203200,
+          "size": 24576
+        }
+      ],
+      "metadata_exceptions": [
+        {
+          "address": 142376448,
+          "size": 33000,
+          "baseline_sha256": "3c6c9b2c95e284f67ddc216f06e24122289dd4d9403b0e35cc352c7e46ba5f50",
+          "target_sha256": "ec468cd189f15744480e5f91f1dbef117ea11c65f8f5c1df16147ca0859b3371",
+          "reason": "道具13使用回调指针改变；完整重提取的数值、地址及编码配置不变"
+        }
+      ]
+    },
+    {
+      "baseline_sha256": "9801866280284a8ac12650666b8526ff3d07aa455f8dc623c2c56c0537313ec4",
+      "baseline_version": "1.33",
+      "rom_size": 33554432,
+      "profile_sha256": "0fde26e565f774568a5c8b27667871cec878044bdf873276a7293a562a6b7786",
+      "guards": [
+        {
+          "address": 134217728,
+          "size": 160,
+          "kind": "engine",
+          "sha256": "a3443662298576e97556f0b2e71475734e6da0a15390351d9d735a13c0dc73aa"
+        },
+        {
+          "address": 134217900,
+          "size": 16,
+          "kind": "engine",
+          "sha256": "1746a7843453b114c1f755f0a0a054ae3c58821fb518a968f5615632887820be"
+        },
+        {
+          "address": 134217918,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f65641594a4fab1637ece0425f93b8cad3235a4b39a812df114164b6fd55980f"
+        },
+        {
+          "address": 134283454,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b09b4ddd4dfdf10b481b367ae530270ee3010c078f2e7b93b92b79c5ddd6a71a"
+        },
+        {
+          "address": 134348990,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "aeaa05553bac72bb211c7da7aebeb4076f235a8cc013081d4d410fd47ffd5bb2"
+        },
+        {
+          "address": 134414526,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a203b736a74ae1ee0f0159214a17ca8ddd12e5691a6096a32a89f923941a7e92"
+        },
+        {
+          "address": 134480062,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "62f2091cf780069f308bb10719d38f6dd2728ecc50c91056161ee551fac1d056"
+        },
+        {
+          "address": 134545598,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "759acf8dec858276f5c99bf478bba17edd2df270aeed8f0d295aebaa9c7954c3"
+        },
+        {
+          "address": 134611134,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7b3dae6319ee38ccb3e5ce93f8f7be9ef873c9ebe64736a0b7b77e668e93d363"
+        },
+        {
+          "address": 134676670,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "adc0637cc480453a28aa457ea5533f2c3f2612debbf4283e876221a4cdd4e1cf"
+        },
+        {
+          "address": 134742206,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5c2c1823aae1a0e8c3490a3659af335c6e58b63405e3d52893f0fd70ac51912e"
+        },
+        {
+          "address": 134807742,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7b346cc880a409c3d10f496952074a672ebc6da02e144a1855c7113269c74aa0"
+        },
+        {
+          "address": 134873278,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "74334db4df72e7803c818e1d00121669804b2f2d1adf554c73045d29946d44bf"
+        },
+        {
+          "address": 134938814,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "866d88b18ed83798468c6aae21cd5aa0a5d5c07b7979ac65c1d27f432b6c9025"
+        },
+        {
+          "address": 135004350,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3d27e7a6cee203aa513023dfdc4a5f0a4d1aa3b720444dd296df7564c70c33d7"
+        },
+        {
+          "address": 135069886,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "53b480c0748e1d7a18257def53fa42d7f0a62c7f5cdf746f3bf74609e1b14c56"
+        },
+        {
+          "address": 135135422,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "16be1a23a7c6eff8355c5789c402c4acb34fc24ba127943b0b26df1ab690220e"
+        },
+        {
+          "address": 135200958,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f9c9bffc893cabfbe0bce6b1a9dac177f17bf74cb7fb2861e2f6a397e57c8572"
+        },
+        {
+          "address": 135266494,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "02d831487c343e021d9a4e9b8fa00864e9926c53bf2cd8df839ecd85ecd1747d"
+        },
+        {
+          "address": 135332030,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d900f72701eb540dce42b591d31fd3ec9f3602203a478572f96fad907a33a316"
+        },
+        {
+          "address": 135397566,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "fcb943c730cb20b4f57942f0a4766b8ca8a206f65acb4ea69b699467094550e8"
+        },
+        {
+          "address": 135463102,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "285f6586169837c4c76865d912bdadaaf152cb0b61c45c8e3fec0645540cc25f"
+        },
+        {
+          "address": 135528638,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5bbc96dd1c08030f6de62554eb96ef740b7563e2aeb2d463b6173c4fcb5dd115"
+        },
+        {
+          "address": 135594174,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c9efcd9f0468a8afe835a72b55012c1b9f33208ca7b2f1dcf5a0232e3f66eb80"
+        },
+        {
+          "address": 135659710,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eaaf894cc27bc5f81cf99e9b1ab350bdea6fdeda02198a6463029789aa7d85c6"
+        },
+        {
+          "address": 135725246,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4c2fb06bcba6390f194e716d44c44e599da9f5191eb6a75b6569127eb3c83b90"
+        },
+        {
+          "address": 135790782,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b077addf8bc992f99208e404e32909997d2a05e31029d1502d7e69d831d2d75b"
+        },
+        {
+          "address": 135856318,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a0d926402afe702cbaef6c091f7e0fb7a929567afc5b9a868eccbbd09e8f256c"
+        },
+        {
+          "address": 135921854,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b814026b4db14d9699a2a33ee4b3d5dcaf1ce5f63a426723036ac4ce138ee166"
+        },
+        {
+          "address": 135987390,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c0ad508206673a1f12d1080de9e9a67304dc74fe70e22f99a65ef30efb3e9862"
+        },
+        {
+          "address": 136052926,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a25a88c56984f7fbb68c45cf21a66fc17ee5f8f452f612e1929a291dcc262338"
+        },
+        {
+          "address": 136118462,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "de5243452180e7d76f4573a563e8a2c7337a667c1533ee97c27aa62eb4ff9089"
+        },
+        {
+          "address": 136183998,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cc62957085f604323b42f91cb704c2d7c4290e627a3186918dc868e17e35a8d2"
+        },
+        {
+          "address": 136249534,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "764e9a4b9b99620a28214f077378b7e81927dcff3d55aae81ede6ca9e58171e1"
+        },
+        {
+          "address": 136315070,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a1e07bec6aa7be075d8f2283f1e0150ed75623b035e580b3781eb5cb93aaf320"
+        },
+        {
+          "address": 136380606,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cdedd20d27fd4fdde6e5012baf3fa8830f1e5d101099cc0187141f077f9060ed"
+        },
+        {
+          "address": 136446142,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8804163496ae806a155bbc1fc49d4fe89a8b1495cbf52936ee39dd70b68abaaf"
+        },
+        {
+          "address": 136511678,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4fae956cbc77b09cbe6dd285b8c65c4ec642416d3a1e57d3eb92058ec0bb238d"
+        },
+        {
+          "address": 136577214,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "184734a86cd3457c0afd02afc3143469d17aae092f886cfee43d2943a98fd9c9"
+        },
+        {
+          "address": 136642750,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2971fdc1824470fcc792f710baa29aa957a101b3ac2ef204b18b92d9f06e757f"
+        },
+        {
+          "address": 136708286,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "70420940cf42fade810b83803f3d31c65497a3f03d0e4d8c1b565d2700a1551a"
+        },
+        {
+          "address": 136773822,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e415d8d7633ec255378b0a0519253870fdb0f3756a13daf002fc935ee3e2a3c4"
+        },
+        {
+          "address": 136839358,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eb6552d06d39f10ec9c7bb79674800165c60758835efbed503169a3df59e611e"
+        },
+        {
+          "address": 136904894,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "28106704d622ac0ec6189ff39bc1a7b17eaf41e61050cb842865edb4270f801e"
+        },
+        {
+          "address": 136970430,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d6747df53a900ced6d491975e7f4c410207768d1ba7c381313d2594f30eab8c1"
+        },
+        {
+          "address": 137035966,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "90468e65e03b2b11eecb63ec89cf6494c3032190eb332f0f57f76e66702222fa"
+        },
+        {
+          "address": 137101502,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0cd8bdd5a0cc5573c64f0267236f923a6d8da029b8a8cc3ee40add262b497eca"
+        },
+        {
+          "address": 137167038,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "60f3ac052787796bbfb7f57d3f9715e3fa8f06436e7d7a5a90cd1bfa3abef63f"
+        },
+        {
+          "address": 137232574,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "866e215e6fa93362688c2486ed2a2660fcb08c7b9a12dfabfb3d861158714a07"
+        },
+        {
+          "address": 137298110,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "78a3e235dbe4c2667028f166bf72b12f623411dbdb80714fb8fc87a2d604c0f8"
+        },
+        {
+          "address": 137363646,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4c237aba9000cfd3c794643320a8903767d9062200f784902aabc9e945f91e3b"
+        },
+        {
+          "address": 137429182,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "4fc0b322efb8e4df30420653e459e5241bf77d80918e697d6c5361086b05d526"
+        },
+        {
+          "address": 137494718,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "44c34876b5acfabcc76b917c103f3cd9120eae1e505763bc189058aaa605c669"
+        },
+        {
+          "address": 137560254,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3af053d29d21d0d9e3ec5d984d419a72a0b5c5065227c91bc876cdee6047c500"
+        },
+        {
+          "address": 137625790,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a62b8fd1a7f05ea38ddb9e93c6caa7d7391bce54c2bb5996454d46fe558418c1"
+        },
+        {
+          "address": 137691326,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ff2d906300812f2e474ac481cdc21510d47626ec78a6ed5819597ec6192f00e3"
+        },
+        {
+          "address": 137756862,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "95a0a03031aaa374d515e7c3338a9d2263eb5c32adc862b9c2e88889bdd23396"
+        },
+        {
+          "address": 137822398,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f903c21173f40ac7ba6f92870eef1b0670d2d84cdd8fc6c65a01330775d2a0f1"
+        },
+        {
+          "address": 137887934,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "825ca757c4091acd6df23d4390f724dc837a9724e5f9993e967a1b3aa64fb0cf"
+        },
+        {
+          "address": 137953470,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9fb3290b0275917145937af46e47d09768d7777057667fc07ee8725811e2c74e"
+        },
+        {
+          "address": 138019006,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3f89174c3da3f65c340a583a347149de85cef54cda61f308e22b88996b820acd"
+        },
+        {
+          "address": 138084542,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5dd5ba1050fcd955647eab7bfe01996baa157f3348e90e6bad48a09fb2001306"
+        },
+        {
+          "address": 138150078,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f368838dc3d4d8ea3a288243a0ffd7b3a3de93a4dde6cf8d9050e52e9f953fcc"
+        },
+        {
+          "address": 138215614,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3c189c1b5091aed03e842ab097160fde93ef82ad75d30811cbd5b15f9d18951a"
+        },
+        {
+          "address": 138281150,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b615c5ad0534614ca980c7611b1676fffa2508e822332fd6936d2d19bf35537e"
+        },
+        {
+          "address": 138346686,
+          "size": 65346,
+          "kind": "engine",
+          "sha256": "72d98c204905da7ba13b23c3ee2004937246b7aab82de8b286752974912deebb"
+        },
+        {
+          "address": 142376448,
+          "size": 33000,
+          "kind": "metadata",
+          "sha256": "2ca9be4c6ea8457fd2fb47d8f240a6bda3ac8fda802cc34a4173c3785288c1dc"
+        },
+        {
+          "address": 142409728,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "1831194ab5e7ce06da83449288e1fd89b8468b8f43e3944f62077d310a1106d9"
+        },
+        {
+          "address": 142475264,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "64f59273ffae5deb615119415238bffcd97732dea472419daf8a8da1e19d9f1c"
+        },
+        {
+          "address": 142540800,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "1b90b68da1a00c7e3b362bfb08f1b10e7750ecbe91d03bd6a5d45457bba5e7c3"
+        },
+        {
+          "address": 142606336,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "db5775d017cb2aa84d1af74c2b0b8fb9e97fa0937661010c61702070a09c6ba6"
+        },
+        {
+          "address": 142671872,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "eb627a7b4b1f67b5404b0a5d16cb479b859430e4a6a9ce59779e237d4b827419"
+        },
+        {
+          "address": 142737408,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "58686cd2a8d0af76dfa92a0a6c93dc9c7b8782ad1743592039298a8d31f21e30"
+        },
+        {
+          "address": 142802944,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "45ac4ad4a798a2c3e43b4daa5e9a7b4486bb6247c2e42382232bb8804aac8109"
+        },
+        {
+          "address": 142868480,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "7e604014326175d6439aa89790e4f4d83e9fa9fd33dc36072907c83927397597"
+        },
+        {
+          "address": 142934016,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "68526adddf5e0965ecb7ddc33c5567d4944d0cc29aa9fa452a0c23f765d8d8a6"
+        },
+        {
+          "address": 142999552,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "bf01a2bc796b60dc73070ca3717cf49b634289cca36fa6596bfc2520a7f3421c"
+        },
+        {
+          "address": 143065088,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0d3b7370ad3d12d33526de2d029604baf05c6b10558d4d68fcd04a8623947839"
+        },
+        {
+          "address": 143130624,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a5dc11c6719c0a0d5558a9337d37a5ab41aa5990f1689a08b72340e37ec35ff1"
+        },
+        {
+          "address": 143196160,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ac4a8663e3af573a55abf401ceddc91b367e36587f16d866cde4258b5368e91c"
+        },
+        {
+          "address": 143261696,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6673e5b08e10d6e157c5b51d19ca7e60d51003a309f33fe531bcf26ca6540328"
+        },
+        {
+          "address": 143611460,
+          "size": 200,
+          "kind": "engine",
+          "sha256": "de8ebf06d204388d36aad97ecbe386d90ab03e4b61d57c9972a1aea8f4980b5b"
+        },
+        {
+          "address": 144109568,
+          "size": 512,
+          "kind": "metadata",
+          "sha256": "4ef310629cfffe107709dbc28c472f6e2e7987e10d81545b02396fd38642a9d7"
+        },
+        {
+          "address": 145203200,
+          "size": 24576,
+          "kind": "engine",
+          "sha256": "b427b1d4acc7b65249471c74e1c61e057c0a843327531f2bda7c64ab37d09ee7"
+        },
+        {
+          "address": 146976768,
+          "size": 660,
+          "kind": "metadata",
+          "sha256": "fae26bf81f4c0b2facc1b5b4b8c9bf1980cfce5b7fd217ddac1496199d4c3bfe"
+        },
+        {
+          "address": 147012240,
+          "size": 128,
+          "kind": "metadata",
+          "sha256": "e8aada1ab2a61158f0cac7af454882eea1a5e61f6b48ac501d3a3ce997081f5c"
+        },
+        {
+          "address": 147016892,
+          "size": 128,
+          "kind": "metadata",
+          "sha256": "8e23872d53db178c6c1b49ca11d6ff736206b8dec40834b32d5ecaeef0f44f6b"
+        },
+        {
+          "address": 148832256,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "d09bf71bd5a7c06b9db745ebd5a125f5cc56d93d711611894cecf86435b305c3"
+        },
+        {
+          "address": 148897792,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ae88902d0d85f768c18ef402603d98ef73bc2a7c447557972ce29c2ad00b4951"
+        },
+        {
+          "address": 148963328,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "32fa9d384b1eca71621371706f966ffe0490d48f82d985a5c3ba6d92668e6835"
+        },
+        {
+          "address": 149028864,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "555f551599cf50dbfdc158a9c721a8a333c84984578864e05cf1f903f3451a48"
+        },
+        {
+          "address": 149094400,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "41bbe9b14b0e84d5213fb3c3374d420ea3781ab81545cf910ad8e5ae0e45de75"
+        },
+        {
+          "address": 149629665,
+          "size": 155,
+          "kind": "metadata",
+          "sha256": "9365b1e11cefdfead6a5980134d1bf061b8f96d03f9d742fe9c876176030126f"
+        },
+        {
+          "address": 155190436,
+          "size": 20688,
+          "kind": "metadata",
+          "sha256": "cdd15f2177d8af47c7b1446db71e2cc3b53add83c46d225bccac3df8566b6736"
+        },
+        {
+          "address": 155212836,
+          "size": 2224,
+          "kind": "metadata",
+          "sha256": "8da394d28f31829d2a0eda05a258983e4a2d4bb7d2ccd4ae00dc055160e06172"
+        },
+        {
+          "address": 155215124,
+          "size": 160,
+          "kind": "metadata",
+          "sha256": "7dd72633fd6a5a253045aa3fc4de9ea22cb6bc5b9db1daeb5d7d6875bd4a8304"
+        },
+        {
+          "address": 158785496,
+          "size": 7028,
+          "kind": "metadata",
+          "sha256": "b6c051e2a9bd7746a12a51966ecfb26b05a0e1b9f5c061fec134f56f9e8458c7"
+        },
+        {
+          "address": 158792580,
+          "size": 29120,
+          "kind": "metadata",
+          "sha256": "49cdef3606e6c77979a6f44ee9465abbeb44c3d50b4ad9ae74cc5ff8428cffb6"
+        },
+        {
+          "address": 158824696,
+          "size": 2464,
+          "kind": "metadata",
+          "sha256": "d6b78e7abcf3f0680bba7e16beb2c481eef27e6bde1d083f3c58054fd11e6629"
+        },
+        {
+          "address": 158827216,
+          "size": 28,
+          "kind": "metadata",
+          "sha256": "b393da1000da3a262caf8aff19a4fbe69d67d7bccb15fba9ed69ed18b22a7566"
+        },
+        {
+          "address": 158827300,
+          "size": 1288,
+          "kind": "metadata",
+          "sha256": "a5239f3609299ee6ae8b92aa57462e859cdc7487b331d85810e23fd6fcd98686"
+        },
+        {
+          "address": 158828700,
+          "size": 280,
+          "kind": "metadata",
+          "sha256": "edabbc03fe55907e0bc850e60f6f4aabe0a8c07b88b213ebe29415de02816a13"
+        },
+        {
+          "address": 159103556,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "39005c748e3d741a63ff3f6c5df166705eee477eabd6fe1e05bfc9c0015cec5f"
+        },
+        {
+          "address": 159118855,
+          "size": 1293,
+          "kind": "metadata",
+          "sha256": "c7f2c0f4ac80451cdc3f3a73a43ebd36e8b9a248be07ef4152ec10548cf6f9af"
+        },
+        {
+          "address": 159120255,
+          "size": 5329,
+          "kind": "metadata",
+          "sha256": "c24367610a9ef09e78e67e9036734a302a09c5e8a6ca5f5dc7f94a87a9c6e15c"
+        },
+        {
+          "address": 159126012,
+          "size": 612,
+          "kind": "metadata",
+          "sha256": "be6a93507e469f56956b7d2893732636dcfc3a6fe0bff62f79a56f2e464032f4"
+        },
+        {
+          "address": 159134400,
+          "size": 5172,
+          "kind": "metadata",
+          "sha256": "6e3ddebb07c2807ea9a0bda97405c4d817abaed0fd902393d6c31fc01cae4f52"
+        },
+        {
+          "address": 159140000,
+          "size": 65536,
+          "kind": "metadata",
+          "sha256": "e609744895ac0475f39cc9b4f00a77df123ea2a3b5d1ff268c5ed3fdfe89cbeb"
+        },
+        {
+          "address": 159205536,
+          "size": 7226,
+          "kind": "metadata",
+          "sha256": "d5fdfe8bd8eb7ba9b9bc7f4ab5a909e90930a0a133f1f99ec7f1494f69e5ce7b"
+        },
+        {
+          "address": 159215232,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "5096d8e1c1dbfeced8dfd035973228bfe1058715dcce998c8c34b7821d87b45e"
+        },
+        {
+          "address": 159273864,
+          "size": 4,
+          "kind": "metadata",
+          "sha256": "d2a8d3dd28a5739c02207422316e6cfeb353b3ce95c97574f615cec0b743b601"
+        },
+        {
+          "address": 159287230,
+          "size": 256,
+          "kind": "metadata",
+          "sha256": "2726135c178a80ca367d005c843f8b46886684b9210b86586a8eb5f92c6fd5f3"
+        },
+        {
+          "address": 164417536,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "782f16bc0a61901106e6781a0f742ec11e392538b0a47a1bab638c2d16478a98"
+        },
+        {
+          "address": 164483072,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "801d2e28f8dcf5c7d743d53e416679d457a0789bac10fbf0fc393ace70c331c5"
+        },
+        {
+          "address": 164548608,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3a2da2018ee2a2fe38c25f8a0d1ca2137b0b665e4e0f64a2726a62e42a637ee4"
+        },
+        {
+          "address": 164614144,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "193eb28a33f2060c7014e79e7675459a9a496797b1d2e3e1820fa0512f446c65"
+        },
+        {
+          "address": 164679680,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "dba2876323fb6d3ad32af75056cca0ba2792912dc076d9b6d63f44cba10a4db3"
+        },
+        {
+          "address": 164745216,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6efec30c956095adfd4b3d87de603ffe651a46d41907c04dc9aa3bb0dd7fd03d"
+        },
+        {
+          "address": 164810752,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "21e7b51142c574f2ebd7ec87e9b42022fb266ce15b42546b2cbbc4cbc0a61c26"
+        },
+        {
+          "address": 164876288,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e62100cdbaae35cd38d8c61d617083e2e55726064eb82d78ab3ad6233d9e88b5"
+        },
+        {
+          "address": 164941824,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a6cbc0c0d13c19b262efb5d4cc7c9a839e1b72ccdf5963e0b72be4361f60e936"
+        },
+        {
+          "address": 165007360,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e58a09af9fc5789666983c187f001a1517bc541328b2ad119d787392c8e9fe28"
+        },
+        {
+          "address": 165072896,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "dbf076a27493cdcbe60709e1e6ae90d05d4e285f4455a9403bdb7da2bfd4bdda"
+        },
+        {
+          "address": 165138432,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0dd6177d2c320fb12cdf5e75e6318ef18d3c3337dc029ed651cd7891a501993a"
+        },
+        {
+          "address": 165203968,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a0ffe87f5c08fa90d6c4d8a07e90d7486a0c96bed9a4a342bcf7136e6aaa0ed1"
+        },
+        {
+          "address": 165269504,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "bb92b38847ff8e01710af810bc93b32249d8de0c533e535699cc49420c6b28dc"
+        },
+        {
+          "address": 165335040,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "989be15782e646191f541335321a5668ea6eb1a16b1c941f6f2f7abaa48a14cc"
+        },
+        {
+          "address": 165400576,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3f2adacd1324e5532d6340c058fc673421f08ffca5876eaeee075eaf3119d3e2"
+        },
+        {
+          "address": 165466112,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "362affe6572042afb9de4dcdca4ea02c6733366e4ca6ed0b17e15836c7c6aeb9"
+        },
+        {
+          "address": 165531648,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "c7c6d939c7316f85cbd5f355625161f38f0ae3d9a44614e1b3eb7b0715e6dce1"
+        },
+        {
+          "address": 165597184,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "81117044f8d83d358682677340342fe7d39ebfc1e60491ebd8569ad6bf61314d"
+        },
+        {
+          "address": 165662720,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6c507584227468077c800a04f97181569366ad2d4db0e0d2d491694edef971cf"
+        },
+        {
+          "address": 165728256,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "a3452c4cc4d7ca5d8ec2b365ad19c57595a9b059b33805f7eb29067be4c6fa23"
+        },
+        {
+          "address": 165793792,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "dc4f9576901da42379c662897e5d167ac268729162c67919f4045165edcdfa43"
+        },
+        {
+          "address": 165859328,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "64bbf38b4bc9fbee64818e0ca1cb9ee1972c6a12147902d3a1bbb4f20b21b89f"
+        },
+        {
+          "address": 165924864,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "91d8514b3aebba5e33b3596384b6c67a2d7f828b16e427ca57fdaa5bf6bbcc48"
+        },
+        {
+          "address": 165990400,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "76c5e32d9b9bf60a5c309883a464eca1f92d205862c39b7d4cb533949dd3d404"
+        },
+        {
+          "address": 166055936,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "22ac29898d18ccec824d96d2e99d5113f2a3d613a4d4d6b0f32505ec8f2a6c88"
+        },
+        {
+          "address": 166121472,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "1f3bd926c476637edd7dc60519f1713fb4b4b1b7bc1955b533e38802a2b3d371"
+        },
+        {
+          "address": 166187008,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "8f17f79e50e4ae9f4b552e36cca860bc612846712e4fdee7da4dcf248c6a958a"
+        },
+        {
+          "address": 166252544,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "354c911ed36d444242a8996790bc97955efafcb14a371428f56dd33169650ce3"
+        },
+        {
+          "address": 166318080,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "bff1eff6d963afb5b22598d8195c09abb61c4d3bfe576dead27dca0009b08445"
+        },
+        {
+          "address": 166383616,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "29844ae6f789af06f299b583c1bf460a242ac927f3ac81d25cece08fb3554d77"
+        },
+        {
+          "address": 166449152,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "dd49ccef9f0143dddc8534b4908dfcf95506e05213ce3aee27399de500d6edbc"
+        },
+        {
+          "address": 166514688,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3d1c22f774b8256737c8008cbaf7d020967383e1f6395bac7419c4c4f5e79dce"
+        },
+        {
+          "address": 166580224,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "9ca1aebb0f6c923de746e61fbd0e87feba1054549e1358b010d77dc181706601"
+        },
+        {
+          "address": 166645760,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6e34d9f9e9be5d6c2012950de1bd128b98ef9a44652d508c3d1c00badfb7e56b"
+        },
+        {
+          "address": 166711296,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b0153d87fcf24bf50647072cda3a32303cc256ead383d00cff0e020a0f273c2e"
+        },
+        {
+          "address": 166776832,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2a841c18e3363576f8d7a77c72c3e24e84f3df43cf63a835b0ca8a93d4b53c13"
+        },
+        {
+          "address": 166842368,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "841ea6a8ce961c882cdf4ad2f212e073d3b219be2fcde0ec5b98a619de18d533"
+        },
+        {
+          "address": 166907904,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "5ccaee259eb4c6a5ca21b5b053b7957423076532fac235db6586c5fc3126dd6a"
+        },
+        {
+          "address": 166973440,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "ccbf80ed01477339208b1047f5a7187ddf02ed68a01476dc38ce4c88a9213244"
+        },
+        {
+          "address": 167038976,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "cbaf2100bfd509023b86f21135d85b870516a7b9f5c902a8c87def8a8500a391"
+        },
+        {
+          "address": 167104512,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "87c8b1d8153ad98e7588ae7c9771599e1229002bb7fc24d339998752dc8615d9"
+        },
+        {
+          "address": 167170048,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "2a0e74c3be36b7e5eb29a3ebdd56c1f47b3ed20bff52cafa89995d09e7ccb51d"
+        },
+        {
+          "address": 167235584,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "e44182c594a9943ac87a1a3a7d57cc4cb6313fe4f6ab146ac9d6bddaa43f8be1"
+        },
+        {
+          "address": 167301120,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "b5071afac9c84f7b69b908c7f272a949186bb1d0cca0d57dd9ee2a6a2c466c42"
+        },
+        {
+          "address": 167366656,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6d06ccd06f08d0ff0e2698f69a46bf57a6b69a4241ece8827e594deeb052c137"
+        },
+        {
+          "address": 167432192,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "6413fb1da66cf8cbfcc3b596ac0190c0977914d4c35cd5b38c87c6bb3c5584b9"
+        },
+        {
+          "address": 167497728,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "0e39e4a8fde505a0d902a7014d34132f62c60e734a17be78e2cdd4ece3494e78"
+        },
+        {
+          "address": 167563264,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "946621407e5d9fad061ae0dcab3588c8ea63d13054a23606b7e8b8618dbb064d"
+        },
+        {
+          "address": 167628800,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "3dbf59355af8cad7d0796cf61430df8b0274fc0937b7e6ca407f6293258460f7"
+        },
+        {
+          "address": 167694336,
+          "size": 65536,
+          "kind": "engine",
+          "sha256": "f310035de30fbbf69d647294aca9495a39836715406fe8ac6222cbc8557b0af7"
+        },
+        {
+          "address": 167759872,
+          "size": 12288,
+          "kind": "engine",
+          "sha256": "a361c4aecdf159555f77221c066c7c8f2e0dc015bfdc3bb4bab2d64c836a7795"
+        }
+      ],
+      "scope": "完整原版保护范围及已审计内置修改器payload；完整重提取配置相同",
+      "allowed_changes": "GBA标题/修订标签，以及受保护范围外的文本或图像载荷；不保证所有文案/贴图均在范围外",
+      "id": "builtin-editor-safe-v133",
+      "name": "内置修改器安全移植（开发核验）",
+      "patch_sha256": "f91014b7347e123dff550c03ab36eb4ace632d2b1cf581197aa7b3622554a68d",
+      "source_crc32": "518482f7",
+      "target_crc32": "19b04315",
+      "target_sha256": "440441659ee4273a3e0a7af87207a160ee5406deceef2359c991659316bcafb5",
+      "patch_crc32": "95a9f1b4",
+      "profile_values_unchanged": true,
+      "payload_regions": [
+        {
+          "address": 145203200,
+          "size": 24576
+        }
+      ],
+      "metadata_exceptions": [
+        {
+          "address": 142376448,
+          "size": 33000,
+          "baseline_sha256": "837a74a680988abe003e81e4ca925effb402d6f294351ed6be55682a1cc0a9d5",
+          "target_sha256": "2ca9be4c6ea8457fd2fb47d8f240a6bda3ac8fda802cc34a4173c3785288c1dc",
+          "reason": "道具13使用回调指针改变；完整重提取的数值、地址及编码配置不变"
+        }
+      ]
     }
   ]
 }

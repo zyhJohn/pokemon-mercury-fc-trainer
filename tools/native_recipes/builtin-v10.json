@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "fixture": "potion-5-to-6",
+  "versions": [
+    "1.0"
+  ],
+  "record": [
+    {
+      "op": "run",
+      "frames": 600
+    },
+    {
+      "op": "tap",
+      "button": 3,
+      "hold": 2,
+      "release": 120
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 2,
+      "release": 300
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 2,
+      "release": 120
+    },
+    {
+      "op": "capture",
+      "name": "continue"
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 2,
+      "release": 180
+    },
+    {
+      "op": "capture",
+      "name": "field"
+    },
+    {
+      "op": "assert_memory",
+      "address": "0203bb20",
+      "expected": "0d000500"
+    },
+    {
+      "op": "tap",
+      "button": 3,
+      "hold": 10,
+      "release": 60
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 6,
+      "release": 30
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 6,
+      "release": 30
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 6,
+      "release": 120
+    },
+    {
+      "op": "capture",
+      "name": "medicine-pocket"
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 6,
+      "release": 45
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 6,
+      "release": 120
+    },
+    {
+      "op": "capture",
+      "name": "builtin-home"
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 6,
+      "release": 30
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 6,
+      "release": 45
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "tap",
+      "button": 0,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "capture",
+      "name": "potion-selected"
+    },
+    {
+      "op": "assert_memory",
+      "address": "0203bb20",
+      "expected": "0d000500"
+    },
+    {
+      "op": "tap",
+      "button": 5,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "tap",
+      "button": 5,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "tap",
+      "button": 5,
+      "hold": 3,
+      "release": 20
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 3,
+      "release": 120
+    },
+    {
+      "op": "assert_memory",
+      "address": "0203bb20",
+      "expected": "0d000600"
+    },
+    {
+      "op": "capture",
+      "name": "potion-added"
+    },
+    {
+      "op": "tap",
+      "button": 0,
+      "hold": 6,
+      "release": 45
+    },
+    {
+      "op": "tap",
+      "button": 0,
+      "hold": 6,
+      "release": 120
+    },
+    {
+      "op": "tap",
+      "button": 3,
+      "hold": 10,
+      "release": 60
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 8,
+      "release": 30
+    },
+    {
+      "op": "tap",
+      "button": 7,
+      "hold": 8,
+      "release": 30
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 6,
+      "release": 90
+    },
+    {
+      "op": "capture",
+      "name": "save-confirm"
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 6,
+      "release": 180
+    },
+    {
+      "op": "capture",
+      "name": "overwrite-confirm"
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 6,
+      "release": 1200
+    },
+    {
+      "op": "capture",
+      "name": "saved-field"
+    },
+    {
+      "op": "assert_memory",
+      "address": "0203bb20",
+      "expected": "0d000600"
+    }
+  ],
+  "reload": [
+    {
+      "op": "run",
+      "frames": 600
+    },
+    {
+      "op": "tap",
+      "button": 3,
+      "hold": 2,
+      "release": 120
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 2,
+      "release": 300
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 2,
+      "release": 120
+    },
+    {
+      "op": "capture",
+      "name": "continue"
+    },
+    {
+      "op": "tap",
+      "button": 8,
+      "hold": 2,
+      "release": 180
+    },
+    {
+      "op": "capture",
+      "name": "field"
+    },
+    {
+      "op": "capture",
+      "name": "reloaded-field"
+    },
+    {
+      "op": "assert_memory",
+      "address": "0203bb20",
+      "expected": "0d000600"
+    }
+  ]
+}

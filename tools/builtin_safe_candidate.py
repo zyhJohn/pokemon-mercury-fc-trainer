@@ -98,7 +98,7 @@ def main():
     source, template, patch = (path.read_bytes() for path in (args.source, args.template, args.ups))
     candidate = build_safe_candidate(source, template, patch)
     parsed = parse_ups(candidate.ups)
-    report = {"status": "safety research candidate; no runtime compatibility registered",
+    report = {"status": "safety candidate; registration not assessed by this tool",
               "version": candidate.version, "source": identity(source),
               "template": identity(template), "template_ups": identity(patch),
               "base_sha256": candidate.base_sha256, "candidate": identity(candidate.image),
