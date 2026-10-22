@@ -38,6 +38,7 @@ from pokemon_data import (
     unown_form,
 )
 from pokemon_selector import PokemonSelector
+from pokemon_integrity import inspect_record
 from scrolling_form import ScrollingForm
 from spinda_images import read_spinda_assets, spinda_png
 from sprite_images import icon_species, read_icons
@@ -98,6 +99,8 @@ class App:
         self.spinda_assets = None
         self.spinda_photos = []
         self.party_form_original = None
+        self.party_readonly_states = {}
+        self.party_snapshot_stale = False
         self.box_editor = None
         self.box_editor_values = []
         self.box_editor_original = ()
@@ -117,6 +120,7 @@ class App:
         self.box_preferences = BoxPreferences(base / "box-locks.json")
         self.box_save_path = tk.StringVar()
         self._build()
+        self.update_integrity_actions()
         self.timer = root.after(50, self._poll)
         root.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -345,8 +349,10 @@ class App:
         )
         actions = ttk.Frame(form)
         actions.pack(fill="x", pady=5)
-        self.button(actions, "检查与预览", self.preview, side="left", padx=3)
-        self.button(actions, "写入当前宝可梦", self.write_mon, side="left", padx=3)
+        self.party_preview_button = self.button(actions, "检查与预览", self.preview, side="left", padx=3)
+        self.party_write_button = self.button(actions, "写入当前宝可梦", self.write_mon, side="left", padx=3)
+        self.party_diagnosis_button = self.button(actions, "查看异常诊断", lambda: self.show_record_diagnosis("party"), side="left", padx=3)
+        self.party_delete_abnormal_button = self.button(actions, "删除异常成员…", lambda: self.delete_abnormal("party"), side="left", padx=3)
         report_frame = ttk.Frame(form)
         report_frame.pack(fill="both", expand=True)
         self.report = tk.Text(
@@ -627,6 +633,8 @@ class App:
     def fill_player_ot(self):
         if self.trainer is None or self.current_slot is None or self.busy:
             return
+        if self.selected_abnormal("party") is not None:
+            return
         trainer, slot = self.trainer, self.current_slot
         original = self.snapshot["party"][slot].raw
 
@@ -637,6 +645,7 @@ class App:
                 or self.snapshot is None
                 or slot >= len(self.snapshot["party"])
                 or self.snapshot["party"][slot].raw != original
+                or self.selected_abnormal("party") is not None
             ):
                 self.status.set("选中成员已变化，未填入玩家资料。")
                 return
@@ -1241,6 +1250,7 @@ class App:
             preview_mon = None
         if self.box_snapshot is not None:
             pokemon += list(self.box_snapshot["pokemon"])
+        pokemon = [mon for mon in pokemon if self.record_diagnosis(mon)["editable"]]
 
         def job():
             trainer.verify()
@@ -1275,12 +1285,187 @@ class App:
         self.run("读取游戏微缩图…", job, done)
 
     def mon_image(self, mon):
-        if not self.icons_enabled:
+        if not self.icons_enabled or not self.record_diagnosis(mon)["editable"]:
             return ""
         return self.icon_images.get(icon_species(mon, self.profile), "")
 
+    def record_diagnosis(self, mon, kind=None):
+        kind = kind or ("box" if isinstance(mon, BoxPokemon) else "party")
+        return inspect_record(mon.raw, self.profile, kind=kind, active=True)
+
+    @staticmethod
+    def diagnosis_label(diagnosis):
+        return "坏蛋（只读）" if diagnosis["bad_egg"] else "异常（只读）"
+
+    def diagnosis_text(self, diagnosis, target=""):
+        lines = [target, self.diagnosis_label(diagnosis), "以下为原始字段观察值，未验证为有效宝可梦资料。"]
+        lines.extend(str(value) for value in diagnosis.get("errors", ()))
+        lines.extend(str(value) for value in diagnosis.get("notes", ()))
+        lines.append("原始可读字段（编号、flag 等）：")
+        lines.append(json.dumps(diagnosis.get("observed", {}), ensure_ascii=False, indent=2, default=str))
+        lines.append("水银固定明文记录不使用原版 checksum 判定；不会自动修复或删除。")
+        return "\n".join(line for line in lines if line)
+
+    def selected_abnormal(self, kind):
+        if kind == "party":
+            if self.snapshot is None or self.current_slot is None:
+                return None
+            slot, box_index = self.current_slot, None
+            mon = self.snapshot["party"][slot]
+        else:
+            selected = self.box_tree.selection()
+            if self.box_snapshot is None or len(selected) != 1:
+                return None
+            slot, box_index = int(selected[0]), self.box_snapshot["index"]
+            mon = self.box_snapshot["pokemon"][slot]
+        diagnosis = self.record_diagnosis(mon, kind)
+        if not (diagnosis["damaged"] or diagnosis["bad_egg"]):
+            return None
+        return slot, box_index, diagnosis
+
+    def require_party_editable(self):
+        if self.snapshot is None or self.current_slot is None:
+            raise ValueError("请先连接并选中队伍成员")
+        if not self.record_diagnosis(self.snapshot["party"][self.current_slot], "party")["editable"]:
+            raise ValueError("异常成员仅可查看诊断或使用专用删除，不能普通编辑或填写草稿")
+
+    def selected_box_has_abnormal(self):
+        return self.box_snapshot is not None and any(
+            not self.record_diagnosis(self.box_snapshot["pokemon"][int(slot)], "box")["editable"]
+            and not self.record_diagnosis(self.box_snapshot["pokemon"][int(slot)], "box")["empty"]
+            for slot in self.box_tree.selection()
+        )
+
+    def update_integrity_actions(self):
+        if not hasattr(self, "party_diagnosis_button"):
+            return
+        for kind, diagnostic, deletion in (
+            ("party", self.party_diagnosis_button, self.party_delete_abnormal_button),
+            ("box", self.box_diagnosis_button, self.box_delete_abnormal_button),
+        ):
+            enabled = not self.busy and self.trainer is not None and self.selected_abnormal(kind) is not None
+            diagnostic.configure(state="normal" if enabled else "disabled")
+            deletion.configure(state="normal" if enabled else "disabled")
+        readonly = self.party_snapshot_stale or self.selected_abnormal("party") is not None
+        exempt = {self.party_diagnosis_button, self.party_delete_abnormal_button}
+        def visit(parent):
+            for widget in parent.winfo_children():
+                if isinstance(widget, (ttk.Entry, ttk.Combobox, ttk.Checkbutton, ttk.Radiobutton, ttk.Button)) and widget not in exempt:
+                    if readonly:
+                        if widget not in self.party_readonly_states:
+                            self.party_readonly_states[widget] = widget.state()
+                        widget.state(["disabled"])
+                    elif widget in self.party_readonly_states:
+                        state = self.party_readonly_states.pop(widget)
+                        widget.state(["!disabled", "!readonly", *state])
+                visit(widget)
+        if not self.busy:
+            visit(self.party_pages)
+
+    def show_record_diagnosis(self, kind):
+        if self.busy:
+            return
+        selection = self.selected_abnormal(kind)
+        if selection is None:
+            return
+        slot, index, diagnosis = selection
+        target = f"队伍第 {slot + 1} 格" if kind == "party" else f"第 {index + 1} 盒第 {slot + 1} 格"
+        window = tk.Toplevel(self.root)
+        window.title(target + " · 异常诊断（只读）")
+        view = tk.Text(window, width=76, height=25, wrap="word")
+        view.pack(fill="both", expand=True, padx=10, pady=10)
+        view.insert("1.0", self.diagnosis_text(diagnosis, target))
+        view.configure(state="disabled")
+        return window
+
+    def delete_abnormal(self, kind):
+        if self.busy or self.trainer is None:
+            return
+        selected = self.selected_abnormal(kind)
+        if selected is None:
+            return
+        if not self.discard_party_changes() or not self.discard_box_changes():
+            return
+        slot, index, _ = selected
+        trainer = self.trainer
+        pocket = self.pocket_id()
+        def preview(prepared):
+            if trainer is not self.trainer:
+                return
+            target = f"队伍第 {slot + 1} 格" if kind == "party" else f"第 {index + 1} 盒第 {slot + 1} 格"
+            details = self.diagnosis_text(prepared["diagnosis"], target)
+            if not messagebox.askokcancel("确认永久删除异常记录", details + "\n\n" + str(prepared.get("summary", "")) + "\n\n将永久删除目标记录；队伍后续成员会压紧。请先另存完整 .sav 存档备份。程序另建事务备份，但不能替代完整存档。\n确认备份完成并删除？", parent=self.root):
+                self.status.set("已取消删除，未写入。")
+                return
+            def job():
+                commit_error = refresh_error = None
+                try:
+                    result = trainer.commit_abnormal_deletion(prepared)
+                except Exception as exc:
+                    result = None
+                    commit_error = str(exc) or type(exc).__name__
+                try:
+                    snapshot = trainer.snapshot(pocket) if kind == "party" else trainer.snapshot_box(index)
+                except Exception as exc:
+                    snapshot = None
+                    refresh_error = str(exc) or type(exc).__name__
+                return result, snapshot, commit_error, refresh_error
+            def done(outcome):
+                result, snapshot, commit_error, refresh_error = outcome
+                self.box_staged_refs.clear()
+                self.box_selected_refs.clear()
+                self.box_stage_selected.clear()
+                self.render_box_stage()
+                if snapshot is None:
+                    self.invalidate_abnormal_target(kind)
+                elif kind == "party":
+                    self.apply_snapshot(snapshot)
+                else:
+                    self.apply_box_snapshot(snapshot)
+                errors = []
+                if commit_error:
+                    errors.append("提交错误：" + commit_error)
+                if refresh_error:
+                    if result is not None:
+                        errors.append("提交已返回；事务备份：" + str(result.get("backup", "未返回备份路径")))
+                    errors.append("重新读取失败：" + refresh_error)
+                    errors.append("旧目标已停用。请重新读取后核对；不要重复提交或自动恢复。")
+                if errors:
+                    self.last_error = "\n".join(errors)
+                    self.status.set("异常删除需要核对：" + self.last_error)
+                    messagebox.showerror("异常删除需要核对", self.last_error, parent=self.root)
+                    return
+                self.request_icons()
+                self.status.set("异常记录已删除、备份并读回核对；请检查游戏并保存。" if result["changed"] else "没有变化，未删除。")
+            self.run("备份、比较原槽并删除异常记录…", job, done)
+        self.run("重新核对异常记录并生成删除预览…", lambda: trainer.prepare_abnormal_deletion(kind, slot, box_index=index), preview)
+
+    def invalidate_abnormal_target(self, kind):
+        """Retire stale UI inputs when a post-commit read cannot establish state."""
+        if kind == "party":
+            self.snapshot = None
+            self.current_slot = None
+            self.party_form_original = None
+            self.party_snapshot_stale = True
+            self.party_tree.selection_set_many((), notify=False)
+            for card in self.party_tree.cards:
+                card.state(["disabled"])
+            self.identity.set("队伍读取失败，旧目标已停用；请重新读取核对。")
+        else:
+            self.clear_box_editor()
+            self.box_snapshot = None
+            self.box_tree.selection_set_many((), notify=False)
+            for card in self.box_tree.cards:
+                card.state(["disabled"])
+            self.box_detail.set("盒子读取失败，旧目标已停用；请重新读取核对。")
+        self.icon_request_pending = False
+        self.update_box_egg_button()
+        self.update_integrity_actions()
+
     def new_spinda_pattern(self):
         if self.busy or self.current_slot is None or self.snapshot is None:
+            return
+        if self.selected_abnormal("party") is not None:
             return
         if self.snapshot["party"][self.current_slot].species != 308:
             self.status.set("花纹重新生成仅适用于晃晃斑。")
@@ -1395,6 +1580,8 @@ class App:
             lock_row, "快速生蛋（仅已有蛋）", self.ready_box_egg, side="left", padx=3
         )
         self.box_egg_ready_button.configure(state="disabled")
+        self.box_diagnosis_button = self.button(lock_row, "查看异常诊断", lambda: self.show_record_diagnosis("box"), side="left", padx=3)
+        self.box_delete_abnormal_button = self.button(lock_row, "删除异常槽…", lambda: self.delete_abnormal("box"), side="left", padx=3)
         self.box_lock_detail = tk.StringVar(
             value="盒锁保存在本地配置；请关联当前游戏的 .sav，不修改存档文件。"
         )
@@ -1520,8 +1707,8 @@ class App:
 
     def update_box_egg_button(self):
         refs = self.box_operation_references() if self.trainer else ()
-        enabled = bool(refs) and not self.busy and all(
-            ref["box"] not in self.trainer.locked_boxes and BoxPokemon(ref["raw"]).egg
+        enabled = bool(refs) and not self.busy and not self.selected_box_has_abnormal() and all(
+            ref["box"] not in self.trainer.locked_boxes and self.record_diagnosis(BoxPokemon(ref["raw"]), "box")["editable"] and BoxPokemon(ref["raw"]).egg
             for ref in refs
         )
         self.box_egg_ready_button.configure(state="normal" if enabled else "disabled")
@@ -1666,8 +1853,8 @@ class App:
         return "break"
 
     def make_box_batch_menu(self, refs):
-        editable = len(refs) == 1 and refs[0]["box"] not in self.trainer.locked_boxes
-        valid = bool(refs) and all(ref["box"] not in self.trainer.locked_boxes for ref in refs)
+        valid = bool(refs) and not self.selected_box_has_abnormal() and all(ref["box"] not in self.trainer.locked_boxes and self.record_diagnosis(BoxPokemon(ref["raw"]), "box")["editable"] for ref in refs)
+        editable = len(refs) == 1 and valid
         eggs = valid and all(BoxPokemon(ref["raw"]).egg for ref in refs)
         menu = tk.Menu(self.root, tearoff=False)
         menu.add_command(
@@ -1685,10 +1872,17 @@ class App:
             command=self.ready_box_egg,
             state="normal" if eggs else "disabled",
         )
+        abnormal = not self.busy and self.selected_abnormal("box") is not None
+        menu.add_separator()
+        menu.add_command(label="查看异常诊断", command=lambda: self.show_record_diagnosis("box"), state="normal" if abnormal else "disabled")
+        menu.add_command(label="删除异常槽…", command=lambda: self.delete_abnormal("box"), state="normal" if abnormal else "disabled")
         return menu
 
     def edit_box_reference(self, reference):
         if self.busy or self.trainer is None or not self.discard_box_changes():
+            return
+        if not self.record_diagnosis(BoxPokemon(reference["raw"]), "box")["editable"]:
+            messagebox.showerror("只读记录", "异常记录不能普通编辑。", parent=self.root)
             return
         trainer = self.trainer
         def done(snapshot):
@@ -1703,6 +1897,9 @@ class App:
 
     def stage_box_selection(self):
         if self.busy or self.trainer is None or self.box_snapshot is None:
+            return
+        if self.selected_box_has_abnormal():
+            messagebox.showerror("只读记录", "异常记录不能暂存或批量移动，请单独查看诊断。", parent=self.root)
             return
         if not self.box_selected_refs:
             messagebox.showinfo("引用暂存", "请在右侧逐只选择非空成员。", parent=self.root)
@@ -1751,7 +1948,7 @@ class App:
         if self.busy or self.trainer is None or self.snapshot is None:
             return
         trainer, snapshot = self.trainer, self.snapshot
-        eggs = [i for i, mon in enumerate(snapshot["party"]) if mon.egg]
+        eggs = [i for i, mon in enumerate(snapshot["party"]) if mon.egg and self.record_diagnosis(mon, "party")["editable"]]
         if not eggs:
             messagebox.showinfo(
                 "已有蛋周期归零",
@@ -1805,6 +2002,9 @@ class App:
         if self.busy or self.trainer is None or not self.discard_box_changes():
             return
         refs = self.box_operation_references()
+        if self.selected_box_has_abnormal() or any(not self.record_diagnosis(BoxPokemon(ref["raw"]), "box")["editable"] for ref in refs):
+            messagebox.showerror("只读记录", "选择包含异常记录，不能批量移动或归零蛋周期。", parent=self.root)
+            return
         if not refs:
             messagebox.showinfo("盒子批量操作", "请在左侧暂存或右侧选择至少一只非空成员。", parent=self.root)
             return
@@ -1862,15 +2062,19 @@ class App:
         self.box_tree.delete(*self.box_tree.get_children())
         count = 0
         for i, mon in enumerate(snapshot["pokemon"]):
-            info = mon.describe(self.profile)
+            diagnosis = self.record_diagnosis(mon, "box")
+            healthy = diagnosis["editable"]
+            info = mon.describe(self.profile) if healthy else {}
             name = (
                 self.names["breeds"].get(str(mon.species), f"未收录 #{mon.species}")
                 if mon.species
                 else "（空槽）"
             )
-            if mon.species and mon.nickname and mon.nickname.strip():
+            if healthy and mon.nickname and mon.nickname.strip():
                 name = mon.nickname
-            count += bool(mon.species)
+            if not healthy and not diagnosis["empty"]:
+                name = self.diagnosis_label(diagnosis)
+            count += not diagnosis["empty"]
             self.box_tree.insert(
                 "",
                 "end",
@@ -1878,9 +2082,9 @@ class App:
                 image=self.mon_image(mon),
                 values=(
                     i + 1,
-                    name + ("（蛋）" if mon.egg else ""),
-                    info["level"] or "—",
-                    ("是" if mon.shiny else "否") if mon.species else "—",
+                    name + ("（蛋）" if healthy and mon.egg else ""),
+                    info.get("level") or "—",
+                    ("是" if mon.shiny else "否") if healthy else "—",
                 ),
             )
         visible = [str(slot) for box, slot in self.box_selected_refs if box == snapshot["index"]]
@@ -1898,6 +2102,7 @@ class App:
             if stale else f"已读取第 {snapshot['index'] + 1} 盒，尚未写入。"
         )
         self.update_box_egg_button()
+        self.update_integrity_actions()
 
     def clear_box_editor(self):
         if self.box_editor is not None and self.box_editor.winfo_exists():
@@ -1922,7 +2127,7 @@ class App:
         snapshot = self.box_snapshot
         slot = int(selected[0])
         mon = snapshot["pokemon"][slot]
-        if not mon.species:
+        if not self.record_diagnosis(mon, "box")["editable"]:
             return
         trainer = self.trainer
         window = None
@@ -2194,6 +2399,8 @@ class App:
         def prepare():
             if self.trainer is not trainer:
                 raise ValueError("连接已经改变，请重新打开此编辑窗口")
+            if not self.record_diagnosis(mon, "box")["editable"]:
+                raise ValueError("异常记录不能普通编辑")
             details = {
                 key: var.get().split(" - ", 1)[0]
                 if key in ("met_location", "held")
@@ -2343,10 +2550,11 @@ class App:
                     del self.box_selected_refs[key]
         for ident in selected:
             slot = int(ident)
-            if self.box_snapshot["pokemon"][slot].species and (index, slot) not in self.box_selected_refs:
+            if self.record_diagnosis(self.box_snapshot["pokemon"][slot], "box")["editable"] and (index, slot) not in self.box_selected_refs:
                 self.box_selected_refs[(index, slot)] = self.trainer.box_reference(self.box_snapshot, slot)
         self.box_tree.last_toggle = False
         self.update_box_egg_button()
+        self.update_integrity_actions()
         if not selected:
             self.clear_box_editor()
             return
@@ -2362,10 +2570,22 @@ class App:
             return
         self.clear_box_editor()
         mon = self.box_snapshot["pokemon"][int(selected[0])]
-        info = mon.describe(self.profile)
-        if not mon.species:
+        diagnosis = self.record_diagnosis(mon, "box")
+        if diagnosis["empty"]:
             self.box_detail.set("空槽")
             return
+        if not diagnosis["editable"]:
+            target = f"第 {index + 1} 盒第 {slot + 1} 格"
+            self.box_detail.set(self.diagnosis_text(diagnosis, target))
+            self.box_editor = ttk.Frame(self.box_editor_host)
+            self.box_editor.pack(fill="both", expand=True)
+            view = tk.Text(self.box_editor, width=45, height=20, wrap="word")
+            view.pack(fill="both", expand=True)
+            view.insert("1.0", self.diagnosis_text(diagnosis, target))
+            view.configure(state="disabled")
+            self.box_editor_slot = slot
+            return
+        info = mon.describe(self.profile)
         self.edit_box_dialog(self.box_editor_host)
         nature = self.names.get("pers", {}).get(str(mon.pid % 25), str(mon.pid % 25))
         moves = " / ".join(
@@ -2479,6 +2699,9 @@ class App:
     def catalog_fill(self):
         row = self.selected_catalog()
         if not row:
+            return
+        if self.category.get() != "items" and (self.busy or self.selected_abnormal("party") is not None):
+            self.status.set("异常成员只读，不能填写草稿。")
             return
         if self.category.get() == "pokemon" and self.current_slot is not None:
             self.species.set(f"{row['id']} - {row['name']}")
@@ -2635,6 +2858,7 @@ class App:
             self.close()
             return
         self.update_box_egg_button()
+        self.update_integrity_actions()
         self.unown_page.update_actions()
         self.wild_page.update_actions()
         if self.icon_request_pending and not self.busy and self.trainer is not None:
@@ -2888,6 +3112,7 @@ class App:
                     return False
                 keep_form = False
         self.snapshot = snap
+        self.party_snapshot_stale = False
         self.snapshot_at = datetime.now().astimezone().isoformat()
         self.money.set(str(snap["money"]))
         self.coins.set(str(snap["coins"]))
@@ -2895,19 +3120,23 @@ class App:
         self.bracer_points.set(str(snap["bracer_points"]))
         self.party_tree.delete(*self.party_tree.get_children())
         for i, mon in enumerate(snap["party"]):
+            diagnosis = self.record_diagnosis(mon, "party")
+            healthy = diagnosis["editable"]
             name = (
                 mon.nickname
                 if mon.nickname and mon.nickname.strip()
                 else self.names["breeds"].get(str(mon.species), f"未收录#{mon.species}")
             )
+            if not healthy:
+                name = self.diagnosis_label(diagnosis)
             self.party_tree.insert(
                 "",
                 "end",
                 iid=str(i),
                 image=self.mon_image(mon),
                 values=(
-                    f"{i + 1}. {name}{' ★' if mon.shiny else ''}{'（蛋）' if mon.egg else ''}",
-                    mon.level,
+                    f"{i + 1}. {name}{' ★' if healthy and mon.shiny else ''}{'（蛋）' if healthy and mon.egg else ''}",
+                    mon.level if healthy else "—",
                 ),
             )
         if snap["party"]:
@@ -2975,6 +3204,7 @@ class App:
             + (" · 旧桥接仅可读" if "CRCBATCH" not in self.mem.capabilities else "")
             + (" · 已保留队伍成员尚未写入的修改" if keep_form else "")
         )
+        self.update_integrity_actions()
         return True
 
     def item_name(self, item):
@@ -3045,6 +3275,22 @@ class App:
         self.current_slot = i
         self.target_gender.set("保持当前")
         mon = self.snapshot["party"][i]
+        diagnosis = self.record_diagnosis(mon, "party")
+        if not diagnosis["editable"]:
+            for var in [self.species, self.level, self.hp, self.held, self.nature, self.ability, self.nickname, self.ot_name, self.unown_letter, self.minior_color, self.spinda_seed, *self.iv, *self.ev, *self.move_vars, *self.pp_vars, *self.pp_up_vars, *self.detail_vars.values()]:
+                var.set("")
+            self.egg.set(False)
+            self.shiny.set(False)
+            self.identity.set(f"队伍第 {i + 1} 格 · {self.diagnosis_label(diagnosis)} · 原始物种编号 {mon.species}，未验证")
+            self.stat_preview.set("原始字段见诊断；能力值和公式未计算。")
+            self.detail_preview.set("")
+            self.detail_image.configure(image="")
+            self.spinda_before.configure(image="")
+            self.spinda_after.configure(image="")
+            self.set_report(self.diagnosis_text(diagnosis, f"队伍第 {i + 1} 格"))
+            self.party_form_original = None
+            self.update_integrity_actions()
+            return
         self.species.set(
             f"{mon.species} - {self.names['breeds'].get(str(mon.species), '未收录')}"
         )
@@ -3122,6 +3368,7 @@ class App:
         report = self.trainer.validate_pokemon(mon)
         self.set_report("\n".join(report["errors"] + report["notes"]))
         self.party_form_original = self.party_form_values()
+        self.update_integrity_actions()
 
     def set_report(self, text):
         self.report.configure(state="normal")
@@ -3130,6 +3377,7 @@ class App:
         self.report.configure(state="disabled")
 
     def prepare_mon(self):
+        self.require_party_editable()
         if self.snapshot is None or self.current_slot is None:
             raise ValueError("请先连接并选中队伍成员")
         mon = self.snapshot["party"][self.current_slot]
@@ -3221,6 +3469,8 @@ class App:
     def max_pp_ups(self):
         if self.snapshot is None or self.current_slot is None:
             return
+        if self.busy or self.selected_abnormal("party") is not None:
+            return
         mon = self.snapshot["party"][self.current_slot]
         for i, var in enumerate(self.move_vars):
             move = var.get().split(" - ", 1)[0]
@@ -3230,6 +3480,8 @@ class App:
 
     def fill_pp(self):
         if self.snapshot is None or self.current_slot is None:
+            return
+        if self.busy or self.selected_abnormal("party") is not None:
             return
         try:
             values = []
@@ -3251,6 +3503,8 @@ class App:
 
     def show_learnset(self):
         if self.current_slot is None:
+            return
+        if self.busy or self.selected_abnormal("party") is not None:
             return
         try:
             species = int(self.species.get().split(" - ", 1)[0])
@@ -3290,7 +3544,7 @@ class App:
 
         def fill():
             selected = tree.selection()
-            if not selected or self.busy:
+            if not selected or self.busy or self.selected_abnormal("party") is not None:
                 return
             move = entries[int(selected[0])][0]
             metadata = self.profile["moves"].get(str(move))

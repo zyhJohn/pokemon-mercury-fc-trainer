@@ -85,6 +85,7 @@ def main():
         "wild-encounters-audit-2026-10-16.md",
         "builtin-editor-patch-compatibility.md",
         "builtin-editor-native-audit-2026-10-21.md",
+        "abnormal-records-2026-10-22.md",
     ]:
         source = ROOT / "docs" / name
         if source.exists():

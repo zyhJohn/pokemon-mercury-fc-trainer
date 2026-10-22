@@ -14,6 +14,15 @@ from tests.test_core import Memory
 from tests.test_pokemon_data import sample
 
 
+def packed_box():
+    # The boundary fixture carries move 1023, outside Mercury's verified table.
+    # UI operation tests need a healthy member; preserve the boundary fixture.
+    from tests.test_box import packed_box as boundary_record
+    raw = bytearray(boundary_record())
+    raw[39:44] = (757).to_bytes(5, "little")
+    return bytes(raw)
+
+
 class AppTests(unittest.TestCase):
     def test_pp_ups_and_gender_are_drafts_with_updated_limits(self):
         from pokemon_data import gender
@@ -151,7 +160,6 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.mem.writes, 0)
 
     def test_box_move_selects_destination_and_egg_state_only_previews(self):
-        from tests.test_box import packed_box
         from box_data import BoxPokemon
 
         raw = bytearray(packed_box())
@@ -326,7 +334,6 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.mem.writes, writes)
 
     def test_pc_ability_preview_tracks_draft_without_writing(self):
-        from tests.test_box import packed_box
         from box_data import BoxPokemon
 
         raw = bytearray(packed_box())
@@ -375,7 +382,6 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.mem.writes, 0)
 
     def test_held_form_party_and_pc_preview_explain_species_changes(self):
-        from tests.test_box import packed_box
         from box_data import BoxPokemon
 
         patches, _ = self.app.trainer.edit_pokemon(self.app.snapshot, 0, species=546)
@@ -430,7 +436,6 @@ class AppTests(unittest.TestCase):
 
     def test_fill_current_player_ot_drafts_in_party_and_pc_without_writes(self):
         from name_codec import encode_name
-        from tests.test_box import packed_box
         from box_data import BoxPokemon
 
         address = 0x2024588
@@ -672,7 +677,6 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.mem.writes, 0)
 
     def test_pc_cards_and_inline_form_bind_box_slot(self):
-        from tests.test_box import packed_box
         from box_data import BoxPokemon
 
         raw = packed_box() * 2 + b"\0" * 58 * 28
@@ -869,7 +873,6 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.mem.writes, 0)
 
     def test_box_dialog_has_separate_member_and_does_not_write_on_open(self):
-        from tests.test_box import packed_box
         from box_data import BoxPokemon
 
         raw = packed_box() + b"\0" * 58 * 29

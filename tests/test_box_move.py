@@ -8,8 +8,16 @@ from box_data import BoxPokemon
 from rom_versions import load_profile
 from trainer_core import Trainer, SAVE_POINTER, PARTY_COUNT
 from tests.test_core import Memory
-from tests.test_box import packed_box
+from tests.test_box import packed_box as packed_boundaries
 from tests.test_rom_versions import install_profile
+
+
+def packed_box():
+    # The codec boundary fixture contains unknown move1023. Movement now
+    # requires a healthy source; retain its opaque bytes with a known move.
+    raw = bytearray(packed_boundaries())
+    raw[39:44] = (757).to_bytes(5, "little")
+    return bytes(raw)
 
 
 class BoxMoveTests(unittest.TestCase):

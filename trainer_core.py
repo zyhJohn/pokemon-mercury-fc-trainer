@@ -1,7 +1,7 @@
 """Verified ROM profile, immutable read snapshots, durable backups and transactions."""
 
-import json
 import hashlib
+import json
 import os
 import struct
 from copy import deepcopy
@@ -10,22 +10,23 @@ from pathlib import Path
 from uuid import uuid4
 
 from box_data import BoxPokemon
-from distribution_catalog import load_distributions, usable_rows
-from game_fields import (
-    box_name_pointer_table,
-    box_name_address,
-    decode_box_name,
-    encode_box_name,
-)
 from clock_data import (
     decode_daily_event,
     decode_game_clock,
     decode_playtime,
     encode_daily_event,
 )
+from distribution_catalog import load_distributions, usable_rows
+from game_fields import (
+    box_name_address,
+    box_name_pointer_table,
+    decode_box_name,
+    encode_box_name,
+)
+from held_forms import held_form_family, held_form_species, resolve_held_form
 from move_sources import describe_move_sources
 from name_codec import decode_name, encode_name
-from held_forms import held_form_family, held_form_species, resolve_held_form
+from pokemon_creation import box_to_party_pokemon, create_box_pokemon
 from pokemon_data import (
     MINIOR_COLORS,
     MINIOR_CORES,
@@ -37,11 +38,18 @@ from pokemon_data import (
     resolve_toxtricity_form,
     toxtricity_species,
 )
-from pokemon_creation import box_to_party_pokemon, create_box_pokemon
+from pokemon_deletion import deletion_patches, plan_deletion
+from pokemon_deletion_layout import party_deletion_guards
+from pokemon_integrity import inspect_record, require_editable
 from rom_versions import rom_identity, runtime_compatibility_check
 from unown_records import (
-    CAPTURE_ADDRESS, FINAL_ADDRESS, RESEARCH_ADDRESS, RESEARCH_MASK,
-    prepare_unown_records_patches, read_unown_records, unown_rom_features,
+    CAPTURE_ADDRESS,
+    FINAL_ADDRESS,
+    RESEARCH_ADDRESS,
+    RESEARCH_MASK,
+    prepare_unown_records_patches,
+    read_unown_records,
+    unown_rom_features,
 )
 
 PARTY = 0x02024284
@@ -70,6 +78,8 @@ class Trainer:
         self.connection_generation = uuid4().hex
         self._unown_snapshots = {}
         self._unown_previews = {}
+        self._abnormal_previews = {}
+        self._abnormal_authorizations = {}
 
     def verify(self, *, full_compatibility=False):
         self.verified = False
@@ -513,11 +523,172 @@ class Trainer:
             "pokemon": tuple(BoxPokemon(raw[i : i + 58]) for i in range(0, size, 58)),
         }
 
+    def prepare_abnormal_deletion(self, kind, slot, box_index=None):
+        """Preview a single abnormal removal, bound to this connection and bytes."""
+        snapshot = self.snapshot()
+        if snapshot["in_battle"]:
+            raise ValueError("战斗中不能删除异常记录")
+        if kind == "party":
+            party_deletion_guards(self.g, self.profile)
+            count = len(snapshot["party"])
+            slot = integer(slot, 0, count - 1, "队伍位置")
+            raw = self.g.read(PARTY, 600)
+            if raw[: count * 100] != b"".join(mon.raw for mon in snapshot["party"]):
+                raise ValueError("读取时队伍已变化，请重新读取")
+            after, diagnosis = plan_deletion(raw, self.profile, kind, slot, count=count)
+            context = {
+                "kind": kind,
+                "slot": slot,
+                "count_before": count,
+                "before": raw.hex(),
+                "after": after.hex(),
+            }
+            summary = f"删除队伍第{slot + 1}格异常记录；后续队员顺次前移，数量{count}→{count - 1}"
+        elif kind == "box":
+            index = integer(box_index, 0, 24, "盒子位置")
+            slot = integer(slot, 0, 29, "盒子槽位")
+            self.check_box_unlocked(index)
+            box = self.snapshot_box(index)
+            raw = box["pokemon"][slot].raw
+            after, diagnosis = plan_deletion(raw, self.profile, kind, slot)
+            context = {
+                "kind": kind,
+                "slot": slot,
+                "box_index": index,
+                "before": raw.hex(),
+                "after": after.hex(),
+            }
+            summary = f"清空第{index + 1}盒第{slot + 1}格异常记录，其他槽位保持原样"
+        else:
+            raise ValueError("删除对象只能是队伍或PC")
+        if (
+            self.g.read(
+                PARTY if kind == "party" else box["address"] + slot * 58, len(raw)
+            )
+            != raw
+        ):
+            raise ValueError("读取时异常记录已变化，请重新预览")
+        prepared = {
+            **self._rom_context(),
+            "connection_generation": self.connection_generation,
+            "transport_generation": getattr(self.g, "connection_generation", None),
+            "nonce": uuid4().hex,
+            "kind": kind,
+            "slot": slot,
+            "box_index": context.get("box_index"),
+            "context": context,
+            "diagnosis": diagnosis,
+            "summary": summary,
+            "patches": self._deletion_patches(context),
+        }
+        self._remember_unown(self._abnormal_previews, prepared["nonce"], prepared)
+        return prepared
+
+    def _deletion_patches(self, context):
+        return deletion_patches(
+            context,
+            self.profile,
+            PARTY,
+            PARTY_COUNT,
+            self.profile["storage"]["box_addresses"],
+        )
+
+    def _commit_abnormal_context(self, snap, context, direction):
+        patches = self._deletion_patches(context)
+        if direction == "restore":
+            patches = [(a, c, b) for a, b, c in patches]
+        elif direction != "delete":
+            raise ValueError("异常处理方向无效")
+        token = uuid4().hex
+        self._abnormal_authorizations[token] = {
+            "context": deepcopy(context),
+            "direction": direction,
+            "patches": patches,
+            "transport_generation": getattr(self.g, "connection_generation", None),
+        }
+        snap["_abnormal_authorization"] = token
+        try:
+            return self.commit(
+                snap,
+                patches,
+                "删除异常记录" if direction == "delete" else "恢复异常删除备份",
+            )
+        finally:
+            self._abnormal_authorizations.pop(token, None)
+
+    def commit_abnormal_deletion(self, prepared):
+        if (
+            not self._same_rom(prepared)
+            or prepared.get("connection_generation") != self.connection_generation
+            or prepared.get("transport_generation")
+            != getattr(self.g, "connection_generation", None)
+            or self._abnormal_previews.get(prepared.get("nonce")) != prepared
+        ):
+            raise ValueError("异常删除预览已失效，请重新读取并预览")
+        # Consume before any attempt: an uncertain write must never be retried.
+        self._abnormal_previews.pop(prepared["nonce"])
+        snap = self.snapshot()
+        if prepared.get("transport_generation") != getattr(self.g, "connection_generation", None):
+            raise ValueError("通信连接已变化，异常删除预览失效")
+        return self._commit_abnormal_context(snap, prepared["context"], "delete")
+
+    def _check_mon_patches(self, patches, party_count):
+        """Ordinary edits may preserve an abnormal record, but never alter it."""
+        new_count = next(
+            (
+                after[0]
+                for a, before, after in patches
+                if a == PARTY_COUNT and len(after) == 1
+            ),
+            party_count,
+        )
+        for address, before, after in patches:
+            if before == after:
+                continue
+            kind = None
+            if (
+                len(before) == len(after) == 100
+                and PARTY <= address < PARTY + 600
+                and (address - PARTY) % 100 == 0
+            ):
+                kind = "party"
+                size = 100
+            elif self.is_box_patch(address, len(before)) and len(before) == len(after):
+                kind = "box"
+                size = 58
+            if kind is None:
+                spans = [(PARTY, 600)] + [
+                    (a, 1740)
+                    for a in self.profile.get("storage", {}).get("box_addresses", [])
+                ]
+                if any(
+                    address < a + size and a < address + max(len(before), len(after))
+                    for a, size in spans
+                ):
+                    raise ValueError(
+                        "宝可梦普通写入必须使用对齐的完整记录，禁止部分或跨记录补丁"
+                    )
+                continue
+            for offset in range(0, len(before), size):
+                original, replacement = (
+                    before[offset : offset + size],
+                    after[offset : offset + size],
+                )
+                if original == replacement:
+                    continue
+                for raw, count in ((original, party_count), (replacement, new_count)):
+                    active = kind == "party" and (address - PARTY) // 100 < count
+                    if (any(raw) or active) and inspect_record(
+                        raw, self.profile, kind, active=active
+                    )["damaged"]:
+                        raise ValueError(
+                            "异常/坏蛋记录仅供诊断，不能普通修改、搬运或覆盖；请使用专用删除"
+                        )
+
     def edit_box(self, snap, slot, **changes):
         if (
-            (self.profile.get("compatibility") or "rom_sha256" in snap)
-            and not self._same_rom(snap)
-        ):
+            self.profile.get("compatibility") or "rom_sha256" in snap
+        ) and not self._same_rom(snap):
             raise ValueError("盒子快照来自另一ROM，请重新读取")
         self.check_box_unlocked(snap["index"])
         slot = integer(slot, 0, 29, "盒子位置")
@@ -525,6 +696,7 @@ class Trainer:
         if snap["address"] != address:
             raise ValueError("盒子快照地址不一致")
         mon = snap["pokemon"][slot]
+        require_editable(mon.raw, self.profile, "box")
         self.check_capture_ball(mon, changes)
         self.check_met_location(mon, changes)
         updated, report = mon.edit(self.profile, **changes)
@@ -1128,6 +1300,7 @@ class Trainer:
     def edit_pokemon(self, snap, slot, **changes):
         slot = integer(slot, 0, len(snap["party"]) - 1, "队伍位置")
         mon = snap["party"][slot]
+        require_editable(mon.raw, self.profile, "party")
         species = integer(changes.get("species", mon.species), 1, 65535, "物种")
         species = resolve_toxtricity_form(
             mon.species, mon.pid, species, changes.get("nature")
@@ -1371,13 +1544,34 @@ class Trainer:
 
     def commit(self, snap, patches, label):
         contexts = [snap] + [
-            snap[key] for key in ("trainer", "time", "daily_time", "unown_records") if key in snap
+            snap[key]
+            for key in ("trainer", "time", "daily_time", "unown_records")
+            if key in snap
         ]
         for context in contexts:
             if not self._same_rom(context):
                 raise ValueError("写入快照来自另一ROM，请重新读取")
         self.check_box_patches_unlocked(patches)
         self.verify(full_compatibility=True)
+        abnormal = None
+        if "_abnormal_authorization" in snap:
+            abnormal = self._abnormal_authorizations.get(
+                snap["_abnormal_authorization"]
+            )
+            if abnormal is None or patches != abnormal["patches"]:
+                raise ValueError("异常处理事务没有有效授权或补丁被修改")
+            expected = self._deletion_patches(abnormal["context"])
+            if abnormal["direction"] == "restore":
+                expected = [(a, c, b) for a, b, c in expected]
+            if patches != expected:
+                raise ValueError("异常处理事务与重新计算的删除计划不一致")
+            if (
+                abnormal["context"]["kind"] == "party"
+                and len(snap["party"]) != expected[0][1][0]
+            ):
+                raise ValueError("队伍数量已变化，请重新预览")
+        else:
+            self._check_mon_patches(patches, len(snap["party"]))
         if any(
             address == PARTY_COUNT and before == after
             for address, before, after in patches
@@ -1391,6 +1585,8 @@ class Trainer:
             raise ValueError("时间相关写入需要重新加载 0.2.10 的 mercury_bridge.lua")
         if "unown_records" in snap and "BATCHVERIFY" not in self.g.capabilities:
             raise ValueError("未知图腾记录写入需要支持回调内读回的 mercury_bridge.lua")
+        if abnormal is not None and "BATCHVERIFY" not in self.g.capabilities:
+            raise ValueError("异常删除/恢复需要支持回调内读回的新版 mercury_bridge.lua")
         if snap.get("time_apply_absolute"):
             # The user's inputs are absolute H:M:S. Capture the latest expected
             # value after slow ROM checks, then compare inside the callback.
@@ -1403,7 +1599,9 @@ class Trainer:
         unown_context = None
         unown_guards = []
         if "unown_records" in snap:
-            unown_guards, unown_context = self._unown_transaction_context(snap["unown_records"], changes)
+            unown_guards, unown_context = self._unown_transaction_context(
+                snap["unown_records"], changes
+            )
         if not changes:
             return {"changed": False, "backup": None}
         count_changes = [p for p in changes if p[0] == PARTY_COUNT]
@@ -1422,19 +1620,23 @@ class Trainer:
                 raise ValueError("队伍数量变化必须为相邻且有效的一个成员")
             edge_slot = min(current_count, new_count[0])
             edge_patches = [p for p in changes if p[0] == PARTY + edge_slot * 100]
-            if not any(
+            if abnormal is None and not any(
                 address == PARTY + edge_slot * 100
                 and len(before) == len(after) == 100
                 and before != after
                 for address, before, after in edge_patches
             ):
                 raise ValueError("队伍数量变化必须与对应完整成员同事务")
-            if current_count < new_count[0] and any(
-                before != b"\0" * 100 for _, before, _ in edge_patches
+            if (
+                abnormal is None
+                and current_count < new_count[0]
+                and any(before != b"\0" * 100 for _, before, _ in edge_patches)
             ):
                 raise ValueError("队伍新增成员的目标槽必须全零")
-            if current_count > new_count[0] and any(
-                after != b"\0" * 100 for _, _, after in edge_patches
+            if (
+                abnormal is None
+                and current_count > new_count[0]
+                and any(after != b"\0" * 100 for _, _, after in edge_patches)
             ):
                 raise ValueError("队伍数量减少时必须清空末位完整成员")
         # Compare count and pointer inside the emulator callback along with edits.
@@ -1552,6 +1754,12 @@ class Trainer:
         guards += snap.get("box_batch_guards", [])
         guards += snap.get("box_name_guards", [])
         guards += unown_guards
+        if abnormal is not None:
+            # All unchanged/inactive party slots are part of the same callback
+            # comparison, alongside every changed slot and the count byte.
+            guards += [p for p in patches if p[1] == p[2]]
+            if abnormal["context"]["kind"] == "party":
+                guards += party_deletion_guards(self.g, self.profile)
         # Also reject a ROM swap between Python validation and the callback.
         guards += [
             (s["address"], bytes.fromhex(s["hex"]), bytes.fromhex(s["hex"]))
@@ -1593,6 +1801,11 @@ class Trainer:
             }
         if unown_context is not None:
             record["unown_context"] = unown_context
+        if abnormal is not None:
+            record["abnormal_context"] = {
+                "direction": abnormal["direction"],
+                "plan": abnormal["context"],
+            }
 
         def save_record():
             temp = path.with_suffix(".tmp")
@@ -1605,9 +1818,18 @@ class Trainer:
         save_record()  # Fail closed when a backup cannot be written.
         try:
             self.check_box_patches_unlocked(patches)
+            if abnormal is not None and abnormal["transport_generation"] != getattr(
+                self.g, "connection_generation", None
+            ):
+                raise ValueError("通信连接已变化，异常处理授权失效")
             if large_boxes:
                 self.g.batch(guards + changes, verify=True, large_boxes=True)
-            elif "time" in snap or "daily_time" in snap or unown_context is not None:
+            elif (
+                "time" in snap
+                or "daily_time" in snap
+                or unown_context is not None
+                or abnormal is not None
+            ):
                 # Confirm time and Unown records in the same emulator callback,
                 # before the game can advance and change the written fields.
                 self.g.batch(guards + changes, verify=True)
@@ -1629,18 +1851,35 @@ class Trainer:
 
     def restore(self, path):
         record = json.loads(Path(path).read_text(encoding="utf-8"))
-        if (
-            record.get("schema") != 1
-            or not self._same_rom(record)
-        ):
+        if record.get("schema") != 1 or not self._same_rom(record):
             raise ValueError("备份格式或 ROM 版本不匹配")
         if record.get("status") != "verified":
             raise ValueError("此备份的写入未被确认完成，不能自动恢复；请先导出诊断核对")
         snap = self.snapshot()
+        if "abnormal_context" in record:
+            context = record["abnormal_context"]
+            direction = context["direction"]
+            if direction not in ("delete", "restore"):
+                raise ValueError("异常删除备份方向无效")
+            expected = self._deletion_patches(context["plan"])
+            if direction == "restore":
+                expected = [(a, c, b) for a, b, c in expected]
+            changes = [
+                {"address": a, "before": b.hex(), "after": c.hex()}
+                for a, b, c in expected
+                if b != c
+            ]
+            if record.get("patches") != changes:
+                raise ValueError("异常删除备份补丁与原始删除计划不一致")
+            return self._commit_abnormal_context(
+                snap, context["plan"], "restore" if direction == "delete" else "delete"
+            )
         unown_ranges = ((CAPTURE_ADDRESS, 4), (RESEARCH_ADDRESS, 1), (FINAL_ADDRESS, 1))
         unown_restore = "unown_context" in record or any(
-            item["address"] < a + size and a < item["address"] + len(bytes.fromhex(item["before"]))
-            for item in record.get("patches", []) for a, size in unown_ranges
+            item["address"] < a + size
+            and a < item["address"] + len(bytes.fromhex(item["before"]))
+            for item in record.get("patches", [])
+            for a, size in unown_ranges
         )
         if unown_restore:
             self._restore_unown_context(record, snap)
@@ -1701,8 +1940,16 @@ class Trainer:
                 name_snap = self.snapshot_box_name(index)
                 snap.setdefault("box_name_guards", []).extend(
                     [
-                        (name_snap["pointer_address"], name_snap["pointer_raw"], name_snap["pointer_raw"]),
-                        (name_snap["table_address"], name_snap["table_raw"], name_snap["table_raw"]),
+                        (
+                            name_snap["pointer_address"],
+                            name_snap["pointer_raw"],
+                            name_snap["pointer_raw"],
+                        ),
+                        (
+                            name_snap["table_address"],
+                            name_snap["table_raw"],
+                            name_snap["table_raw"],
+                        ),
                     ]
                 )
             valid = valid or any(
@@ -1747,8 +1994,7 @@ class Trainer:
             raise ValueError("备份修改记录数量异常")
         count_patches = [p for p in patches if p[0] == PARTY_COUNT]
         party_patches = [
-            p for p in patches
-            if len(p[1]) == 100 and PARTY <= p[0] < PARTY + 600
+            p for p in patches if len(p[1]) == 100 and PARTY <= p[0] < PARTY + 600
         ]
         if count_patches:
             if len(count_patches) != 1:

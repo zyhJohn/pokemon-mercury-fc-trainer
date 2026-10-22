@@ -9,9 +9,17 @@ from unittest.mock import patch
 from box_data import BoxPokemon
 from trainer_app import App
 from trainer_core import PARTY, PARTY_COUNT, SAVE_POINTER, Trainer
-from tests.test_box import packed_box
 from tests.test_core import Memory
 from tests.test_pokemon_data import sample
+
+
+def packed_box():
+    # The boundary fixture carries move 1023, outside Mercury's verified table.
+    # UI operation tests need a healthy member; preserve the boundary fixture.
+    from tests.test_box import packed_box as boundary_record
+    raw = bytearray(boundary_record())
+    raw[39:44] = (757).to_bytes(5, "little")
+    return bytes(raw)
 
 
 class BoxBatchUiTests(unittest.TestCase):
